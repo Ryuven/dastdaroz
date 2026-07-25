@@ -123,12 +123,72 @@ body{
 }
 .phone-field:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
 .phone-prefix{
-  display:flex;align-items:center;gap:7px;padding:0 14px;
+  display:flex;align-items:center;gap:7px;padding:0 12px;
   background:var(--s2);border-right:1.5px solid var(--b);
   font-family:var(--fs);font-weight:700;font-size:.86rem;color:var(--tx2);
-  flex-shrink:0;user-select:none;
+  flex-shrink:0;user-select:none;cursor:pointer;
+  transition:background var(--tf);
 }
-.phone-flag{width:14px;height:21px;border-radius:2px;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.10);object-fit:cover;display:block}
+.phone-prefix:hover{background:var(--s3)}
+.phone-prefix-arrow{font-size:.55rem;color:var(--tx3);margin-left:1px;line-height:1}
+/* флаг горизонтальный 96×64 → отображаем 24×16 */
+.phone-flag{width:24px;height:16px;border-radius:2px;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.10);object-fit:cover;display:block}
+
+/* ── Country Picker Modal ── */
+.cp-overlay{
+  position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s var(--ease);
+}
+.cp-overlay.open{opacity:1;pointer-events:all}
+.cp-modal{
+  width:min(480px,100vw);max-height:82svh;
+  background:#fff;border-radius:22px 22px 0 0;
+  display:flex;flex-direction:column;
+  transform:translateY(40px);transition:transform .26s var(--ease);
+  overflow:hidden;
+}
+.cp-overlay.open .cp-modal{transform:translateY(0)}
+.cp-handle{
+  width:36px;height:4px;border-radius:99px;background:var(--b);
+  margin:10px auto 0;flex-shrink:0;
+}
+.cp-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 12px;flex-shrink:0;
+  border-bottom:1px solid var(--b);
+}
+.cp-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);letter-spacing:-.02em}
+.cp-close{
+  width:28px;height:28px;border-radius:50%;background:var(--s2);border:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--tx3);font-size:.9rem;transition:background var(--tf);
+}
+.cp-close:hover{background:var(--s3)}
+.cp-search-wrap{padding:10px 16px 8px;flex-shrink:0}
+.cp-search{
+  width:100%;padding:9px 13px 9px 36px;border-radius:10px;
+  border:1.5px solid var(--b);background:var(--s2);
+  font-family:var(--fs);font-size:.82rem;color:var(--tx);outline:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238fa898' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:11px center;
+  transition:border-color var(--tf);
+}
+.cp-search:focus{border-color:var(--acc)}
+.cp-search::placeholder{color:var(--tx3)}
+.cp-list{overflow-y:auto;flex:1;padding:4px 8px 16px}
+.cp-item{
+  display:flex;align-items:center;gap:12px;padding:9px 10px;
+  border-radius:10px;cursor:pointer;
+  transition:background var(--tf);border:none;background:none;width:100%;text-align:left;
+}
+.cp-item:hover{background:var(--s2)}
+.cp-item.selected{background:var(--accd)}
+.cp-item-flag{width:32px;height:21px;border-radius:3px;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.cp-item-name{flex:1;font-size:.8rem;color:var(--tx);font-weight:500}
+.cp-item-dial{font-size:.76rem;color:var(--tx3);font-weight:600;font-family:var(--fs)}
+.cp-empty{text-align:center;padding:28px 0;font-size:.78rem;color:var(--tx3)}
 .phone-input{
   flex:1;min-width:0;border:none;background:none;outline:none;
   color:var(--tx);font-family:var(--fs);font-size:.88rem;font-weight:500;
@@ -292,9 +352,10 @@ body{
       <div class="field">
         <label class="lbl" for="login-phone">Рақами телефон</label>
         <div class="phone-field">
-          <div class="phone-prefix">
-            <img class="phone-flag" src="flag_tajikistan_96x64.png" alt="TJ"/>
-            +992
+          <div class="phone-prefix" id="prefix-login" role="button" tabindex="0" aria-label="Выбрать код страны">
+            <img class="phone-flag" id="flag-login" src="flag_tj_96x64.png" alt="TJ"/>
+            <span id="dial-login">+992</span>
+            <span class="phone-prefix-arrow">▾</span>
           </div>
           <input type="tel" id="login-phone" class="phone-input"
             placeholder="90 000 00 00" autocomplete="tel" autofocus inputmode="numeric" maxlength="12"/>
@@ -369,9 +430,10 @@ body{
     <div class="field">
       <label class="lbl" for="reg-phone">Рақами телефон</label>
       <div class="phone-field">
-        <div class="phone-prefix">
-          <img class="phone-flag" src="flag_tajikistan_96x64.png" alt="TJ"/>
-          +992
+        <div class="phone-prefix" id="prefix-reg" role="button" tabindex="0" aria-label="Выбрать код страны">
+          <img class="phone-flag" id="flag-reg" src="flag_tj_96x64.png" alt="TJ"/>
+          <span id="dial-reg">+992</span>
+          <span class="phone-prefix-arrow">▾</span>
         </div>
         <input type="tel" id="reg-phone" class="phone-input"
           placeholder="90 000 00 00" autocomplete="tel" inputmode="numeric" maxlength="12"/>
@@ -440,6 +502,21 @@ body{
     <span id="status-text">Пайваст шудан ба dastdaroz…</span>
   </div>
 
+</div>
+
+<!-- ── Country Picker Modal ── -->
+<div class="cp-overlay" id="cp-overlay" role="dialog" aria-modal="true" aria-label="Выбрать страну">
+  <div class="cp-modal">
+    <div class="cp-handle"></div>
+    <div class="cp-header">
+      <div class="cp-title">Кишварро интихоб кунед</div>
+      <button class="cp-close" id="cp-close" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="cp-search-wrap">
+      <input type="text" id="cp-search" class="cp-search" placeholder="Ҷустуҷӯ..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+    </div>
+    <div class="cp-list" id="cp-list"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -919,6 +996,159 @@ body{
       setLoading(btnReg, false);
     }
   });
+
+  // ─────────────────────────────────────────────────────────────
+  //  Country Picker
+  // ─────────────────────────────────────────────────────────────
+  const COUNTRIES = [
+    // CIS & ближнее зарубежье
+    { code:'TJ', name:'Тоҷикистон',       dial:'992', flag:'flag_tj_96x64.png' },
+    { code:'RU', name:'Россия',            dial:'7',   flag:'flag_ru_96x64.png' },
+    { code:'UZ', name:'Ӯзбекистон',        dial:'998', flag:'flag_uz_96x64.png' },
+    { code:'KZ', name:'Қазоқистон',        dial:'7',   flag:'flag_kz_96x64.png' },
+    { code:'KG', name:'Қирғизистон',       dial:'996', flag:'flag_kg_96x64.png' },
+    { code:'TM', name:'Туркманистон',      dial:'993', flag:'flag_tm_96x64.png' },
+    { code:'AZ', name:'Озарбойҷон',        dial:'994', flag:'flag_az_96x64.png' },
+    { code:'AM', name:'Арманистон',        dial:'374', flag:'flag_am_96x64.png' },
+    { code:'GE', name:'Гурҷистон',         dial:'995', flag:'flag_ge_96x64.png' },
+    { code:'UA', name:'Украина',           dial:'380', flag:'flag_ua_96x64.png' },
+    { code:'BY', name:'Беларус',           dial:'375', flag:'flag_by_96x64.png' },
+    { code:'MD', name:'Молдова',           dial:'373', flag:'flag_md_96x64.png' },
+    // Осиёи Ҷанубӣ ва Шарқӣ
+    { code:'AF', name:'Афғонистон',        dial:'93',  flag:'flag_af_96x64.png' },
+    { code:'PK', name:'Покистон',          dial:'92',  flag:'flag_pk_96x64.png' },
+    { code:'IN', name:'Ҳиндустон',         dial:'91',  flag:'flag_in_96x64.png' },
+    { code:'CN', name:'Чин',               dial:'86',  flag:'flag_cn_96x64.png' },
+    { code:'JP', name:'Япония',            dial:'81',  flag:'flag_jp_96x64.png' },
+    { code:'KR', name:'Кореяи Ҷанубӣ',    dial:'82',  flag:'flag_kr_96x64.png' },
+    { code:'TR', name:'Туркия',            dial:'90',  flag:'flag_tr_96x64.png' },
+    { code:'IR', name:'Эрон',              dial:'98',  flag:'flag_ir_96x64.png' },
+    // Ховари Миёна
+    { code:'SA', name:'Арабистони Саудӣ',  dial:'966', flag:'flag_sa_96x64.png' },
+    { code:'AE', name:'Аморатҳои Арабӣ',   dial:'971', flag:'flag_ae_96x64.png' },
+    { code:'QA', name:'Қатар',             dial:'974', flag:'flag_qa_96x64.png' },
+    { code:'KW', name:'Кувайт',            dial:'965', flag:'flag_kw_96x64.png' },
+    { code:'IQ', name:'Ироқ',              dial:'964', flag:'flag_iq_96x64.png' },
+    { code:'IL', name:'Исроил',            dial:'972', flag:'flag_il_96x64.png' },
+    { code:'JO', name:'Урдун',             dial:'962', flag:'flag_jo_96x64.png' },
+    { code:'LB', name:'Лубнон',            dial:'961', flag:'flag_lb_96x64.png' },
+    // Аврупо
+    { code:'DE', name:'Олмон',             dial:'49',  flag:'flag_de_96x64.png' },
+    { code:'GB', name:'Британияи Кабир',   dial:'44',  flag:'flag_gb_96x64.png' },
+    { code:'FR', name:'Фаронса',           dial:'33',  flag:'flag_fr_96x64.png' },
+    { code:'IT', name:'Италия',            dial:'39',  flag:'flag_it_96x64.png' },
+    { code:'ES', name:'Испания',           dial:'34',  flag:'flag_es_96x64.png' },
+    { code:'NL', name:'Нидерландия',       dial:'31',  flag:'flag_nl_96x64.png' },
+    { code:'BE', name:'Белгия',            dial:'32',  flag:'flag_be_96x64.png' },
+    { code:'CH', name:'Швейцария',         dial:'41',  flag:'flag_ch_96x64.png' },
+    { code:'AT', name:'Австрия',           dial:'43',  flag:'flag_at_96x64.png' },
+    { code:'SE', name:'Шветсия',           dial:'46',  flag:'flag_se_96x64.png' },
+    { code:'NO', name:'Норвегия',          dial:'47',  flag:'flag_no_96x64.png' },
+    { code:'DK', name:'Дания',             dial:'45',  flag:'flag_dk_96x64.png' },
+    { code:'FI', name:'Финляндия',         dial:'358', flag:'flag_fi_96x64.png' },
+    { code:'PL', name:'Лаҳистон',          dial:'48',  flag:'flag_pl_96x64.png' },
+    { code:'PT', name:'Португалия',        dial:'351', flag:'flag_pt_96x64.png' },
+    { code:'GR', name:'Юнон',              dial:'30',  flag:'flag_gr_96x64.png' },
+    { code:'CZ', name:'Ҷумҳурии Чех',      dial:'420', flag:'flag_cz_96x64.png' },
+    { code:'HU', name:'Маҷористон',        dial:'36',  flag:'flag_hu_96x64.png' },
+    { code:'RO', name:'Руминия',           dial:'40',  flag:'flag_ro_96x64.png' },
+    // Амрико
+    { code:'US', name:'Иёлоти Муттаҳида',  dial:'1',   flag:'flag_us_96x64.png' },
+    { code:'CA', name:'Канада',            dial:'1',   flag:'flag_ca_96x64.png' },
+    { code:'BR', name:'Бразилия',          dial:'55',  flag:'flag_br_96x64.png' },
+    { code:'MX', name:'Мексика',           dial:'52',  flag:'flag_mx_96x64.png' },
+    { code:'AR', name:'Аргентина',         dial:'54',  flag:'flag_ar_96x64.png' },
+    // Африко
+    { code:'EG', name:'Миср',              dial:'20',  flag:'flag_eg_96x64.png' },
+    { code:'ZA', name:'Африкаи Ҷанубӣ',   dial:'27',  flag:'flag_za_96x64.png' },
+    { code:'NG', name:'Нигерия',           dial:'234', flag:'flag_ng_96x64.png' },
+    // Уқёнусия
+    { code:'AU', name:'Австралия',         dial:'61',  flag:'flag_au_96x64.png' },
+    { code:'NZ', name:'Зеландияи Нав',     dial:'64',  flag:'flag_nz_96x64.png' },
+  ];
+
+  let selectedCountry = COUNTRIES[0]; // TJ default
+  let _cpTarget = null; // 'login' | 'reg'
+
+  function applyCountry(c) {
+    selectedCountry = c;
+    // Обновляем оба префикса сразу
+    ['login','reg'].forEach(id => {
+      const flagEl = document.getElementById('flag-' + id);
+      const dialEl = document.getElementById('dial-' + id);
+      if (flagEl) { flagEl.src = c.flag; flagEl.alt = c.code; }
+      if (dialEl)   dialEl.textContent = '+' + c.dial;
+    });
+  }
+
+  // Render list
+  function renderCP(query = '') {
+    const q    = query.toLowerCase().trim();
+    const list = document.getElementById('cp-list');
+    const filtered = q
+      ? COUNTRIES.filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.code.toLowerCase().includes(q) ||
+          c.dial.includes(q)
+        )
+      : COUNTRIES;
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="cp-empty">Ёфт нашуд</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(c => `
+      <button class="cp-item${c.code === selectedCountry.code ? ' selected' : ''}"
+        data-code="${c.code}" type="button">
+        <img class="cp-item-flag" src="${c.flag}" alt="${c.code}" loading="lazy"/>
+        <span class="cp-item-name">${c.name}</span>
+        <span class="cp-item-dial">+${c.dial}</span>
+      </button>`).join('');
+
+    list.querySelectorAll('.cp-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = COUNTRIES.find(x => x.code === btn.dataset.code);
+        if (c) { applyCountry(c); closeCP(); }
+      });
+    });
+
+    // Scroll selected into view
+    const sel = list.querySelector('.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function openCP(target) {
+    _cpTarget = target;
+    document.getElementById('cp-search').value = '';
+    renderCP();
+    document.getElementById('cp-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('cp-search').focus(), 280);
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCP() {
+    document.getElementById('cp-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Open triggers
+  document.getElementById('prefix-login').addEventListener('click', () => openCP('login'));
+  document.getElementById('prefix-reg').addEventListener('click',   () => openCP('reg'));
+  document.getElementById('prefix-login').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openCP('login'); });
+  document.getElementById('prefix-reg').addEventListener('keydown',   e => { if (e.key === 'Enter' || e.key === ' ') openCP('reg'); });
+
+  // Close triggers
+  document.getElementById('cp-close').addEventListener('click', closeCP);
+  document.getElementById('cp-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('cp-overlay')) closeCP();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCP();
+  });
+
+  // Search
+  document.getElementById('cp-search').addEventListener('input', e => renderCP(e.target.value));
 </script>
 </body>
 </html>
