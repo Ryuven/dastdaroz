@@ -1,11 +1,32 @@
 <!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║              ШАБЛОН DASTDAROZ — ПРАВИЛА ДЛЯ ИИ                  ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  ЕДИНСТВЕННАЯ ЗОНА РЕДАКТИРОВАНИЯ:                               ║
+║  Блок между метками КОНТЕНТ START и КОНТЕНТ END внутри .content  ║
+║                                                                  ║
+║  ЧТО ЗАПРЕЩЕНО ТРОГАТЬ:                                          ║
+║  ✗  <div class="header"> ... </div>   — топ-бар с логотипом     ║
+║  ✗  <div class="footer"> ... </div>   — контакты и соцсети      ║
+║  ✗  <div class="overlay"> ... </div>  — профиль bottom sheet     ║
+║  ✗  <style> ... </style>              — все CSS переменные       ║
+║  ✗  <script> ... </script>            — Firebase auth логика     ║
+║                                                                  ║
+║  ЧТО РАЗРЕШЕНО:                                                  ║
+║  ✓  Заменить содержимое между КОНТЕНТ START / КОНТЕНТ END        ║
+║  ✓  Добавлять новые CSS-классы в <style> для контента страницы   ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="tg">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Хабарҳо — dastdaroz</title>
+<title>Навигация · dastdaroz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
@@ -16,119 +37,78 @@
   --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.15);
   --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;--txd:#b0c4b8;
   --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
-  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
   --ease:cubic-bezier(.32,0,.18,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--tx);font-family:var(--fs);height:100svh;max-height:100svh;overflow:hidden;display:flex;flex-direction:column;padding-top:var(--safe-t);-webkit-font-smoothing:antialiased}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:var(--fs);
+  height:100svh;max-height:100svh;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  padding-top:var(--safe-t);
+  -webkit-font-smoothing:antialiased;
+}
 a{color:inherit;text-decoration:none}
 
-/* ── HEADER ──────────────────────────────────────────────────── */
-.header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:54px;border-bottom:1px solid var(--b0);background:var(--s1);z-index:100}
+/* ── HEADER ── */
+.header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  height:54px;
+  border-bottom:1px solid var(--b0);
+  background:var(--s1);
+  z-index:100;
+}
 .logo{display:flex;align-items:center;height:100%}
-.logo img{height:26px;width:auto;object-fit:contain;display:block}
-.header-right{display:flex;align-items:center;gap:8px}
-.icon-btn{width:36px;height:36px;border-radius:10px;border:none;background:none;outline:none;display:flex;align-items:center;justify-content:center;color:var(--tx3);cursor:pointer;transition:background .12s}
-.icon-btn:active{background:var(--s2)}
-.avatar-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:var(--s2);border:2px solid var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;outline:none;color:var(--tx3);font-family:var(--fd);font-weight:900;font-size:.75rem;transition:border-color .15s,background .15s}
+.logo img{height:28px;width:auto;object-fit:contain;display:block}
+.header-right{display:flex;align-items:center;gap:10px}
+
+/* ── AVATAR BUTTON ── */
+.avatar-btn{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--s2);border:2px solid var(--b0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;outline:none;
+  transition:border-color .15s,background .15s;
+  color:var(--tx3);
+  font-family:var(--fd);font-weight:900;font-size:.75rem;
+}
 .avatar-btn:active{background:var(--accd);border-color:var(--acc)}
 .avatar-btn.authed{background:var(--accd);border-color:var(--accg);color:var(--acc)}
 
-/* ── CATEGORY TABS ───────────────────────────────────────────── */
-.cats{flex-shrink:0;display:flex;overflow-x:auto;gap:6px;padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--b0);scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.cats::-webkit-scrollbar{display:none}
-.cat-btn{flex-shrink:0;padding:6px 14px;border-radius:99px;border:1.5px solid var(--b0);background:none;outline:none;cursor:pointer;font-family:var(--fs);font-size:.72rem;font-weight:600;color:var(--tx3);transition:all .15s;white-space:nowrap}
-.cat-btn.active{background:var(--acc);border-color:var(--acc);color:#fff}
-.cat-btn:not(.active):active{background:var(--s2)}
-
-/* ── SCROLL ──────────────────────────────────────────────────── */
+/* ── SCROLL AREA ── */
 .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
-/* ── SKELETON ────────────────────────────────────────────────── */
-.skel{background:var(--s2);border-radius:10px;animation:sk 1.5s ease-in-out infinite}
-@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}
+/* ── MAIN CONTENT ── */
+.content{padding:20px}
 
-/* ── CATEGORY BADGE ──────────────────────────────────────────── */
-.cbadge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:.58rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex-shrink:0}
-.cb-green{background:var(--accd);color:var(--acc)}
-.cb-red{background:rgba(220,38,38,.08);color:#dc2626}
-.cb-blue{background:rgba(37,99,235,.08);color:#2563eb}
-.cb-yellow{background:rgba(217,119,6,.09);color:#d97706}
-.cb-purple{background:rgba(124,58,237,.08);color:#7c3aed}
+/* ── FOOTER ── */
+.footer{flex-shrink:0;background:var(--s1);border-top:1px solid var(--b0)}
+.divider{height:1px;background:var(--b0);margin:0 20px}
+.contacts{padding:3px 0}
+.contact-item{display:flex;align-items:center;gap:12px;padding:9px 20px;text-decoration:none;color:inherit;transition:background .1s}
+.contact-item.clickable{cursor:pointer}
+.contact-item.clickable:active{background:var(--s2)}
+.ci-icon{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.ci-body{flex:1;min-width:0}
+.ci-val{font-size:.8rem;font-weight:600;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-sub{font-size:.58rem;color:var(--tx3);margin-top:1px}
+.ci-arrow{color:var(--txd);flex-shrink:0}
+.socials-wrap{padding:8px 20px calc(10px + var(--safe-b))}
+.socials{display:flex;gap:9px}
+.soc-btn{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:opacity .12s,transform .12s;flex-shrink:0}
+.soc-btn:active{opacity:.7;transform:scale(.93)}
+.soc-btn.fb{background:#1877f2}
+.soc-btn.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
+.soc-btn.tg{background:#2aabee}
+.soc-btn.yt{background:#ff0000}
 
-/* ── HERO CARD ───────────────────────────────────────────────── */
-.hero{margin:14px 14px 0;border-radius:20px;overflow:hidden;background:var(--s1);cursor:pointer;box-shadow:0 2px 18px rgba(0,0,0,.07);transition:transform .14s}
-.hero:active{transform:scale(.985)}
-.hero-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--s2)}
-.hero-img-ph{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--s2),var(--accg));display:flex;align-items:center;justify-content:center;color:var(--acc);opacity:.5}
-.hero-body{padding:14px 16px 18px}
-.hero-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.hero-rt{margin-left:auto;font-size:.62rem;color:var(--tx3);display:flex;align-items:center;gap:4px;flex-shrink:0}
-.hero-title{font-family:var(--fd);font-weight:900;font-size:1.18rem;color:var(--tx);line-height:1.22;letter-spacing:-.01em;margin-bottom:8px}
-.hero-subtitle{font-size:.78rem;color:var(--tx3);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.hero-foot{display:flex;align-items:center;gap:9px}
-.hero-av{width:24px;height:24px;border-radius:50%;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;font-size:.52rem;font-weight:700;color:var(--acc);flex-shrink:0;font-family:var(--fd)}
-.hero-by{font-size:.68rem;font-weight:600;color:var(--tx2)}
-.hero-dt{margin-left:auto;font-size:.62rem;color:var(--tx3)}
-
-/* ── SECTION HEADER ──────────────────────────────────────────── */
-.sec-head{display:flex;align-items:center;justify-content:space-between;padding:18px 14px 9px}
-.sec-title{font-family:var(--fd);font-weight:900;font-size:.88rem;color:var(--tx)}
-.sec-cnt{font-size:.64rem;color:var(--tx3)}
-
-/* ── NEWS CARD ───────────────────────────────────────────────── */
-.nlist{padding:0 14px;display:flex;flex-direction:column;gap:9px;padding-bottom:calc(22px + var(--safe-b))}
-.nc{background:var(--s1);border-radius:14px;display:flex;gap:11px;padding:11px;cursor:pointer;border:1px solid var(--b0);transition:transform .12s;overflow:hidden}
-.nc:active{transform:scale(.98)}
-.nc-img{width:84px;height:70px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--s2);display:block}
-.nc-img-ph{width:84px;height:70px;border-radius:10px;background:linear-gradient(135deg,var(--s2),var(--accg));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--acc);opacity:.5}
-.nc-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:6px}
-.nc-title{font-family:var(--fd);font-weight:800;font-size:.84rem;color:var(--tx);line-height:1.28;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.nc-meta{display:flex;align-items:center;gap:7px}
-.nc-rt{font-size:.6rem;color:var(--tx3);display:flex;align-items:center;gap:3px}
-
-/* ── EMPTY STATE ─────────────────────────────────────────────── */
-.empty{padding:58px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
-.empty-ico{color:var(--txd);margin-bottom:4px}
-.empty-h{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx3)}
-.empty-t{font-size:.72rem;color:var(--txd);line-height:1.5;max-width:220px}
-
-/* ── ARTICLE OVERLAY ─────────────────────────────────────────── */
-.art-ov{position:fixed;inset:0;z-index:400;background:var(--bg);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .34s var(--ease)}
-.art-ov.open{transform:translateY(0)}
-.art-topbar{position:absolute;left:0;right:0;top:calc(var(--safe-t) + 12px);z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 16px;pointer-events:none}
-.art-topbar > *{pointer-events:auto}
-.art-btn{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.44);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:none;cursor:pointer;outline:none;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .12s}
-.art-btn:active{background:rgba(0,0,0,.7)}
-.art-cover-wrap{flex-shrink:0}
-.art-cover{width:100%;height:236px;object-fit:cover;display:block;background:var(--s2)}
-.art-cover-ph{width:100%;height:236px;background:linear-gradient(135deg,var(--s2),var(--accg));display:flex;align-items:center;justify-content:center;color:var(--acc);opacity:.5}
-.art-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--s1);border-radius:22px 22px 0 0;margin-top:-22px;z-index:1;position:relative;padding:24px 20px calc(36px + var(--safe-b))}
-.art-cat-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.art-dt{font-size:.64rem;color:var(--tx3);font-weight:500}
-.art-title{font-family:var(--fd);font-weight:900;font-size:1.44rem;color:var(--tx);line-height:1.18;letter-spacing:-.02em;margin-bottom:10px}
-.art-subtitle{font-size:.85rem;color:var(--tx3);line-height:1.55;margin-bottom:18px;font-weight:500}
-.art-author-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0);margin-bottom:22px}
-.art-av{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--acc)}
-.art-author-name{font-weight:700;font-size:.8rem;color:var(--tx)}
-.art-author-meta{font-size:.62rem;color:var(--tx3);margin-top:2px}
-.art-content{font-size:.88rem;color:var(--tx2);line-height:1.8}
-.art-content p{margin-bottom:16px}
-.art-content p:last-child{margin-bottom:0}
-.art-footer{display:flex;align-items:center;gap:6px;margin-top:24px;padding-top:16px;border-top:1px solid var(--b0);font-size:.65rem;color:var(--tx3)}
-
-/* ── SEARCH OVERLAY ──────────────────────────────────────────── */
-.search-ov{position:fixed;inset:0;z-index:450;background:var(--bg);transform:translateY(-100%);transition:transform .28s var(--ease);display:flex;flex-direction:column;padding-top:var(--safe-t)}
-.search-ov.open{transform:translateY(0)}
-.search-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--b0);background:var(--s1)}
-.search-input{flex:1;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;padding:10px 14px;font-family:var(--fs);font-size:.88rem;color:var(--tx);outline:none;transition:border-color .15s}
-.search-input:focus{border-color:var(--acc)}
-.search-cancel{font-size:.78rem;font-weight:600;color:var(--acc);cursor:pointer;white-space:nowrap;padding:8px 4px;flex-shrink:0}
-.search-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.search-empty{padding:40px;text-align:center;color:var(--tx3);font-size:.78rem}
-
-/* ── PROFILE SHEET ───────────────────────────────────────────── */
+/* ── PROFILE SHEET ── */
 .overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.38);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .overlay.open{opacity:1;pointer-events:auto}
 .sheet{width:100%;background:var(--s1);border-radius:22px 22px 0 0;padding-bottom:calc(20px + var(--safe-b));transform:translateY(100%);transition:transform .3s var(--ease);overflow:hidden}
@@ -137,7 +117,7 @@ a{color:inherit;text-decoration:none}
 .sheet-head{display:flex;align-items:center;gap:14px;padding:18px 20px 14px;border-bottom:1px solid var(--b0)}
 .sheet-ava{width:52px;height:52px;border-radius:50%;flex-shrink:0;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--acc)}
 .sheet-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);line-height:1.2}
-.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500}
+.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500;letter-spacing:.02em}
 .sheet-row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .1s;text-decoration:none;color:inherit}
 .sheet-row:active{background:var(--s2)}
 .sheet-row-ico{width:32px;height:32px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0}
@@ -145,99 +125,305 @@ a{color:inherit;text-decoration:none}
 .sheet-row-arr{color:var(--txd)}
 .sheet-logout{margin:14px 20px 0;width:calc(100% - 40px);padding:14px;border:none;border-radius:13px;background:rgba(220,38,38,.07);color:#dc2626;font-family:var(--fd);font-weight:900;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .12s}
 .sheet-logout:active{background:rgba(220,38,38,.15)}
+
+/* ══════════════════════════════════════
+   КОНТЕНТ — стили новостей
+══════════════════════════════════════ */
+
+/* Состояния загрузки и пустого списка */
+.news-loading{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;padding:48px 20px;
+  color:var(--tx3);font-size:.85rem;
+}
+.news-spinner{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid var(--accg);
+  border-top-color:var(--acc);
+  animation:spin .7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.news-empty{
+  display:flex;flex-direction:column;align-items:center;
+  padding:52px 20px;gap:10px;color:var(--tx3);
+  text-align:center;
+}
+.news-empty svg{opacity:.25}
+.news-empty-txt{font-size:.85rem;font-weight:500}
+
+/* Герой — первая статья */
+.news-hero{
+  display:block;
+  border-radius:16px;
+  overflow:hidden;
+  background:var(--s1);
+  border:1px solid var(--b0);
+  margin-bottom:16px;
+  cursor:pointer;
+  transition:transform .18s var(--ease),box-shadow .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.news-hero:active{transform:scale(.985)}
+.news-hero-img{
+  width:100%;aspect-ratio:16/9;
+  object-fit:cover;display:block;
+  background:var(--s2);
+}
+.news-hero-img-ph{
+  width:100%;aspect-ratio:16/9;
+  background:linear-gradient(135deg,var(--s2),var(--accd));
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txd);
+}
+.news-hero-body{padding:14px 16px 16px}
+.news-hero-cat{
+  display:inline-flex;align-items:center;
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--acc);background:var(--accd);
+  padding:3px 9px;border-radius:99px;
+  margin-bottom:8px;
+}
+.news-hero-title{
+  font-family:var(--fd);font-weight:900;
+  font-size:1.15rem;line-height:1.3;
+  color:var(--tx);margin-bottom:6px;
+}
+.news-hero-sub{
+  font-size:.8rem;color:var(--tx3);
+  line-height:1.5;margin-bottom:10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.news-hero-meta{
+  display:flex;align-items:center;gap:12px;
+  font-size:.68rem;color:var(--txd);
+}
+.news-hero-meta span{display:flex;align-items:center;gap:4px}
+
+/* Список карточек */
+.news-list{display:flex;flex-direction:column;gap:1px;background:var(--b0);border-radius:14px;overflow:hidden;border:1px solid var(--b0)}
+
+.news-card{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;
+  background:var(--s1);
+  cursor:pointer;
+  transition:background .12s;
+  text-decoration:none;color:inherit;
+}
+.news-card:active{background:var(--s2)}
+
+.news-card-thumb{
+  width:64px;height:64px;border-radius:10px;
+  object-fit:cover;flex-shrink:0;
+  background:var(--s2);display:block;
+}
+.news-card-thumb-ph{
+  width:64px;height:64px;border-radius:10px;
+  background:var(--accd);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--acc2);
+}
+.news-card-body{flex:1;min-width:0}
+.news-card-cat{
+  font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--acc);margin-bottom:4px;
+}
+.news-card-title{
+  font-family:var(--fd);font-weight:800;font-size:.88rem;
+  color:var(--tx);line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:5px;
+}
+.news-card-meta{font-size:.63rem;color:var(--txd);display:flex;gap:8px;align-items:center}
+.news-card-dot{width:3px;height:3px;border-radius:50%;background:var(--txd);flex-shrink:0}
+
+/* Стрелка */
+.news-card-arr{color:var(--txd);flex-shrink:0}
+
+/* Детальный просмотр статьи (bottom sheet) */
+.article-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.45);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+.article-overlay.open{opacity:1;pointer-events:auto}
+.article-sheet{
+  width:100%;height:92svh;
+  background:var(--bg);
+  border-radius:22px 22px 0 0;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .32s var(--ease);
+  overflow:hidden;
+}
+.article-overlay.open .article-sheet{transform:translateY(0)}
+
+.article-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 6px;flex-shrink:0}
+
+.article-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.article-cover{
+  width:100%;aspect-ratio:16/9;object-fit:cover;display:block;
+  background:var(--s2);
+}
+.article-cover-ph{
+  width:100%;aspect-ratio:16/9;
+  background:linear-gradient(135deg,var(--s2),var(--accd));
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txd);
+}
+
+.article-body{padding:20px 20px 32px}
+.article-cat{
+  display:inline-flex;
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--acc);background:var(--accd);
+  padding:3px 9px;border-radius:99px;margin-bottom:10px;
+}
+.article-title{
+  font-family:var(--fd);font-weight:900;font-size:1.3rem;
+  line-height:1.25;color:var(--tx);margin-bottom:8px;
+}
+.article-sub{
+  font-size:.88rem;color:var(--tx3);line-height:1.55;margin-bottom:14px;
+}
+.article-meta{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 0;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0);
+  margin-bottom:18px;
+}
+.article-meta-item{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--tx3)}
+.article-content{
+  font-size:.88rem;line-height:1.7;color:var(--tx2);
+  white-space:pre-wrap;word-break:break-word;
+}
+.article-views{
+  display:flex;align-items:center;gap:5px;
+  margin-top:20px;font-size:.72rem;color:var(--txd);
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- ── HEADER — НЕ ТРОГАТЬ ── -->
 <div class="header">
-  <div class="logo"><img src="dastdaroz.png" alt="dastdaroz"/></div>
+  <div class="logo">
+    <img src="dastdaroz.png" alt="dastdaroz"/>
+  </div>
   <div class="header-right">
-    <button class="icon-btn" id="btn-search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    </button>
-    <button class="avatar-btn" id="avatar-btn">
-      <svg id="ava-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span id="ava-init" style="display:none"></span>
+    <button class="avatar-btn" id="avatar-btn" aria-label="Профил">
+      <svg id="ava-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="ava-initials" style="display:none"></span>
     </button>
   </div>
 </div>
 
-<!-- CATEGORY TABS -->
-<div class="cats">
-  <button class="cat-btn active" data-cat="all">Ҳама</button>
-  <button class="cat-btn" data-cat="актуали">Актуалӣ 🔥</button>
-  <button class="cat-btn" data-cat="ҷомеа">Ҷомеа</button>
-  <button class="cat-btn" data-cat="иқтисод">Иқтисод</button>
-  <button class="cat-btn" data-cat="варзиш">Варзиш</button>
-  <button class="cat-btn" data-cat="технология">Технология</button>
-</div>
+<!-- ── SCROLL AREA ── -->
+<div class="scroll">
+  <div class="content">
 
-<!-- SCROLL AREA -->
-<div class="scroll" id="scroll-area">
+    <!-- ═══════════════════════════════════════════════════════════
+         ▼▼▼  КОНТЕНТ START  ▼▼▼
+    ════════════════════════════════════════════════════════════ -->
 
-  <!-- SKELETON -->
-  <div id="skel-wrap">
-    <div class="skel" style="margin:14px 14px 0;aspect-ratio:16/9;border-radius:20px"></div>
-    <div style="padding:14px 14px 10px;display:flex;justify-content:space-between">
-      <div class="skel" style="width:110px;height:13px"></div>
-      <div class="skel" style="width:52px;height:13px"></div>
+    <!-- Состояние загрузки -->
+    <div class="news-loading" id="news-loading">
+      <div class="news-spinner"></div>
+      Загрузка…
     </div>
-    <div style="display:flex;flex-direction:column;gap:9px;padding:0 14px 20px">
-      <div class="skel" style="height:92px;border-radius:14px"></div>
-      <div class="skel" style="height:92px;border-radius:14px"></div>
-      <div class="skel" style="height:92px;border-radius:14px"></div>
+
+    <!-- Герой — первая статья, скрыт до загрузки -->
+    <div id="news-hero-wrap" style="display:none"></div>
+
+    <!-- Список остальных статей -->
+    <div class="news-list" id="news-list" style="display:none"></div>
+
+    <!-- Пустой список -->
+    <div class="news-empty" id="news-empty" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8L2 8v12a2 2 0 002 2z"/>
+        <polyline points="10 2 10 8 2 8"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+        <line x1="8" y1="17" x2="13" y2="17"/>
+      </svg>
+      <div class="news-empty-txt">Хабарҳо ёфт нашуданд</div>
+    </div>
+
+    <!-- ▲▲▲  КОНТЕНТ END  ▲▲▲ -->
+
+  </div>
+
+  <!-- ── FOOTER — НЕ ТРОГАТЬ ── -->
+  <div class="footer">
+    <div class="divider"></div>
+    <div class="contacts">
+      <a href="tel:+992977178800" class="contact-item clickable">
+        <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+        <div class="ci-body"><div class="ci-val">+992 977 17 8800</div><div class="ci-sub">Хизмати дастгирӣ</div></div>
+        <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a href="tel:+992878777788" class="contact-item clickable">
+        <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+        <div class="ci-body"><div class="ci-val">+992 87 877 7788</div><div class="ci-sub">Хизмати дастгирӣ</div></div>
+        <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <div class="contact-item">
+        <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="ci-body"><div class="ci-val">Душанбе, Тоҷикистон</div></div>
+      </div>
+      <a href="mailto:info@galelium.com" class="contact-item clickable">
+        <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div class="ci-body"><div class="ci-val">info@galelium.com</div></div>
+      </a>
+      <div class="contact-item">
+        <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="ci-body"><div class="ci-val">Душ – Ҷум: 8:00 – 22:00</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="socials-wrap">
+      <div class="socials">
+        <a href="#" class="soc-btn fb" aria-label="Facebook"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+        <a href="#" class="soc-btn ig" aria-label="Instagram"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="#" class="soc-btn tg" aria-label="Telegram"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c-.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.292z"/></svg></a>
+        <a href="#" class="soc-btn yt" aria-label="YouTube"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a>
+      </div>
     </div>
   </div>
-
-  <!-- NEWS FEED (rendered by JS) -->
-  <div id="feed" style="display:none"></div>
-
 </div>
 
-<!-- ══ ARTICLE DETAIL OVERLAY ════════════════════════════════════ -->
-<div class="art-ov" id="art-ov">
-  <div class="art-topbar">
-    <button class="art-btn" id="art-back">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-    </button>
-    <button class="art-btn" id="art-share">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-    </button>
-  </div>
-  <div class="art-cover-wrap" id="art-cover-wrap"></div>
-  <div class="art-body" id="art-body"></div>
-</div>
-
-<!-- ══ SEARCH OVERLAY ════════════════════════════════════════════ -->
-<div class="search-ov" id="search-ov">
-  <div class="search-bar">
-    <input class="search-input" id="search-input" type="search" placeholder="Ҷустуҷӯи хабарҳо…" autocomplete="off"/>
-    <span class="search-cancel" id="search-cancel">Бекор</span>
-  </div>
-  <div class="search-scroll" id="search-res">
-    <div class="search-empty" style="color:var(--txd)">Матни ҷустуҷӯро ворид кунед…</div>
+<!-- ── ARTICLE BOTTOM SHEET ── -->
+<div class="article-overlay" id="article-overlay">
+  <div class="article-sheet">
+    <div class="article-handle"></div>
+    <div class="article-scroll" id="article-scroll">
+      <div id="article-inner"></div>
+    </div>
   </div>
 </div>
 
-<!-- ══ PROFILE SHEET ════════════════════════════════════════════ -->
+<!-- ── PROFILE BOTTOM SHEET — НЕ ТРОГАТЬ ── -->
 <div class="overlay" id="overlay">
-  <div class="sheet">
+  <div class="sheet" id="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <div class="sheet-ava" id="sheet-ava">?</div>
-      <div>
+      <div class="sheet-info">
         <div class="sheet-name" id="sheet-name">—</div>
         <div class="sheet-phone" id="sheet-phone">—</div>
       </div>
     </div>
-    <a class="sheet-row" href="orders.html">
+    <div class="sheet-row" onclick="window.location.href='orders.html'">
       <div class="sheet-row-ico">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       </div>
       <span class="sheet-row-lbl">Фармоишҳои ман</span>
       <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-    </a>
+    </div>
     <button class="sheet-logout" id="btn-logout">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Хуруҷ
@@ -246,320 +432,180 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script type="module">
-import { auth, db } from './firebase.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-import {
-  collection, query, where, orderBy, limit,
-  getDocs, doc, updateDoc, increment
-} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+// ═══ НЕ ТРОГАТЬ — Firebase auth ══════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+import { getFirestore, collection, query, where, orderBy, getDocs, doc, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
 
-// ══ DOM refs ══════════════════════════════════════════════════════
-const avatarBtn  = document.getElementById('avatar-btn');
-const avaIcon    = document.getElementById('ava-icon');
-const avaInit    = document.getElementById('ava-init');
-const overlay    = document.getElementById('overlay');
-const sheetAva   = document.getElementById('sheet-ava');
-const sheetName  = document.getElementById('sheet-name');
-const sheetPhone = document.getElementById('sheet-phone');
-const btnLogout  = document.getElementById('btn-logout');
-const skelWrap   = document.getElementById('skel-wrap');
-const feed       = document.getElementById('feed');
-const artOv      = document.getElementById('art-ov');
-const artBack    = document.getElementById('art-back');
-const artShare   = document.getElementById('art-share');
-const artCoverW  = document.getElementById('art-cover-wrap');
-const artBody    = document.getElementById('art-body');
-const searchOv   = document.getElementById('search-ov');
-const searchInp  = document.getElementById('search-input');
-const searchRes  = document.getElementById('search-res');
-const searchCancel = document.getElementById('search-cancel');
+const cfg={apiKey:'AIzaSyCjIAMFuwLKwmjChCuiz-MHLv5WZOczAAE',authDomain:'delivery-galelium.firebaseapp.com',projectId:'delivery-galelium',storageBucket:'delivery-galelium.firebasestorage.app',messagingSenderId:'982466555080',appId:'1:982466555080:web:c77ccbff0e71e540ddc9fd'};
+const app = initializeApp(cfg);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
+// Auth UI
+const avatarBtn   = document.getElementById('avatar-btn');
+const avaIcon     = document.getElementById('ava-icon');
+const avaInitials = document.getElementById('ava-initials');
+const overlay     = document.getElementById('overlay');
+const sheetAva    = document.getElementById('sheet-ava');
+const sheetName   = document.getElementById('sheet-name');
+const sheetPhone  = document.getElementById('sheet-phone');
+const btnLogout   = document.getElementById('btn-logout');
 let currentUser = null;
-let allArticles = [];
-let currentCat  = 'all';
-let currentArt  = null;
 
-// ══ Category config ═══════════════════════════════════════════════
-const CAT_COLOR = {
-  'актуали':'cb-red','ҷомеа':'cb-blue',
-  'иқтисод':'cb-yellow','варзиш':'cb-green','технология':'cb-purple'
-};
-const CAT_LABEL = {
-  'актуали':'Актуалӣ','ҷомеа':'Ҷомеа',
-  'иқтисод':'Иқтисод','варзиш':'Варзиш','технология':'Технология'
-};
-function catCls(c){ return CAT_COLOR[(c||'').toLowerCase()]||'cb-green'; }
-function catLbl(c){ return CAT_LABEL[(c||'').toLowerCase()]||(c||'Умумӣ'); }
+function initials(name){if(!name)return'?';const p=name.trim().split(/\s+/);return p.length>1?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase();}
+function emailToPhone(email){if(!email)return'—';const m=email.match(/^992(\d{9})@/);if(!m)return email;const d=m[1];return'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);}
 
-// ══ Auth helpers ══════════════════════════════════════════════════
-function ini(n){
-  if(!n) return '?';
-  const p=n.trim().split(/\s+/);
-  return p.length>1?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase();
-}
-function decodePhone(email){
-  if(!email) return '—';
-  const m=email.match(/^992(\d{9})@/);
-  if(!m) return email;
-  const d=m[1];
-  return '+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);
-}
-
-onAuthStateChanged(auth, user => {
-  currentUser = user;
+onAuthStateChanged(auth, user=>{
+  currentUser=user;
   if(user){
-    const i = ini(user.displayName);
-    avaIcon.style.display='none'; avaInit.style.display=''; avaInit.textContent=i;
+    const ini=initials(user.displayName);
+    avaIcon.style.display='none';avaInitials.style.display='';avaInitials.textContent=ini;
     avatarBtn.classList.add('authed');
-    sheetAva.textContent=i;
-    sheetName.textContent=user.displayName||'Корбар';
-    sheetPhone.textContent=decodePhone(user.email);
-  } else {
-    avaIcon.style.display=''; avaInit.style.display='none';
-    avatarBtn.classList.remove('authed');
+    sheetAva.textContent=ini;sheetName.textContent=user.displayName||'Корбар';sheetPhone.textContent=emailToPhone(user.email);
+  }else{
+    avaIcon.style.display='';avaInitials.style.display='none';avatarBtn.classList.remove('authed');
   }
 });
+avatarBtn.addEventListener('click',()=>{if(currentUser)overlay.classList.add('open');else window.location.href='login.html';});
+overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('open');});
+btnLogout.addEventListener('click',async()=>{await signOut(auth);overlay.classList.remove('open');});
 
-avatarBtn.addEventListener('click',()=>{
-  if(currentUser) overlay.classList.add('open'); else location.href='login.html';
-});
-overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
-btnLogout.addEventListener('click',async()=>{ await signOut(auth); overlay.classList.remove('open'); });
+// ═══ НОВОСТИ — загрузка и рендер ════════════════════════════
 
-// ══ Category tabs ═════════════════════════════════════════════════
-document.querySelectorAll('.cat-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentCat=btn.dataset.cat;
-    renderFeed();
-  });
-});
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ══ Utils ═════════════════════════════════════════════════════════
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDate(ts){
-  if(!ts) return '';
-  const d=ts.toDate?ts.toDate():new Date(ts);
-  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
-}
-function fmtShort(ts){
-  if(!ts) return '';
-  const d=ts.toDate?ts.toDate():new Date(ts);
-  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
-}
-function readTime(content){ return Math.max(1,Math.round((content||'').split(/\s+/).length/200)); }
-function authorIni(n){ return ini(n); }
-
-// ══ Cover HTML helper ═════════════════════════════════════════════
-function cover(url, type){
-  const isHero = type==='hero';
-  const cls    = isHero ? 'hero-img'  : 'nc-img';
-  const phCls  = isHero ? 'hero-img-ph' : 'nc-img-ph';
-  const sz     = isHero ? 38 : 22;
-  const icon   = `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
-  return url
-    ? `<img class="${cls}" src="${esc(url)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="${phCls}" style="display:none">${icon}</div>`
-    : `<div class="${phCls}">${icon}</div>`;
+  if(!ts?.toDate)return'';
+  return ts.toDate().toLocaleDateString('tg-TJ',{day:'numeric',month:'long'});
 }
 
-// ══ Fetch ═════════════════════════════════════════════════════════
+function coverHtml(url, cls, phCls){
+  if(url) return `<img class="${cls}" src="${esc(url)}" alt="" onerror="this.style.display='none'">`;
+  return `<div class="${phCls}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+}
+
 async function loadNews(){
+  const loading  = document.getElementById('news-loading');
+  const heroWrap = document.getElementById('news-hero-wrap');
+  const newsList = document.getElementById('news-list');
+  const empty    = document.getElementById('news-empty');
+
   try{
     const q = query(
       collection(db,'news'),
       where('status','==','published'),
-      orderBy('createdAt','desc'),
-      limit(40)
+      orderBy('createdAt','desc')
     );
     const snap = await getDocs(q);
-    allArticles = snap.docs.map(d=>({id:d.id,...d.data()}));
-  } catch(e){ console.error('Firestore:',e); allArticles=[]; }
+    const articles = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-  skelWrap.style.display = 'none';
-  feed.style.display = '';
-  renderFeed();
+    loading.style.display='none';
+
+    if(!articles.length){empty.style.display='flex';return;}
+
+    // Герой — первая статья
+    const hero = articles[0];
+    heroWrap.style.display='block';
+    heroWrap.innerHTML=`
+      <div class="news-hero" onclick="openArticle('${hero.id}')">
+        ${coverHtml(hero.coverUrl,'news-hero-img','news-hero-img-ph')}
+        <div class="news-hero-body">
+          ${hero.category?`<div class="news-hero-cat">${esc(hero.category)}</div>`:''}
+          <div class="news-hero-title">${esc(hero.title)}</div>
+          ${hero.subtitle?`<div class="news-hero-sub">${esc(hero.subtitle)}</div>`:''}
+          <div class="news-hero-meta">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              ${hero.readingTime||3} дақ
+            </span>
+            <span>${fmtDate(hero.createdAt)}</span>
+            ${hero.views?`<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${hero.views}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+
+    // Остальные статьи
+    if(articles.length > 1){
+      newsList.style.display='flex';
+      newsList.innerHTML = articles.slice(1).map(a=>`
+        <div class="news-card" onclick="openArticle('${a.id}')">
+          ${coverHtml(a.coverUrl,'news-card-thumb','news-card-thumb-ph')}
+          <div class="news-card-body">
+            ${a.category?`<div class="news-card-cat">${esc(a.category)}</div>`:''}
+            <div class="news-card-title">${esc(a.title)}</div>
+            <div class="news-card-meta">
+              <span>${fmtDate(a.createdAt)}</span>
+              <div class="news-card-dot"></div>
+              <span>${a.readingTime||3} дақ</span>
+            </div>
+          </div>
+          <svg class="news-card-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>`).join('');
+    }
+
+  }catch(e){
+    loading.style.display='none';
+    empty.style.display='flex';
+    console.error('News load error:',e);
+  }
 }
 
-// ══ Render feed ═══════════════════════════════════════════════════
-function renderFeed(){
-  const list = currentCat==='all'
-    ? allArticles
-    : allArticles.filter(a=>(a.category||'').toLowerCase()===currentCat);
+// Открытие статьи
+const artOverlay = document.getElementById('article-overlay');
+const artInner   = document.getElementById('article-scroll');
+let articlesCache = {};
 
-  if(!list.length){
-    feed.innerHTML=`<div class="empty">
-      <div class="empty-ico"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8L2 8v12a2 2 0 002 2z"/><polyline points="10 2 10 8 2 8"/></svg></div>
-      <div class="empty-h">Хабаре нест</div>
-      <div class="empty-t">Дар ин бахш ҳоло мақолае нашр нашудааст</div>
-    </div>`;
-    return;
+window.openArticle = async function(id){
+  // Найти в уже загруженном
+  let a = articlesCache[id];
+  if(!a){
+    // Ищем в DOM — данные уже есть в памяти через loadNews
+    // Для упрощения — перезагружаем из Firestore
+    const {getDoc} = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
+    const snap = await getDoc(doc(db,'news',id));
+    if(!snap.exists())return;
+    a = {id:snap.id,...snap.data()};
+    articlesCache[id]=a;
   }
 
-  const [hero,...rest] = list;
-  let html = heroCard(hero);
-
-  if(rest.length){
-    html += `<div class="sec-head">
-      <span class="sec-title">Дигар хабарҳо</span>
-      <span class="sec-cnt">${rest.length} мақола</span>
-    </div>
-    <div class="nlist">${rest.map(newsCard).join('')}</div>`;
-  } else {
-    html += `<div style="height:24px"></div>`;
-  }
-
-  feed.innerHTML = html;
-  list.forEach(a=>{
-    const el=document.getElementById('a-'+a.id);
-    if(el) el.addEventListener('click',()=>openArt(a));
-  });
-}
-
-function heroCard(a){
-  const rt = a.readingTime ? a.readingTime+' мин' : readTime(a.content)+' мин';
-  return `<div class="hero" id="a-${esc(a.id)}">
-    ${cover(a.coverUrl,'hero')}
-    <div class="hero-body">
-      <div class="hero-meta">
-        <span class="cbadge ${catCls(a.category)}">${esc(catLbl(a.category))}</span>
-        <span class="hero-rt">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          ${esc(rt)}
-        </span>
+  document.getElementById('article-inner').innerHTML=`
+    ${coverHtml(a.coverUrl,'article-cover','article-cover-ph')}
+    <div class="article-body">
+      ${a.category?`<div class="article-cat">${esc(a.category)}</div>`:''}
+      <div class="article-title">${esc(a.title)}</div>
+      ${a.subtitle?`<div class="article-sub">${esc(a.subtitle)}</div>`:''}
+      <div class="article-meta">
+        <div class="article-meta-item">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          ${esc(a.author||'Редакция')}
+        </div>
+        <div class="article-meta-item">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ${a.readingTime||3} дақ
+        </div>
+        <div class="article-meta-item">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${fmtDate(a.createdAt)}
+        </div>
       </div>
-      <div class="hero-title">${esc(a.title)}</div>
-      ${a.subtitle?`<div class="hero-subtitle">${esc(a.subtitle)}</div>`:''}
-      <div class="hero-foot">
-        <div class="hero-av">${esc(authorIni(a.author))}</div>
-        <span class="hero-by">${esc(a.author||'Редакция')}</span>
-        <span class="hero-dt">${fmtShort(a.createdAt)}</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-function newsCard(a){
-  const rt = a.readingTime ? a.readingTime+' мин' : readTime(a.content)+' мин';
-  return `<div class="nc" id="a-${esc(a.id)}">
-    ${cover(a.coverUrl,'card')}
-    <div class="nc-body">
-      <div class="nc-title">${esc(a.title)}</div>
-      <div class="nc-meta">
-        <span class="cbadge ${catCls(a.category)}" style="font-size:.52rem;padding:2px 7px">${esc(catLbl(a.category))}</span>
-        <span class="nc-rt">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          ${esc(rt)}
-        </span>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ══ Open article ══════════════════════════════════════════════════
-function openArt(a){
-  currentArt = a;
-  const rt    = a.readingTime ? a.readingTime+' мин' : readTime(a.content)+' мин';
-  const date  = fmtDate(a.createdAt);
-
-  // Cover
-  if(a.coverUrl){
-    artCoverW.innerHTML=`<img class="art-cover" src="${esc(a.coverUrl)}" alt="" onerror="this.outerHTML='<div class=\\'art-cover-ph\\'><svg width=44 height=44 viewBox=\\'0 0 24 24\\' fill=none stroke=currentColor stroke-width=1.1><rect x=3 y=3 width=18 height=18 rx=2/><circle cx=8.5 cy=8.5 r=1.5/><polyline points=\\'21 15 16 10 5 21\\'/></svg></div>'"/>`;
-  } else {
-    artCoverW.innerHTML=`<div class="art-cover-ph"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
-  }
-
-  // Body
-  const paras = (a.content||'').split(/\n\n+/).filter(Boolean).map(p=>`<p>${esc(p)}</p>`).join('');
-  artBody.innerHTML=`
-    <div class="art-cat-row">
-      <span class="cbadge ${catCls(a.category)}">${esc(catLbl(a.category))}</span>
-      <span class="art-dt">${date}</span>
-    </div>
-    <div class="art-title">${esc(a.title)}</div>
-    ${a.subtitle?`<div class="art-subtitle">${esc(a.subtitle)}</div>`:''}
-    <div class="art-author-row">
-      <div class="art-av">${esc(authorIni(a.author))}</div>
-      <div>
-        <div class="art-author-name">${esc(a.author||'Редакция')}</div>
-        <div class="art-author-meta">${date} · ${esc(rt)}</div>
-      </div>
-    </div>
-    <div class="art-content">
-      ${paras||'<p style="color:var(--tx3)">Матни мақола дастрас нест</p>'}
-    </div>
-    <div class="art-footer">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      ${((a.views||0)+1).toLocaleString()} бинандагон
+      <div class="article-content">${esc(a.content)}</div>
+      ${a.views!=null?`<div class="article-views"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${(a.views||0)+1} кас хонд</div>`:''}
     </div>`;
 
-  artOv.classList.add('open');
-  artBody.scrollTop = 0;
-  history.pushState({art:true},'',location.href);
+  artOverlay.classList.add('open');
+  document.getElementById('article-scroll').scrollTop=0;
 
-  // Increment views counter
-  try{ updateDoc(doc(db,'news',a.id),{views:increment(1)}); } catch(e){}
-}
+  // Инкремент просмотров
+  updateDoc(doc(db,'news',id),{views:increment(1),updatedAt:serverTimestamp()}).catch(()=>{});
+};
 
-function closeArt(){ artOv.classList.remove('open'); }
-
-artBack.addEventListener('click', closeArt);
-artShare.addEventListener('click', ()=>{
-  if(!currentArt) return;
-  const payload = {title:currentArt.title, text:currentArt.subtitle||'', url:location.href};
-  if(navigator.share) navigator.share(payload);
-  else navigator.clipboard?.writeText(location.href);
+artOverlay.addEventListener('click', e=>{
+  if(e.target===artOverlay) artOverlay.classList.remove('open');
 });
 
-// Android hardware back button support
-window.addEventListener('popstate', ()=>{
-  if(artOv.classList.contains('open')){ closeArt(); history.pushState(null,'',location.href); }
-  else if(searchOv.classList.contains('open')){ searchOv.classList.remove('open'); history.pushState(null,'',location.href); }
-});
-history.pushState(null,'',location.href);
-
-// ══ Search ════════════════════════════════════════════════════════
-document.getElementById('btn-search').addEventListener('click',()=>{
-  searchOv.classList.add('open');
-  setTimeout(()=>searchInp.focus(),80);
-  history.pushState({search:true},'',location.href);
-});
-searchCancel.addEventListener('click',()=>{
-  searchOv.classList.remove('open');
-  searchInp.value='';
-  searchRes.innerHTML=`<div class="search-empty" style="color:var(--txd)">Матни ҷустуҷӯро ворид кунед…</div>`;
-});
-searchInp.addEventListener('input',()=>{
-  const q = searchInp.value.toLowerCase().trim();
-  if(!q){
-    searchRes.innerHTML=`<div class="search-empty" style="color:var(--txd)">Матни ҷустуҷӯро ворид кунед…</div>`;
-    return;
-  }
-  const found = allArticles.filter(a=>
-    a.title?.toLowerCase().includes(q)||
-    a.subtitle?.toLowerCase().includes(q)||
-    a.content?.toLowerCase().includes(q)
-  );
-  if(!found.length){
-    searchRes.innerHTML=`<div class="search-empty">Дар ин мавзӯъ хабаре ёфт нашуд</div>`;
-    return;
-  }
-  searchRes.innerHTML=`<div class="nlist" style="padding-top:12px">${found.map(a=>`
-    <div class="nc" id="sr-${esc(a.id)}">
-      ${cover(a.coverUrl,'card')}
-      <div class="nc-body">
-        <div class="nc-title">${esc(a.title)}</div>
-        <div class="nc-meta"><span class="cbadge ${catCls(a.category)}" style="font-size:.52rem;padding:2px 7px">${esc(catLbl(a.category))}</span></div>
-      </div>
-    </div>`).join('')}</div>`;
-  found.forEach(a=>{
-    const el=document.getElementById('sr-'+a.id);
-    if(el) el.addEventListener('click',()=>{ searchOv.classList.remove('open'); openArt(a); });
-  });
-});
-
-// ══ Boot ══════════════════════════════════════════════════════════
 loadNews();
 </script>
+
 </body>
 </html>
