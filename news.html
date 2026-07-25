@@ -1,32 +1,11 @@
 <!DOCTYPE html>
-<!--
-╔══════════════════════════════════════════════════════════════════╗
-║              ШАБЛОН DASTDAROZ — ПРАВИЛА ДЛЯ ИИ                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ЕДИНСТВЕННАЯ ЗОНА РЕДАКТИРОВАНИЯ:                               ║
-║  Блок между метками КОНТЕНТ START и КОНТЕНТ END внутри .content  ║
-║                                                                  ║
-║  ЧТО ЗАПРЕЩЕНО ТРОГАТЬ:                                          ║
-║  ✗  <div class="header"> ... </div>   — топ-бар с логотипом     ║
-║  ✗  <div class="footer"> ... </div>   — контакты и соцсети      ║
-║  ✗  <div class="overlay"> ... </div>  — профиль bottom sheet     ║
-║  ✗  <style> ... </style>              — все CSS переменные       ║
-║  ✗  <script> ... </script>            — Firebase auth логика     ║
-║                                                                  ║
-║  ЧТО РАЗРЕШЕНО:                                                  ║
-║  ✓  Заменить содержимое между КОНТЕНТ START / КОНТЕНТ END        ║
-║  ✓  Добавлять новые CSS-классы в <style> для контента страницы   ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
--->
 <html lang="tg">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Навигация · dastdaroz</title>
+<title>Хабарҳо · dastdaroz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
@@ -58,36 +37,39 @@ a{color:inherit;text-decoration:none}
 .header{
   flex-shrink:0;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 20px;
-  height:54px;
+  padding:0 20px;height:54px;
   border-bottom:1px solid var(--b0);
-  background:var(--s1);
-  z-index:100;
+  background:var(--s1);z-index:100;
 }
 .logo{display:flex;align-items:center;height:100%}
 .logo img{height:28px;width:auto;object-fit:contain;display:block}
 .header-right{display:flex;align-items:center;gap:10px}
-
-/* ── AVATAR BUTTON ── */
 .avatar-btn{
   width:36px;height:36px;border-radius:50%;flex-shrink:0;
   background:var(--s2);border:2px solid var(--b0);
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;outline:none;
   transition:border-color .15s,background .15s;
-  color:var(--tx3);
-  font-family:var(--fd);font-weight:900;font-size:.75rem;
+  color:var(--tx3);font-family:var(--fd);font-weight:900;font-size:.75rem;
 }
 .avatar-btn:active{background:var(--accd);border-color:var(--acc)}
 .avatar-btn.authed{background:var(--accd);border-color:var(--accg);color:var(--acc)}
+.search-btn{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:none;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--tx3);
+  transition:background .15s;
+}
+.search-btn:active{background:var(--s2)}
 
-/* ── SCROLL AREA ── */
+/* ── SCROLL ── */
 .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
-/* ── MAIN CONTENT ── */
+/* ── CONTENT ── */
 .content{padding:20px}
 
-/* ── FOOTER ── */
+/* ── FOOTER — flex-shrink:0, всегда НИЖЕ скролла ── */
 .footer{flex-shrink:0;background:var(--s1);border-top:1px solid var(--b0)}
 .divider{height:1px;background:var(--b0);margin:0 20px}
 .contacts{padding:3px 0}
@@ -117,7 +99,7 @@ a{color:inherit;text-decoration:none}
 .sheet-head{display:flex;align-items:center;gap:14px;padding:18px 20px 14px;border-bottom:1px solid var(--b0)}
 .sheet-ava{width:52px;height:52px;border-radius:50%;flex-shrink:0;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--acc)}
 .sheet-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);line-height:1.2}
-.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500;letter-spacing:.02em}
+.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500}
 .sheet-row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .1s;text-decoration:none;color:inherit}
 .sheet-row:active{background:var(--s2)}
 .sheet-row-ico{width:32px;height:32px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0}
@@ -127,194 +109,100 @@ a{color:inherit;text-decoration:none}
 .sheet-logout:active{background:rgba(220,38,38,.15)}
 
 /* ══════════════════════════════════════
-   КОНТЕНТ — стили новостей
+   ПОИСК
 ══════════════════════════════════════ */
-
-/* Состояния загрузки и пустого списка */
-.news-loading{
-  display:flex;align-items:center;justify-content:center;
-  gap:10px;padding:48px 20px;
-  color:var(--tx3);font-size:.85rem;
+.search-bar{
+  position:sticky;top:0;z-index:10;
+  background:var(--bg);
+  padding:10px 20px 8px;
+  border-bottom:1px solid var(--b0);
 }
-.news-spinner{
-  width:18px;height:18px;border-radius:50%;
-  border:2px solid var(--accg);
-  border-top-color:var(--acc);
-  animation:spin .7s linear infinite;
-  flex-shrink:0;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-.news-empty{
-  display:flex;flex-direction:column;align-items:center;
-  padding:52px 20px;gap:10px;color:var(--tx3);
-  text-align:center;
-}
-.news-empty svg{opacity:.25}
-.news-empty-txt{font-size:.85rem;font-weight:500}
-
-/* Герой — первая статья */
-.news-hero{
-  display:block;
-  border-radius:16px;
-  overflow:hidden;
+.search-inner{
+  display:flex;align-items:center;gap:9px;
   background:var(--s1);
   border:1px solid var(--b0);
-  margin-bottom:16px;
-  cursor:pointer;
-  transition:transform .18s var(--ease),box-shadow .18s;
+  border-radius:12px;
+  padding:9px 13px;
+}
+.search-inner input{
+  flex:1;border:none;outline:none;background:none;
+  font-family:var(--fs);font-size:.85rem;color:var(--tx);
+}
+.search-inner input::placeholder{color:var(--txd)}
+.search-inner svg{color:var(--tx3);flex-shrink:0}
+
+/* ══════════════════════════════════════
+   НОВОСТИ
+══════════════════════════════════════ */
+.news-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px 20px;color:var(--tx3);font-size:.85rem}
+.news-spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--accg);border-top-color:var(--acc);animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.news-empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;gap:12px;color:var(--tx3);text-align:center}
+.news-empty svg{opacity:.2}
+.news-empty-txt{font-size:.85rem;font-weight:600;color:var(--tx3)}
+.news-empty-sub{font-size:.75rem;color:var(--txd)}
+
+/* Герой */
+.news-hero{
+  display:block;border-radius:16px;overflow:hidden;
+  background:var(--s1);border:1px solid var(--b0);
+  margin-bottom:14px;cursor:pointer;
+  transition:transform .18s var(--ease);
   -webkit-tap-highlight-color:transparent;
 }
-.news-hero:active{transform:scale(.985)}
-.news-hero-img{
-  width:100%;aspect-ratio:16/9;
-  object-fit:cover;display:block;
-  background:var(--s2);
-}
-.news-hero-img-ph{
-  width:100%;aspect-ratio:16/9;
-  background:linear-gradient(135deg,var(--s2),var(--accd));
-  display:flex;align-items:center;justify-content:center;
-  color:var(--txd);
-}
+.news-hero:active{transform:scale(.98)}
+.news-hero-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--s2)}
+.news-hero-img-ph{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--s2),var(--accd));display:flex;align-items:center;justify-content:center;color:var(--txd)}
 .news-hero-body{padding:14px 16px 16px}
-.news-hero-cat{
-  display:inline-flex;align-items:center;
-  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--acc);background:var(--accd);
-  padding:3px 9px;border-radius:99px;
-  margin-bottom:8px;
-}
-.news-hero-title{
-  font-family:var(--fd);font-weight:900;
-  font-size:1.15rem;line-height:1.3;
-  color:var(--tx);margin-bottom:6px;
-}
-.news-hero-sub{
-  font-size:.8rem;color:var(--tx3);
-  line-height:1.5;margin-bottom:10px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.news-hero-meta{
-  display:flex;align-items:center;gap:12px;
-  font-size:.68rem;color:var(--txd);
-}
-.news-hero-meta span{display:flex;align-items:center;gap:4px}
+.news-cat{display:inline-flex;align-items:center;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);background:var(--accd);padding:3px 9px;border-radius:99px;margin-bottom:8px}
+.news-hero-title{font-family:var(--fd);font-weight:900;font-size:1.1rem;line-height:1.3;color:var(--tx);margin-bottom:6px}
+.news-hero-sub{font-size:.8rem;color:var(--tx3);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-meta{display:flex;align-items:center;gap:10px;font-size:.68rem;color:var(--txd);flex-wrap:wrap}
+.news-meta-item{display:flex;align-items:center;gap:4px}
 
-/* Список карточек */
-.news-list{display:flex;flex-direction:column;gap:1px;background:var(--b0);border-radius:14px;overflow:hidden;border:1px solid var(--b0)}
-
-.news-card{
-  display:flex;align-items:center;gap:12px;
-  padding:13px 14px;
-  background:var(--s1);
-  cursor:pointer;
-  transition:background .12s;
-  text-decoration:none;color:inherit;
-}
+/* Список */
+.news-list{display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1px solid var(--b0);background:var(--b0);gap:1px}
+.news-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s1);cursor:pointer;transition:background .12s}
 .news-card:active{background:var(--s2)}
-
-.news-card-thumb{
-  width:64px;height:64px;border-radius:10px;
-  object-fit:cover;flex-shrink:0;
-  background:var(--s2);display:block;
-}
-.news-card-thumb-ph{
-  width:64px;height:64px;border-radius:10px;
-  background:var(--accd);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--acc2);
-}
+.news-card-thumb{width:66px;height:66px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--s2);display:block}
+.news-card-thumb-ph{width:66px;height:66px;border-radius:10px;background:var(--accd);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--acc)}
 .news-card-body{flex:1;min-width:0}
-.news-card-cat{
-  font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--acc);margin-bottom:4px;
-}
-.news-card-title{
-  font-family:var(--fd);font-weight:800;font-size:.88rem;
-  color:var(--tx);line-height:1.3;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-  margin-bottom:5px;
-}
-.news-card-meta{font-size:.63rem;color:var(--txd);display:flex;gap:8px;align-items:center}
+.news-card-cat{font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+.news-card-title{font-family:var(--fd);font-weight:800;font-size:.86rem;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px}
+.news-card-meta{font-size:.62rem;color:var(--txd);display:flex;gap:7px;align-items:center}
 .news-card-dot{width:3px;height:3px;border-radius:50%;background:var(--txd);flex-shrink:0}
-
-/* Стрелка */
 .news-card-arr{color:var(--txd);flex-shrink:0}
 
-/* Детальный просмотр статьи (bottom sheet) */
-.article-overlay{
-  position:fixed;inset:0;z-index:400;
-  background:rgba(0,0,0,.45);
-  display:flex;align-items:flex-end;
-  opacity:0;pointer-events:none;
-  transition:opacity .25s;
-}
-.article-overlay.open{opacity:1;pointer-events:auto}
-.article-sheet{
-  width:100%;height:92svh;
-  background:var(--bg);
-  border-radius:22px 22px 0 0;
-  display:flex;flex-direction:column;
-  transform:translateY(100%);
-  transition:transform .32s var(--ease);
-  overflow:hidden;
-}
-.article-overlay.open .article-sheet{transform:translateY(0)}
+/* Секция-заголовок */
+.news-section-title{font-family:var(--fd);font-weight:900;font-size:.78rem;color:var(--tx3);letter-spacing:.04em;text-transform:uppercase;margin:16px 0 8px}
 
-.article-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 6px;flex-shrink:0}
-
-.article-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-
-.article-cover{
-  width:100%;aspect-ratio:16/9;object-fit:cover;display:block;
-  background:var(--s2);
-}
-.article-cover-ph{
-  width:100%;aspect-ratio:16/9;
-  background:linear-gradient(135deg,var(--s2),var(--accd));
-  display:flex;align-items:center;justify-content:center;
-  color:var(--txd);
-}
-
-.article-body{padding:20px 20px 32px}
-.article-cat{
-  display:inline-flex;
-  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--acc);background:var(--accd);
-  padding:3px 9px;border-radius:99px;margin-bottom:10px;
-}
-.article-title{
-  font-family:var(--fd);font-weight:900;font-size:1.3rem;
-  line-height:1.25;color:var(--tx);margin-bottom:8px;
-}
-.article-sub{
-  font-size:.88rem;color:var(--tx3);line-height:1.55;margin-bottom:14px;
-}
-.article-meta{
-  display:flex;align-items:center;gap:14px;
-  padding:12px 0;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0);
-  margin-bottom:18px;
-}
-.article-meta-item{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--tx3)}
-.article-content{
-  font-size:.88rem;line-height:1.7;color:var(--tx2);
-  white-space:pre-wrap;word-break:break-word;
-}
-.article-views{
-  display:flex;align-items:center;gap:5px;
-  margin-top:20px;font-size:.72rem;color:var(--txd);
-}
+/* ── ARTICLE SHEET ── */
+.art-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
+.art-overlay.open{opacity:1;pointer-events:auto}
+.art-sheet{width:100%;height:94svh;background:var(--bg);border-radius:22px 22px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s var(--ease);overflow:hidden}
+.art-overlay.open .art-sheet{transform:translateY(0)}
+.art-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0;flex-shrink:0}
+.art-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.art-cover{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--s2)}
+.art-cover-ph{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--s2),var(--accd));display:flex;align-items:center;justify-content:center;color:var(--txd)}
+.art-body{padding:20px 20px 40px}
+.art-title{font-family:var(--fd);font-weight:900;font-size:1.3rem;line-height:1.25;color:var(--tx);margin-bottom:8px}
+.art-sub{font-size:.88rem;color:var(--tx3);line-height:1.55;margin-bottom:14px}
+.art-meta{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0);margin-bottom:18px;flex-wrap:wrap}
+.art-meta-item{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--tx3)}
+.art-text{font-size:.88rem;line-height:1.75;color:var(--tx2);white-space:pre-wrap;word-break:break-word}
+.art-views{display:flex;align-items:center;gap:5px;margin-top:24px;font-size:.72rem;color:var(--txd)}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER — НЕ ТРОГАТЬ ── -->
+<!-- ── HEADER ── -->
 <div class="header">
-  <div class="logo">
-    <img src="dastdaroz.png" alt="dastdaroz"/>
-  </div>
+  <div class="logo"><img src="dastdaroz.png" alt="dastdaroz"/></div>
   <div class="header-right">
+    <button class="search-btn" id="search-toggle-btn" aria-label="Ҷустуҷӯ">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
     <button class="avatar-btn" id="avatar-btn" aria-label="Профил">
       <svg id="ava-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span id="ava-initials" style="display:none"></span>
@@ -322,42 +210,48 @@ a{color:inherit;text-decoration:none}
   </div>
 </div>
 
-<!-- ── SCROLL AREA ── -->
-<div class="scroll">
+<!-- ── SCROLL ── -->
+<div class="scroll" id="main-scroll">
+
+  <!-- Поиск (скрыт по умолчанию) -->
+  <div class="search-bar" id="search-bar" style="display:none">
+    <div class="search-inner">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="search" id="search-inp" placeholder="Дар хабарҳо ҷустуҷӯ кунед…" autocomplete="off"/>
+    </div>
+  </div>
+
   <div class="content">
 
-    <!-- ═══════════════════════════════════════════════════════════
-         ▼▼▼  КОНТЕНТ START  ▼▼▼
-    ════════════════════════════════════════════════════════════ -->
-
-    <!-- Состояние загрузки -->
+    <!-- Загрузка -->
     <div class="news-loading" id="news-loading">
-      <div class="news-spinner"></div>
-      Загрузка…
+      <div class="news-spinner"></div>Боркунӣ…
     </div>
 
-    <!-- Герой — первая статья, скрыт до загрузки -->
-    <div id="news-hero-wrap" style="display:none"></div>
+    <!-- Герой -->
+    <div id="hero-wrap" style="display:none"></div>
 
-    <!-- Список остальных статей -->
-    <div class="news-list" id="news-list" style="display:none"></div>
+    <!-- Остальные -->
+    <div id="list-section" style="display:none">
+      <div class="news-section-title">Дигар хабарҳо</div>
+      <div class="news-list" id="news-list"></div>
+    </div>
 
-    <!-- Пустой список -->
+    <!-- Пусто -->
     <div class="news-empty" id="news-empty" style="display:none">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8L2 8v12a2 2 0 002 2z"/>
         <polyline points="10 2 10 8 2 8"/>
         <line x1="8" y1="13" x2="16" y2="13"/>
         <line x1="8" y1="17" x2="13" y2="17"/>
       </svg>
-      <div class="news-empty-txt">Хабарҳо ёфт нашуданд</div>
+      <div class="news-empty-txt">Хабар нест</div>
+      <div class="news-empty-sub">Ҳанӯз мақола нашр нашудааст</div>
     </div>
-
-    <!-- ▲▲▲  КОНТЕНТ END  ▲▲▲ -->
 
   </div>
 
-  <!-- ── FOOTER — НЕ ТРОГАТЬ ── -->
+  <!-- Footer внутри скролла — скроллится вместе с контентом, как в шаблоне -->
   <div class="footer">
     <div class="divider"></div>
     <div class="contacts">
@@ -387,40 +281,39 @@ a{color:inherit;text-decoration:none}
     <div class="divider"></div>
     <div class="socials-wrap">
       <div class="socials">
-        <a href="#" class="soc-btn fb" aria-label="Facebook"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
-        <a href="#" class="soc-btn ig" aria-label="Instagram"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
-        <a href="#" class="soc-btn tg" aria-label="Telegram"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c-.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.292z"/></svg></a>
-        <a href="#" class="soc-btn yt" aria-label="YouTube"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a>
+        <a href="#" class="soc-btn fb"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+        <a href="#" class="soc-btn ig"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="#" class="soc-btn tg"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c-.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.292z"/></svg></a>
+        <a href="#" class="soc-btn yt"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a>
       </div>
     </div>
   </div>
-</div>
+
+</div><!-- end .scroll -->
 
 <!-- ── ARTICLE BOTTOM SHEET ── -->
-<div class="article-overlay" id="article-overlay">
-  <div class="article-sheet">
-    <div class="article-handle"></div>
-    <div class="article-scroll" id="article-scroll">
-      <div id="article-inner"></div>
+<div class="art-overlay" id="art-overlay">
+  <div class="art-sheet">
+    <div class="art-handle"></div>
+    <div class="art-scroll">
+      <div id="art-inner"></div>
     </div>
   </div>
 </div>
 
-<!-- ── PROFILE BOTTOM SHEET — НЕ ТРОГАТЬ ── -->
+<!-- ── PROFILE BOTTOM SHEET ── -->
 <div class="overlay" id="overlay">
-  <div class="sheet" id="sheet">
+  <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <div class="sheet-ava" id="sheet-ava">?</div>
-      <div class="sheet-info">
+      <div>
         <div class="sheet-name" id="sheet-name">—</div>
         <div class="sheet-phone" id="sheet-phone">—</div>
       </div>
     </div>
-    <div class="sheet-row" onclick="window.location.href='orders.html'">
-      <div class="sheet-row-ico">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      </div>
+    <div class="sheet-row" onclick="location.href='orders.html'">
+      <div class="sheet-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
       <span class="sheet-row-lbl">Фармоишҳои ман</span>
       <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
     </div>
@@ -432,180 +325,215 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script type="module">
-// ═══ НЕ ТРОГАТЬ — Firebase auth ══════════════════════════════
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-import { getFirestore, collection, query, where, orderBy, getDocs, doc, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+import { getFirestore, collection, query, orderBy, getDocs, doc, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
 
 const cfg={apiKey:'AIzaSyCjIAMFuwLKwmjChCuiz-MHLv5WZOczAAE',authDomain:'delivery-galelium.firebaseapp.com',projectId:'delivery-galelium',storageBucket:'delivery-galelium.firebasestorage.app',messagingSenderId:'982466555080',appId:'1:982466555080:web:c77ccbff0e71e540ddc9fd'};
-const app = initializeApp(cfg);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const app=initializeApp(cfg), auth=getAuth(app), db=getFirestore(app);
 
-// Auth UI
-const avatarBtn   = document.getElementById('avatar-btn');
-const avaIcon     = document.getElementById('ava-icon');
-const avaInitials = document.getElementById('ava-initials');
-const overlay     = document.getElementById('overlay');
-const sheetAva    = document.getElementById('sheet-ava');
-const sheetName   = document.getElementById('sheet-name');
-const sheetPhone  = document.getElementById('sheet-phone');
-const btnLogout   = document.getElementById('btn-logout');
-let currentUser = null;
+// ── AUTH ──────────────────────────────────────────────────────────
+const avatarBtn=document.getElementById('avatar-btn');
+const avaIcon=document.getElementById('ava-icon');
+const avaInitials=document.getElementById('ava-initials');
+const overlay=document.getElementById('overlay');
+let currentUser=null;
 
-function initials(name){if(!name)return'?';const p=name.trim().split(/\s+/);return p.length>1?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase();}
-function emailToPhone(email){if(!email)return'—';const m=email.match(/^992(\d{9})@/);if(!m)return email;const d=m[1];return'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);}
+function initials(n){if(!n)return'?';const p=n.trim().split(/\s+/);return(p.length>1?p[0][0]+p[1][0]:p[0][0]).toUpperCase();}
+function emailToPhone(e){if(!e)return'—';const m=e.match(/^992(\d{9})@/);if(!m)return e;const d=m[1];return'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);}
 
-onAuthStateChanged(auth, user=>{
+onAuthStateChanged(auth,user=>{
   currentUser=user;
   if(user){
     const ini=initials(user.displayName);
-    avaIcon.style.display='none';avaInitials.style.display='';avaInitials.textContent=ini;
+    avaIcon.style.display='none'; avaInitials.style.display=''; avaInitials.textContent=ini;
     avatarBtn.classList.add('authed');
-    sheetAva.textContent=ini;sheetName.textContent=user.displayName||'Корбар';sheetPhone.textContent=emailToPhone(user.email);
-  }else{
-    avaIcon.style.display='';avaInitials.style.display='none';avatarBtn.classList.remove('authed');
+    document.getElementById('sheet-ava').textContent=ini;
+    document.getElementById('sheet-name').textContent=user.displayName||'Корбар';
+    document.getElementById('sheet-phone').textContent=emailToPhone(user.email);
+  } else {
+    avaIcon.style.display=''; avaInitials.style.display='none';
+    avatarBtn.classList.remove('authed');
   }
 });
-avatarBtn.addEventListener('click',()=>{if(currentUser)overlay.classList.add('open');else window.location.href='login.html';});
-overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('open');});
-btnLogout.addEventListener('click',async()=>{await signOut(auth);overlay.classList.remove('open');});
+avatarBtn.addEventListener('click',()=>{ if(currentUser)overlay.classList.add('open'); else location.href='login.html'; });
+overlay.addEventListener('click',e=>{ if(e.target===overlay)overlay.classList.remove('open'); });
+document.getElementById('btn-logout').addEventListener('click',async()=>{ await signOut(auth); overlay.classList.remove('open'); });
 
-// ═══ НОВОСТИ — загрузка и рендер ════════════════════════════
+// ── ПОИСК ────────────────────────────────────────────────────────
+const searchToggle=document.getElementById('search-toggle-btn');
+const searchBar=document.getElementById('search-bar');
+const searchInp=document.getElementById('search-inp');
+let searchOpen=false;
+
+searchToggle.addEventListener('click',()=>{
+  searchOpen=!searchOpen;
+  searchBar.style.display=searchOpen?'block':'none';
+  if(searchOpen){searchInp.focus();}
+  else{searchInp.value='';renderNews(allArticles);}
+});
+
+searchInp.addEventListener('input',()=>{
+  const q=searchInp.value.trim().toLowerCase();
+  if(!q){renderNews(allArticles);return;}
+  const found=allArticles.filter(a=>
+    a.title?.toLowerCase().includes(q)||
+    a.subtitle?.toLowerCase().includes(q)||
+    a.content?.toLowerCase().includes(q)||
+    a.category?.toLowerCase().includes(q)
+  );
+  renderNews(found,true);
+});
+
+// ── НОВОСТИ ──────────────────────────────────────────────────────
+let allArticles=[];
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function fmtDate(ts){
   if(!ts?.toDate)return'';
-  return ts.toDate().toLocaleDateString('tg-TJ',{day:'numeric',month:'long'});
+  return ts.toDate().toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
 }
 
-function coverHtml(url, cls, phCls){
-  if(url) return `<img class="${cls}" src="${esc(url)}" alt="" onerror="this.style.display='none'">`;
-  return `<div class="${phCls}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+function cover(url,bigCls,phCls){
+  if(url)return`<img class="${bigCls}" src="${esc(url)}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')">`;
+  return`<div class="${phCls}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+}
+
+function renderNews(articles, isSearch=false){
+  const loading=document.getElementById('news-loading');
+  const heroWrap=document.getElementById('hero-wrap');
+  const listSection=document.getElementById('list-section');
+  const newsList=document.getElementById('news-list');
+  const empty=document.getElementById('news-empty');
+
+  loading.style.display='none';
+
+  if(!articles.length){
+    heroWrap.style.display='none';
+    listSection.style.display='none';
+    empty.style.display='flex';
+    return;
+  }
+  empty.style.display='none';
+
+  if(isSearch){
+    // При поиске — только список без героя
+    heroWrap.style.display='none';
+    listSection.style.display='block';
+    document.querySelector('.news-section-title').textContent='Натиҷаи ҷустуҷӯ';
+    newsList.innerHTML=articles.map(a=>cardHtml(a)).join('');
+    return;
+  }
+
+  // Герой — первая статья
+  const hero=articles[0];
+  heroWrap.style.display='block';
+  heroWrap.innerHTML=`
+    <div class="news-hero" onclick="openArticle('${hero.id}')">
+      ${cover(hero.coverUrl,'news-hero-img','news-hero-img-ph')}
+      <div class="news-hero-body">
+        ${hero.category?`<div class="news-cat">${esc(hero.category)}</div>`:''}
+        <div class="news-hero-title">${esc(hero.title)}</div>
+        ${hero.subtitle?`<div class="news-hero-sub">${esc(hero.subtitle)}</div>`:''}
+        <div class="news-meta">
+          <div class="news-meta-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ${hero.readingTime||3} дақ
+          </div>
+          <div class="news-meta-item">${fmtDate(hero.createdAt)}</div>
+          ${hero.views?`<div class="news-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${hero.views}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+
+  // Остальные
+  if(articles.length>1){
+    document.querySelector('.news-section-title').textContent='Дигар хабарҳо';
+    listSection.style.display='block';
+    newsList.innerHTML=articles.slice(1).map(a=>cardHtml(a)).join('');
+  } else {
+    listSection.style.display='none';
+  }
+}
+
+function cardHtml(a){
+  return`<div class="news-card" onclick="openArticle('${a.id}')">
+    ${cover(a.coverUrl,'news-card-thumb','news-card-thumb-ph')}
+    <div class="news-card-body">
+      ${a.category?`<div class="news-card-cat">${esc(a.category)}</div>`:''}
+      <div class="news-card-title">${esc(a.title)}</div>
+      <div class="news-card-meta">
+        <span>${fmtDate(a.createdAt)}</span>
+        <div class="news-card-dot"></div>
+        <span>${a.readingTime||3} дақ</span>
+      </div>
+    </div>
+    <svg class="news-card-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </div>`;
 }
 
 async function loadNews(){
-  const loading  = document.getElementById('news-loading');
-  const heroWrap = document.getElementById('news-hero-wrap');
-  const newsList = document.getElementById('news-list');
-  const empty    = document.getElementById('news-empty');
-
   try{
-    const q = query(
-      collection(db,'news'),
-      where('status','==','published'),
-      orderBy('createdAt','desc')
-    );
-    const snap = await getDocs(q);
-    const articles = snap.docs.map(d=>({id:d.id,...d.data()}));
-
-    loading.style.display='none';
-
-    if(!articles.length){empty.style.display='flex';return;}
-
-    // Герой — первая статья
-    const hero = articles[0];
-    heroWrap.style.display='block';
-    heroWrap.innerHTML=`
-      <div class="news-hero" onclick="openArticle('${hero.id}')">
-        ${coverHtml(hero.coverUrl,'news-hero-img','news-hero-img-ph')}
-        <div class="news-hero-body">
-          ${hero.category?`<div class="news-hero-cat">${esc(hero.category)}</div>`:''}
-          <div class="news-hero-title">${esc(hero.title)}</div>
-          ${hero.subtitle?`<div class="news-hero-sub">${esc(hero.subtitle)}</div>`:''}
-          <div class="news-hero-meta">
-            <span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              ${hero.readingTime||3} дақ
-            </span>
-            <span>${fmtDate(hero.createdAt)}</span>
-            ${hero.views?`<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${hero.views}</span>`:''}
-          </div>
-        </div>
-      </div>`;
-
-    // Остальные статьи
-    if(articles.length > 1){
-      newsList.style.display='flex';
-      newsList.innerHTML = articles.slice(1).map(a=>`
-        <div class="news-card" onclick="openArticle('${a.id}')">
-          ${coverHtml(a.coverUrl,'news-card-thumb','news-card-thumb-ph')}
-          <div class="news-card-body">
-            ${a.category?`<div class="news-card-cat">${esc(a.category)}</div>`:''}
-            <div class="news-card-title">${esc(a.title)}</div>
-            <div class="news-card-meta">
-              <span>${fmtDate(a.createdAt)}</span>
-              <div class="news-card-dot"></div>
-              <span>${a.readingTime||3} дақ</span>
-            </div>
-          </div>
-          <svg class="news-card-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>`).join('');
-    }
-
+    // БЕЗ where() — фильтруем на клиенте, чтобы не нужен составной индекс
+    const q=query(collection(db,'news'),orderBy('createdAt','desc'));
+    const snap=await getDocs(q);
+    allArticles=snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .filter(a=>a.status==='published');
+    renderNews(allArticles);
   }catch(e){
-    loading.style.display='none';
-    empty.style.display='flex';
-    console.error('News load error:',e);
+    console.error('Ошибка загрузки новостей:',e);
+    document.getElementById('news-loading').style.display='none';
+    document.getElementById('news-empty').style.display='flex';
   }
 }
 
-// Открытие статьи
-const artOverlay = document.getElementById('article-overlay');
-const artInner   = document.getElementById('article-scroll');
-let articlesCache = {};
+// ── СТАТЬЯ ───────────────────────────────────────────────────────
+const artOverlay=document.getElementById('art-overlay');
 
-window.openArticle = async function(id){
-  // Найти в уже загруженном
-  let a = articlesCache[id];
-  if(!a){
-    // Ищем в DOM — данные уже есть в памяти через loadNews
-    // Для упрощения — перезагружаем из Firestore
-    const {getDoc} = await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
-    const snap = await getDoc(doc(db,'news',id));
-    if(!snap.exists())return;
-    a = {id:snap.id,...snap.data()};
-    articlesCache[id]=a;
-  }
+window.openArticle=function(id){
+  const a=allArticles.find(x=>x.id===id);
+  if(!a)return;
 
-  document.getElementById('article-inner').innerHTML=`
-    ${coverHtml(a.coverUrl,'article-cover','article-cover-ph')}
-    <div class="article-body">
-      ${a.category?`<div class="article-cat">${esc(a.category)}</div>`:''}
-      <div class="article-title">${esc(a.title)}</div>
-      ${a.subtitle?`<div class="article-sub">${esc(a.subtitle)}</div>`:''}
-      <div class="article-meta">
-        <div class="article-meta-item">
+  document.getElementById('art-inner').innerHTML=`
+    ${cover(a.coverUrl,'art-cover','art-cover-ph')}
+    <div class="art-body">
+      ${a.category?`<div class="news-cat">${esc(a.category)}</div>`:''}
+      <div class="art-title">${esc(a.title)}</div>
+      ${a.subtitle?`<div class="art-sub">${esc(a.subtitle)}</div>`:''}
+      <div class="art-meta">
+        <div class="art-meta-item">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          ${esc(a.author||'Редакция')}
+          ${esc(a.author||'Таҳририя')}
         </div>
-        <div class="article-meta-item">
+        <div class="art-meta-item">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           ${a.readingTime||3} дақ
         </div>
-        <div class="article-meta-item">
+        <div class="art-meta-item">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           ${fmtDate(a.createdAt)}
         </div>
       </div>
-      <div class="article-content">${esc(a.content)}</div>
-      ${a.views!=null?`<div class="article-views"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${(a.views||0)+1} кас хонд</div>`:''}
+      <div class="art-text">${esc(a.content)}</div>
+      <div class="art-views">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        ${(a.views||0)+1} нафар хонд
+      </div>
     </div>`;
 
   artOverlay.classList.add('open');
-  document.getElementById('article-scroll').scrollTop=0;
+  artOverlay.querySelector('.art-scroll').scrollTop=0;
 
   // Инкремент просмотров
   updateDoc(doc(db,'news',id),{views:increment(1),updatedAt:serverTimestamp()}).catch(()=>{});
 };
 
-artOverlay.addEventListener('click', e=>{
-  if(e.target===artOverlay) artOverlay.classList.remove('open');
-});
+artOverlay.addEventListener('click',e=>{ if(e.target===artOverlay)artOverlay.classList.remove('open'); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')artOverlay.classList.remove('open'); });
 
 loadNews();
 </script>
-
 </body>
 </html>
