@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Кор · Ваканситҳо · dastdaroz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
+<style>
+/* ── TEMPLATE TOKENS (не трогать) ── */
+:root{
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.15);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;--txd:#b0c4b8;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --ease:cubic-bezier(.32,0,.18,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:var(--fs);
+  min-height:100svh;
+  display:flex;flex-direction:column;
+  padding-top:var(--safe-t);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+
+/* ── HEADER ── */
+.header{
+  position:sticky;top:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  height:54px;
+  border-bottom:1px solid var(--b0);
+  background:var(--s1);
+  z-index:100;
+}
+.logo{display:flex;align-items:center;height:100%}
+.logo img{height:28px;width:auto;object-fit:contain;display:block}
+.header-right{display:flex;align-items:center;gap:10px}
+.avatar-btn{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--s2);border:2px solid var(--b0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;outline:none;transition:border-color .15s,background .15s;
+  color:var(--tx3);font-family:var(--fd);font-weight:900;font-size:.75rem;
+}
+.avatar-btn:active{background:var(--accd);border-color:var(--acc)}
+.avatar-btn.authed{background:var(--accd);border-color:var(--accg);color:var(--acc)}
+.search-btn{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--s2);border:2px solid var(--b0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;outline:none;transition:border-color .15s,background .15s;
+  color:var(--tx3);
+}
+.search-btn:active{background:var(--accd);border-color:var(--acc)}
+.search-btn.active{background:var(--accd);border-color:var(--accg);color:var(--acc)}
+.search-panel{
+  position:sticky;top:54px;z-index:99;
+  background:var(--s1);border-bottom:1px solid var(--b0);display:none;
+}
+.search-panel.open{display:block}
+.search-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--b0)}
+.search-bar-ico{color:var(--tx3);flex-shrink:0;display:flex}
+.search-input{flex:1;border:none;outline:none;background:none;font-family:var(--fs);font-size:.9rem;color:var(--tx);caret-color:var(--acc)}
+.search-input::placeholder{color:var(--tx3)}
+.search-clear{width:26px;height:26px;border-radius:50%;border:none;background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx3);flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .12s}
+.search-clear.visible{opacity:1;pointer-events:auto}
+.search-clear:active{background:var(--b0)}
+.search-results{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.search-result-item{display:block;padding:12px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--b0);transition:background .1s;cursor:pointer}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:active{background:var(--s2)}
+.sri-title{font-family:var(--fd);font-weight:800;font-size:.85rem;color:var(--tx);margin-bottom:3px}
+.sri-snippet{font-size:.75rem;color:var(--tx3);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sri-snippet mark,.sri-title mark{background:var(--accd);color:var(--acc);border-radius:3px;padding:0 2px;font-weight:600;font-style:normal}
+.search-status{padding:22px 16px;text-align:center;font-size:.82rem;color:var(--tx3);line-height:1.5}
+.scroll{flex:1}
+.content{padding:20px}
+.footer{background:var(--s1);border-top:1px solid var(--b0)}
+.divider{height:1px;background:var(--b0);margin:0 20px}
+.contacts{padding:3px 0}
+.contact-item{display:flex;align-items:center;gap:12px;padding:9px 20px;text-decoration:none;color:inherit;transition:background .1s}
+.contact-item.clickable{cursor:pointer}
+.contact-item.clickable:active{background:var(--s2)}
+.ci-icon{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.ci-body{flex:1;min-width:0}
+.ci-val{font-size:.8rem;font-weight:600;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-sub{font-size:.58rem;color:var(--tx3);margin-top:1px}
+.ci-arrow{color:var(--txd);flex-shrink:0}
+.socials-wrap{padding:8px 20px calc(10px + var(--safe-b))}
+.socials{display:flex;gap:9px}
+.soc-btn{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:opacity .12s,transform .12s;flex-shrink:0}
+.soc-btn:active{opacity:.7;transform:scale(.93)}
+.soc-btn.fb{background:#1877f2}.soc-btn.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}.soc-btn.tg{background:#2aabee}.soc-btn.yt{background:#ff0000}
+.overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.38);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.overlay.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;background:var(--s1);border-radius:22px 22px 0 0;padding-bottom:calc(20px + var(--safe-b));transform:translateY(100%);transition:transform .3s var(--ease);overflow:hidden}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0}
+.sheet-head{display:flex;align-items:center;gap:14px;padding:18px 20px 14px;border-bottom:1px solid var(--b0)}
+.sheet-ava{width:52px;height:52px;border-radius:50%;flex-shrink:0;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--acc)}
+.sheet-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);line-height:1.2}
+.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500;letter-spacing:.02em}
+.sheet-row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .1s;text-decoration:none;color:inherit}
+.sheet-row:active{background:var(--s2)}
+.sheet-row-ico{width:32px;height:32px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0}
+.sheet-row-lbl{flex:1;font-size:.84rem;font-weight:600;color:var(--tx2)}
+.sheet-row-arr{color:var(--txd)}
+.sheet-logout{margin:14px 20px 0;width:calc(100% - 40px);padding:14px;border:none;border-radius:13px;background:rgba(220,38,38,.07);color:#dc2626;font-family:var(--fd);font-weight:900;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .12s}
+.sheet-logout:active{background:rgba(220,38,38,.15)}
+
+/* ══════════════════════════════════════
+   HR PAGE STYLES
+══════════════════════════════════════ */
+
+/* Hero */
+.hr-hero{margin-bottom:22px}
+.hr-tag{
+  font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--acc);font-weight:700;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.hr-tag::before{content:'';width:14px;height:1.5px;background:var(--acc);border-radius:2px}
+.hr-title{
+  font-family:var(--fd);font-weight:900;font-size:2rem;
+  color:var(--tx);line-height:1.1;letter-spacing:-.03em;margin-bottom:8px;
+}
+.hr-title em{color:var(--acc);font-style:normal}
+.hr-sub{font-size:.84rem;color:var(--tx2);line-height:1.65;margin-bottom:18px}
+
+/* Stats bar */
+.hr-stats{
+  display:flex;align-items:center;
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:14px;padding:14px 20px;gap:0;
+}
+.hr-stat{flex:1;text-align:center}
+.hr-stat-val{
+  font-family:var(--fd);font-weight:900;font-size:1.45rem;
+  color:var(--acc);line-height:1;margin-bottom:3px;
+}
+.hr-stat-lbl{font-size:.6rem;color:var(--tx3);letter-spacing:.01em}
+.hr-stat-div{width:1px;height:30px;background:var(--b0);flex-shrink:0}
+
+/* Filter */
+.hr-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.hr-fp{
+  padding:6px 14px;border-radius:99px;border:1.5px solid var(--b0);
+  background:var(--s1);cursor:pointer;font-size:.71rem;
+  font-family:var(--fs);color:var(--tx3);font-weight:600;
+  transition:all .14s;
+}
+.hr-fp:active,.hr-fp.active{background:var(--accd);border-color:var(--acc);color:var(--acc)}
+
+/* Vacancy list */
+.hr-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.vac-card{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:14px;padding:16px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.vac-card:active{border-color:var(--acc)}
+
+.vac-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.vac-title{font-family:var(--fd);font-weight:800;font-size:1rem;color:var(--tx);line-height:1.2}
+.vac-type{
+  font-size:.54rem;font-weight:700;padding:3px 10px;border-radius:99px;
+  white-space:nowrap;flex-shrink:0;letter-spacing:.04em;text-transform:uppercase;
+}
+.vac-type.full{background:var(--accd);color:var(--acc)}
+.vac-type.part{background:rgba(245,158,11,.10);color:#b45309}
+.vac-type.intern{background:rgba(96,165,250,.10);color:#2563eb}
+
+.vac-meta{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.vac-meta-item{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--tx3)}
+
+.vac-desc{
+  font-size:.78rem;color:var(--tx2);line-height:1.55;margin-bottom:14px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+.vac-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.vac-dept{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.63rem;font-weight:600;color:var(--tx3);
+  background:var(--s2);padding:4px 10px;border-radius:7px;
+}
+.vac-salary{font-family:var(--fd);font-size:.78rem;font-weight:800;color:var(--acc)}
+.vac-apply{
+  padding:8px 18px;border-radius:99px;border:none;
+  background:var(--acc);color:#fff;
+  font-family:var(--fd);font-weight:800;font-size:.7rem;
+  cursor:pointer;transition:opacity .14s;letter-spacing:.02em;
+}
+.vac-apply:active{opacity:.8}
+
+/* Empty state */
+.hr-empty{text-align:center;padding:40px 16px;color:var(--tx3)}
+.hr-empty-ico{font-size:2rem;opacity:.25;margin-bottom:8px}
+.hr-empty-txt{font-size:.8rem}
+
+/* Section */
+.hr-section{margin-bottom:28px}
+.hr-section-tag{font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:4px}
+.hr-section-title{font-family:var(--fd);font-weight:900;font-size:1.25rem;color:var(--tx);letter-spacing:-.02em;margin-bottom:14px}
+
+/* Perks grid */
+.hr-perks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hr-perk{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;padding:14px}
+.hr-perk-ico{font-size:1.4rem;margin-bottom:8px}
+.hr-perk-title{font-family:var(--fd);font-weight:800;font-size:.82rem;color:var(--tx);margin-bottom:4px}
+.hr-perk-desc{font-size:.7rem;color:var(--tx3);line-height:1.55}
+
+/* Apply bottom sheet */
+.apply-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.38);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s;
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+}
+.apply-overlay.open{opacity:1;pointer-events:auto}
+.apply-sheet{
+  width:100%;background:var(--s1);
+  border-radius:22px 22px 0 0;
+  padding-bottom:calc(20px + var(--safe-b));
+  transform:translateY(100%);
+  transition:transform .3s var(--ease);
+  max-height:90svh;overflow-y:auto;
+}
+.apply-overlay.open .apply-sheet{transform:translateY(0)}
+.apply-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0}
+.apply-head{padding:16px 20px 14px;border-bottom:1px solid var(--b0)}
+.apply-head-tag{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);font-weight:700;margin-bottom:3px}
+.apply-head-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
+.apply-body{padding:16px 20px}
+.apply-field{margin-bottom:13px}
+.apply-label{display:block;font-size:.56rem;letter-spacing:.15em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:5px}
+.apply-input{
+  width:100%;background:var(--s2);border:1.5px solid var(--b0);
+  border-radius:10px;padding:10px 14px;
+  font-family:var(--fs);font-size:.82rem;color:var(--tx);
+  outline:none;transition:border-color .15s;
+}
+.apply-input:focus{border-color:var(--acc)}
+.apply-input::placeholder{color:var(--tx3)}
+textarea.apply-input{resize:vertical;min-height:72px}
+.apply-btn{
+  width:100%;padding:14px;border:none;border-radius:13px;
+  background:var(--acc);color:#fff;
+  font-family:var(--fd);font-weight:900;font-size:.84rem;
+  letter-spacing:.04em;cursor:pointer;margin-top:4px;
+  transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.apply-btn:active{opacity:.85}
+.apply-btn:disabled{opacity:.5;cursor:not-allowed}
+.apply-success{text-align:center;padding:28px 16px}
+.apply-success-ico{font-size:2.4rem;margin-bottom:10px}
+.apply-success-title{font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:6px}
+.apply-success-sub{font-size:.78rem;color:var(--tx3);line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="logo">
+    <img src="dastdaroz.png" alt="dastdaroz"/>
+  </div>
+  <div class="header-right">
+    <button class="search-btn" id="search-btn" aria-label="Поиск">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+    </button>
+    <button class="avatar-btn" id="avatar-btn" aria-label="Профиль">
+      <svg id="ava-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span id="ava-initials" style="display:none"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ── SEARCH PANEL ── -->
+<div class="search-panel" id="search-panel">
+  <div class="search-bar">
+    <span class="search-bar-ico">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+    </span>
+    <input class="search-input" id="search-input" type="search"
+      placeholder="Ҷустуҷӯ…" autocomplete="off" autocorrect="off"
+      autocapitalize="off" spellcheck="false"/>
+    <button class="search-clear" id="search-clear" aria-label="Очистить">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="search-results" id="search-results"></div>
+</div>
+
+<div class="scroll">
+  <div class="content">
+
+    <!-- ▼▼▼  КОНТЕНТ START  ▼▼▼ -->
+
+    <!-- HERO -->
+    <div class="hr-hero">
+      <div class="hr-tag">Кор · Dastdaroz</div>
+      <div class="hr-title">Бо беҳтаринҳо<br><em>кор кунед</em></div>
+      <p class="hr-sub">Мо хизмати расонидани молро дар Тоҷикистон месозем. Агар мехоҳед дар як дастаи ҳақиқӣ рушд кунед — ин ҷо ҷойи шумост.</p>
+      <div class="hr-stats">
+        <div class="hr-stat">
+          <div class="hr-stat-val" id="stat-open">—</div>
+          <div class="hr-stat-lbl">Ваканси кушода</div>
+        </div>
+        <div class="hr-stat-div"></div>
+        <div class="hr-stat">
+          <div class="hr-stat-val">140+</div>
+          <div class="hr-stat-lbl">Кормандон</div>
+        </div>
+        <div class="hr-stat-div"></div>
+        <div class="hr-stat">
+          <div class="hr-stat-val">8</div>
+          <div class="hr-stat-lbl">Шӯъбаҳо</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="hr-filters" id="hr-filters">
+      <button class="hr-fp active" data-dept="all">Ҳама</button>
+      <button class="hr-fp" data-dept="Технологии">Технология</button>
+      <button class="hr-fp" data-dept="Операции">Амалиёт</button>
+      <button class="hr-fp" data-dept="Маркетинг">Маркетинг</button>
+      <button class="hr-fp" data-dept="Финансы">Молия</button>
+      <button class="hr-fp" data-dept="Дизайн">Дизайн</button>
+    </div>
+
+    <!-- VACANCIES -->
+    <div class="hr-grid" id="vac-grid">
+      <div class="hr-empty">
+        <div class="hr-empty-ico">⏳</div>
+        <div class="hr-empty-txt">Ваканситҳо бор мешаванд…</div>
+      </div>
+    </div>
+
+    <!-- WHY US -->
+    <div class="hr-section">
+      <div class="hr-section-tag">Чаро мо</div>
+      <div class="hr-section-title">Шароити кор</div>
+      <div class="hr-perks">
+        <div class="hr-perk">
+          <div class="hr-perk-ico">🚀</div>
+          <div class="hr-perk-title">Рушд</div>
+          <div class="hr-perk-desc">Музди мунтазам, буҷети омӯзиш, роҳнамоии рӯҳбарони даста.</div>
+        </div>
+        <div class="hr-perk">
+          <div class="hr-perk-ico">💻</div>
+          <div class="hr-perk-title">Технологияҳои нав</div>
+          <div class="hr-perk-desc">Flutter, Firebase, Vue.js. Мо аз таҷриба наметарсем.</div>
+        </div>
+        <div class="hr-perk">
+          <div class="hr-perk-ico">🤝</div>
+          <div class="hr-perk-title">Даста</div>
+          <div class="hr-perk-desc">Сохтори горизонталӣ. Ақидаҳои шуморо мешунаванд.</div>
+        </div>
+        <div class="hr-perk">
+          <div class="hr-perk-ico">🎯</div>
+          <div class="hr-perk-title">Маош</div>
+          <div class="hr-perk-desc">Музди рақобатпазир, бонус аз натиҷа, ҷадвали чандир.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▲▲▲  КОНТЕНТ END  ▲▲▲ -->
+
+  </div>
+</div>
+
+<!-- ── FOOTER — НЕ ТРОГАТЬ ── -->
+<div class="footer">
+
+  <div class="divider"></div>
+
+  <div class="contacts">
+    <a href="tel:+992977178800" class="contact-item clickable">
+      <div class="ci-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      </div>
+      <div class="ci-body">
+        <div class="ci-val">+992 977 17 8800</div>
+        <div class="ci-sub">Хизмати дастгирӣ</div>
+      </div>
+      <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <a href="tel:+992878777788" class="contact-item clickable">
+      <div class="ci-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      </div>
+      <div class="ci-body">
+        <div class="ci-val">+992 87 877 7788</div>
+        <div class="ci-sub">Хизмати дастгирӣ</div>
+      </div>
+      <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <div class="contact-item">
+      <div class="ci-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div class="ci-body">
+        <div class="ci-val">Душанбе, Тоҷикистон</div>
+      </div>
+    </div>
+
+    <a href="mailto:info@galelium.com" class="contact-item clickable">
+      <div class="ci-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div class="ci-body">
+        <div class="ci-val">info@galelium.com</div>
+      </div>
+    </a>
+
+    <div class="contact-item">
+      <div class="ci-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="ci-body">
+        <div class="ci-val">Душ – Ҷум: 8:00 – 22:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="socials-wrap">
+    <div class="socials">
+      <a href="#" class="soc-btn fb" aria-label="Facebook">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+      </a>
+      <a href="#" class="soc-btn ig" aria-label="Instagram">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="#" class="soc-btn tg" aria-label="Telegram">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c-.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.292z"/></svg>
+      </a>
+      <a href="#" class="soc-btn yt" aria-label="YouTube">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── PROFILE OVERLAY ── -->
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div class="sheet-ava" id="sheet-ava">?</div>
+      <div>
+        <div class="sheet-name" id="sheet-name">—</div>
+        <div class="sheet-phone" id="sheet-phone">—</div>
+      </div>
+    </div>
+    <div class="sheet-row" onclick="window.location.href='orders.html'">
+      <div class="sheet-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <span class="sheet-row-lbl">Фармоишҳои ман</span>
+      <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <button class="sheet-logout" id="btn-logout">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Хуруҷ
+    </button>
+  </div>
+</div>
+
+<!-- ── APPLY BOTTOM SHEET ── -->
+<div class="apply-overlay" id="apply-overlay">
+  <div class="apply-sheet" id="apply-sheet">
+    <div class="apply-handle"></div>
+    <div class="apply-head">
+      <div class="apply-head-tag">Ариза додан</div>
+      <div class="apply-head-title" id="apply-job-title">Ваканси</div>
+    </div>
+    <div class="apply-body" id="apply-body">
+      <div class="apply-field">
+        <label class="apply-label">Ном ва насаб *</label>
+        <input class="apply-input" id="apply-name" type="text" placeholder="Ном Насаб" autocomplete="name"/>
+      </div>
+      <div class="apply-field">
+        <label class="apply-label">Рақами телефон *</label>
+        <input class="apply-input" id="apply-phone" type="tel" placeholder="+992 …" autocomplete="tel"/>
+      </div>
+      <div class="apply-field">
+        <label class="apply-label">Резюме / портфолио</label>
+        <input class="apply-input" id="apply-link" type="url" placeholder="https://…"/>
+      </div>
+      <div class="apply-field">
+        <label class="apply-label">Паёми иловагӣ</label>
+        <textarea class="apply-input" id="apply-msg" rows="3" placeholder="Каме дар бораи худ нависед…"></textarea>
+      </div>
+      <button class="apply-btn" id="apply-submit-btn" onclick="submitApply()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Ариза фиристодан
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SEARCH SCRIPT ── -->
+<script>
+const SEARCH_PAGES = [
+  { title: 'HR · Вакансии', path: 'hr.html' },
+];
+(function(){
+  const searchBtn=document.getElementById('search-btn');
+  const searchPanel=document.getElementById('search-panel');
+  const searchInput=document.getElementById('search-input');
+  const searchClear=document.getElementById('search-clear');
+  const searchResults=document.getElementById('search-results');
+  let index=null,loading=false,timer=null;
+  function open(){searchPanel.classList.add('open');searchBtn.classList.add('active');searchInput.focus();if(!index&&!loading)buildIndex();}
+  function close(){searchPanel.classList.remove('open');searchBtn.classList.remove('active');searchInput.value='';searchClear.classList.remove('visible');searchResults.innerHTML='';}
+  searchBtn.addEventListener('click',()=>searchPanel.classList.contains('open')?close():open());
+  searchClear.addEventListener('click',()=>{searchInput.value='';searchClear.classList.remove('visible');searchResults.innerHTML='';searchInput.focus();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&searchPanel.classList.contains('open'))close();});
+  async function buildIndex(){if(!SEARCH_PAGES.length){index=[];return;}loading=true;searchResults.innerHTML='<div class="search-status">Загрузка…</div>';const parser=new DOMParser();index=[];await Promise.all(SEARCH_PAGES.map(async page=>{try{const res=await fetch(page.path);if(!res.ok)return;const html=await res.text();const doc=parser.parseFromString(html,'text/html');const el=doc.querySelector('.content');const text=(el?el.textContent:'').replace(/\s+/g,' ').trim();index.push({title:page.title,path:page.path,text});}catch(e){}}));loading=false;searchResults.innerHTML='';const q=searchInput.value.trim();if(q.length>=2)doSearch(q);}
+  searchInput.addEventListener('input',()=>{const q=searchInput.value.trim();searchClear.classList.toggle('visible',q.length>0);clearTimeout(timer);timer=setTimeout(()=>doSearch(q),180);});
+  function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function hi(text,q){return esc(text).replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>'<mark>'+m+'</mark>');}
+  function doSearch(q){if(!q||q.length<2){searchResults.innerHTML='';return;}if(loading||!index){searchResults.innerHTML='<div class="search-status">Загрузка…</div>';return;}if(!index.length){searchResults.innerHTML='<div class="search-status">Нет страниц для поиска</div>';return;}const low=q.toLowerCase();const hits=[];for(const page of index){const ti=page.title.toLowerCase().indexOf(low);const tx=page.text.toLowerCase().indexOf(low);if(ti===-1&&tx===-1)continue;let snippet='';if(tx!==-1){const s=Math.max(0,tx-45);const e=Math.min(page.text.length,tx+q.length+90);snippet=(s>0?'…':'')+page.text.slice(s,e)+(e<page.text.length?'…':'');}else{snippet=page.text.slice(0,130)+(page.text.length>130?'…':'');}hits.push({page,snippet});}if(!hits.length){searchResults.innerHTML=`<div class="search-status">«${esc(q)}» не найдено</div>`;return;}searchResults.innerHTML=hits.map(({page,snippet})=>`<a href="${esc(page.path)}" class="search-result-item"><div class="sri-title">${hi(page.title,q)}</div><div class="sri-snippet">${hi(snippet,q)}</div></a>`).join('');}
+})();
+</script>
+
+<!-- ── FIREBASE AUTH (не трогать) ── -->
+<script type="module">
+import { auth } from './firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+const avatarBtn=document.getElementById('avatar-btn');
+const avaIcon=document.getElementById('ava-icon');
+const avaInitials=document.getElementById('ava-initials');
+const overlay=document.getElementById('overlay');
+const sheetAva=document.getElementById('sheet-ava');
+const sheetName=document.getElementById('sheet-name');
+const sheetPhone=document.getElementById('sheet-phone');
+const btnLogout=document.getElementById('btn-logout');
+let currentUser=null;
+function initials(name){if(!name)return'?';const p=name.trim().split(/\s+/);return p.length>1?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase();}
+function emailToPhone(email){if(!email)return'—';const m=email.match(/^992(\d{9})@/);if(!m)return email;const d=m[1];return'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);}
+onAuthStateChanged(auth,user=>{currentUser=user;if(user){const ini=initials(user.displayName);avaIcon.style.display='none';avaInitials.style.display='';avaInitials.textContent=ini;avatarBtn.classList.add('authed');sheetAva.textContent=ini;sheetName.textContent=user.displayName||'Пользователь';sheetPhone.textContent=emailToPhone(user.email);}else{avaIcon.style.display='';avaInitials.style.display='none';avatarBtn.classList.remove('authed');}});
+avatarBtn.addEventListener('click',()=>{if(currentUser){overlay.classList.add('open');}else{window.location.href='login.html';}});
+overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('open');});
+btnLogout.addEventListener('click',async()=>{await signOut(auth);overlay.classList.remove('open');});
+</script>
+
+<!-- ── HR: загрузка вакансий и применение ── -->
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getFirestore, collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+const cfg={apiKey:'AIzaSyCjIAMFuwLKwmjChCuiz-MHLv5WZOczAAE',authDomain:'delivery-galelium.firebaseapp.com',projectId:'delivery-galelium',storageBucket:'delivery-galelium.firebasestorage.app',messagingSenderId:'982466555080',appId:'1:982466555080:web:c77ccbff0e71e540ddc9fd'};
+const app = getApps().length ? getApp() : initializeApp(cfg);
+const db = getFirestore(app);
+
+/* ── SAMPLE VACANCIES (fallback) ── */
+const SAMPLE = [
+  {id:'s1',title:'Frontend Developer',department:'Технологии',type:'full-time',location:'Душанбе / Remote',salary:'2 500 – 3 500 TJS',description:'Интерфейси барномаи мобилӣ ва платформаи вебро таҳия мекунед. Vue.js / React, фаҳмиши хуби UX.',status:'open'},
+  {id:'s2',title:'Flutter Developer',department:'Технологии',type:'full-time',location:'Душанбе',salary:'3 000 – 4 500 TJS',description:'Таҳия ва дастгирии барномаи мобилии кросс-платформа дар Flutter. Таҷрибаи аз 1 сол.',status:'open'},
+  {id:'s3',title:'Курьер',department:'Операции',type:'full-time',location:'Душанбе',salary:'1 500 – 2 200 TJS',description:'Расонидани фармоишҳо ба муштариён. Ҷадвали чандир, бонусҳо, имкони рушд дар шӯъба.',status:'open'},
+  {id:'s4',title:'Marketing Manager',department:'Маркетинг',type:'full-time',location:'Душанбе',salary:'2 000 – 3 000 TJS',description:'Таҳия ва иҷрои кампанияҳо, SMM, нақшаи контент, кор бо шарикон.',status:'open'},
+  {id:'s5',title:'Мутахассиси дастгирӣ',department:'Операции',type:'part-time',location:'Remote',salary:'1 000 – 1 500 TJS',description:'Коркарди муроҷиатҳои муштариён, ҳалли масъалаҳо оид ба фармоишҳо.',status:'open'},
+  {id:'s6',title:'Таҳлилгари молиявӣ',department:'Финансы',type:'full-time',location:'Душанбе',salary:'2 500 – 3 500 TJS',description:'Таҳлили нишондиҳандаҳои молиявӣ, тайёр кардани ҳисоботҳо ва пешгӯиҳо.',status:'open'},
+];
+
+let vacancies = [];
+let currentDept = 'all';
+let currentVacId = null;
+
+/* ── LOAD ── */
+async function loadVacancies() {
+  try {
+    const snap = await getDocs(query(collection(db,'vacancies'), where('status','==','open'), orderBy('createdAt','desc')));
+    vacancies = snap.docs.map(d => ({id:d.id,...d.data()}));
+  } catch(e) {}
+  if (!vacancies.length) vacancies = SAMPLE;
+  document.getElementById('stat-open').textContent = vacancies.length;
+  renderVacancies();
+}
+
+/* ── RENDER ── */
+function renderVacancies() {
+  const grid = document.getElementById('vac-grid');
+  const list = currentDept === 'all' ? vacancies : vacancies.filter(v => v.department === currentDept);
+
+  if (!list.length) {
+    grid.innerHTML = '<div class="hr-empty"><div class="hr-empty-ico">🔍</div><div class="hr-empty-txt">Дар ин шӯъба ваканситҳо нест</div></div>';
+    return;
+  }
+
+  const TYPE_MAP = {'full-time':['full','Рӯзи пурра'],'part-time':['part','Нимвақтӣ'],'internship':['intern','Стажировка']};
+  const DEPT_ICO = {'Технологии':'💻','Операции':'⚙️','Маркетинг':'📣','Финансы':'💰','Дизайн':'🎨','HR':'👥'};
+
+  grid.innerHTML = list.map(v => {
+    const [tClass, tLabel] = TYPE_MAP[v.type] || ['full', v.type||''];
+    const ico = DEPT_ICO[v.department] || '💼';
+    return `
+      <div class="vac-card">
+        <div class="vac-top">
+          <div class="vac-title">${esc(v.title||'')}</div>
+          <span class="vac-type ${tClass}">${tLabel}</span>
+        </div>
+        <div class="vac-meta">
+          <span class="vac-meta-item">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${esc(v.location||'Душанбе')}
+          </span>
+          ${v.salary ? `<span class="vac-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>${esc(v.salary)}</span>` : ''}
+        </div>
+        ${v.description ? `<div class="vac-desc">${esc(v.description)}</div>` : ''}
+        <div class="vac-footer">
+          <span class="vac-dept">${ico} ${esc(v.department||'')}</span>
+          <button class="vac-apply" onclick="openApply('${v.id}','${esc(v.title||'')}')">Ариза додан</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ── FILTER ── */
+document.getElementById('hr-filters').addEventListener('click', e => {
+  const btn = e.target.closest('.hr-fp');
+  if (!btn) return;
+  document.querySelectorAll('.hr-fp').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDept = btn.dataset.dept;
+  renderVacancies();
+});
+
+/* ── APPLY MODAL ── */
+window.openApply = function(vacId, title) {
+  currentVacId = vacId;
+  document.getElementById('apply-job-title').textContent = title;
+  document.getElementById('apply-body').innerHTML = `
+    <div class="apply-field"><label class="apply-label">Ном ва насаб *</label><input class="apply-input" id="apply-name" type="text" placeholder="Ном Насаб"/></div>
+    <div class="apply-field"><label class="apply-label">Рақами телефон *</label><input class="apply-input" id="apply-phone" type="tel" placeholder="+992 …"/></div>
+    <div class="apply-field"><label class="apply-label">Резюме / портфолио</label><input class="apply-input" id="apply-link" type="url" placeholder="https://…"/></div>
+    <div class="apply-field"><label class="apply-label">Паёми иловагӣ</label><textarea class="apply-input" id="apply-msg" rows="3" placeholder="Каме дар бораи худ нависед…"></textarea></div>
+    <button class="apply-btn" id="apply-submit-btn" onclick="submitApply()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Ариза фиристодан
+    </button>
+  `;
+  document.getElementById('apply-overlay').classList.add('open');
+};
+
+window.submitApply = async function() {
+  const name  = document.getElementById('apply-name')?.value.trim();
+  const phone = document.getElementById('apply-phone')?.value.trim();
+  const link  = document.getElementById('apply-link')?.value.trim();
+  const msg   = document.getElementById('apply-msg')?.value.trim();
+  const btn   = document.getElementById('apply-submit-btn');
+
+  if (!name || !phone) {
+    document.getElementById('apply-name').style.borderColor = !name ? 'var(--acc)' : '';
+    document.getElementById('apply-phone').style.borderColor = !phone ? 'var(--acc)' : '';
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Фиристода мешавад…'; }
+
+  try {
+    await addDoc(collection(db, 'vacancies', currentVacId, 'applications'), {
+      name, phone, link: link||'', message: msg||'',
+      vacancyId: currentVacId,
+      createdAt: serverTimestamp(),
+    });
+    document.getElementById('apply-body').innerHTML = `
+      <div class="apply-success">
+        <div class="apply-success-ico">🎉</div>
+        <div class="apply-success-title">Ариза фиристода шуд!</div>
+        <div class="apply-success-sub">Мо аризаи шуморо дар муддати 3 рӯзи корӣ барасӣ мекунем ва бо рақами зикршуда тамос мегирем.</div>
+      </div>
+    `;
+    setTimeout(() => document.getElementById('apply-overlay').classList.remove('open'), 3000);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Аз нав кӯшиш кунед'; }
+  }
+};
+
+/* ── CLOSE APPLY ON TAP OUTSIDE ── */
+document.getElementById('apply-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('apply-overlay')) {
+    document.getElementById('apply-overlay').classList.remove('open');
+  }
+});
+
+/* ── INIT ── */
+loadVacancies();
+</script>
+
+</body>
+</html>
