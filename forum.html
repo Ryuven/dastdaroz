@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Форум · dastdaroz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
+<style>
+/* ══ TEMPLATE TOKENS — НЕ ТРОГАТЬ ══════════════════════════════ */
+:root{
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.15);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;--txd:#b0c4b8;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --ease:cubic-bezier(.32,0,.18,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--tx);font-family:var(--fs);min-height:100svh;display:flex;flex-direction:column;padding-top:var(--safe-t);-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none}
+.header{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:54px;border-bottom:1px solid var(--b0);background:var(--s1);z-index:100;}
+.logo{display:flex;align-items:center;height:100%}
+.logo img{height:28px;width:auto;object-fit:contain;display:block}
+.header-right{display:flex;align-items:center;gap:10px}
+.avatar-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:var(--s2);border:2px solid var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;outline:none;transition:border-color .15s,background .15s;color:var(--tx3);font-family:var(--fd);font-weight:900;font-size:.75rem;}
+.avatar-btn:active{background:var(--accd);border-color:var(--acc)}
+.avatar-btn.authed{background:var(--accd);border-color:var(--accg);color:var(--acc)}
+.search-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:var(--s2);border:2px solid var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;outline:none;transition:border-color .15s,background .15s;color:var(--tx3);}
+.search-btn:active{background:var(--accd);border-color:var(--acc)}
+.search-btn.active{background:var(--accd);border-color:var(--accg);color:var(--acc)}
+.search-panel{position:sticky;top:54px;z-index:99;background:var(--s1);border-bottom:1px solid var(--b0);display:none;}
+.search-panel.open{display:block}
+.search-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--b0);}
+.search-bar-ico{color:var(--tx3);flex-shrink:0;display:flex}
+.search-input{flex:1;border:none;outline:none;background:none;font-family:var(--fs);font-size:.9rem;color:var(--tx);caret-color:var(--acc);}
+.search-input::placeholder{color:var(--tx3)}
+.search-clear{width:26px;height:26px;border-radius:50%;border:none;background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx3);flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .12s;}
+.search-clear.visible{opacity:1;pointer-events:auto}
+.search-clear:active{background:var(--b0)}
+.search-results{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.search-result-item{display:block;padding:12px 16px;text-decoration:none;color:inherit;border-bottom:1px solid var(--b0);transition:background .1s;cursor:pointer;}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:active{background:var(--s2)}
+.sri-title{font-family:var(--fd);font-weight:800;font-size:.85rem;color:var(--tx);margin-bottom:3px}
+.sri-snippet{font-size:.75rem;color:var(--tx3);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.sri-snippet mark,.sri-title mark{background:var(--accd);color:var(--acc);border-radius:3px;padding:0 2px;font-weight:600;font-style:normal}
+.search-status{padding:22px 16px;text-align:center;font-size:.82rem;color:var(--tx3);line-height:1.5}
+.scroll{flex:1}
+.content{padding:20px}
+.footer{background:var(--s1);border-top:1px solid var(--b0)}
+.divider{height:1px;background:var(--b0);margin:0 20px}
+.contacts{padding:3px 0}
+.contact-item{display:flex;align-items:center;gap:12px;padding:9px 20px;text-decoration:none;color:inherit;transition:background .1s;}
+.contact-item.clickable{cursor:pointer}
+.contact-item.clickable:active{background:var(--s2)}
+.ci-icon{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.ci-body{flex:1;min-width:0}
+.ci-val{font-size:.8rem;font-weight:600;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-sub{font-size:.58rem;color:var(--tx3);margin-top:1px}
+.ci-arrow{color:var(--txd);flex-shrink:0}
+.socials-wrap{padding:8px 20px calc(10px + var(--safe-b))}
+.socials{display:flex;gap:9px}
+.soc-btn{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:opacity .12s,transform .12s;flex-shrink:0;}
+.soc-btn:active{opacity:.7;transform:scale(.93)}
+.soc-btn.fb{background:#1877f2}.soc-btn.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}.soc-btn.tg{background:#2aabee}.soc-btn.yt{background:#ff0000}
+.overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.38);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.overlay.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;background:var(--s1);border-radius:22px 22px 0 0;padding-bottom:calc(20px + var(--safe-b));transform:translateY(100%);transition:transform .3s var(--ease);overflow:hidden;}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0}
+.sheet-head{display:flex;align-items:center;gap:14px;padding:18px 20px 14px;border-bottom:1px solid var(--b0)}
+.sheet-ava{width:52px;height:52px;border-radius:50%;flex-shrink:0;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--acc);}
+.sheet-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);line-height:1.2}
+.sheet-phone{font-size:.75rem;color:var(--tx3);margin-top:4px;font-weight:500;letter-spacing:.02em}
+.sheet-row{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--b0);cursor:pointer;transition:background .1s;text-decoration:none;color:inherit;}
+.sheet-row:active{background:var(--s2)}
+.sheet-row-ico{width:32px;height:32px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0}
+.sheet-row-lbl{flex:1;font-size:.84rem;font-weight:600;color:var(--tx2)}
+.sheet-row-arr{color:var(--txd)}
+.sheet-logout{margin:14px 20px 0;width:calc(100% - 40px);padding:14px;border:none;border-radius:13px;background:rgba(220,38,38,.07);color:#dc2626;font-family:var(--fd);font-weight:900;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .12s;}
+.sheet-logout:active{background:rgba(220,38,38,.15)}
+
+/* ══════════════════════════════════════════════════════════════
+   FORUM — CUSTOM STYLES
+══════════════════════════════════════════════════════════════ */
+
+/* Views */
+.forum-view{display:none}
+.forum-view.active{display:block}
+
+/* Sticky sub-header for cat/thread views */
+.view-bar{
+  position:sticky;top:54px;z-index:90;
+  margin:-20px -20px 16px;
+  padding:10px 16px;
+  background:var(--s1);border-bottom:1px solid var(--b0);
+  display:flex;align-items:center;gap:10px;
+}
+.view-back{
+  width:34px;height:34px;border-radius:50%;border:1.5px solid var(--b0);
+  background:var(--s2);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--tx3);flex-shrink:0;transition:all .14s;
+}
+.view-back:active{background:var(--accd);border-color:var(--acc);color:var(--acc)}
+.view-title{
+  font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx);
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* Home page header */
+.forum-home-head{margin-bottom:16px}
+.forum-home-label{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.forum-home-label::before{content:'';width:14px;height:1.5px;background:var(--acc);border-radius:2px}
+.forum-home-title{font-family:var(--fd);font-weight:900;font-size:1.55rem;color:var(--tx);letter-spacing:-.02em;line-height:1.15}
+
+/* Stats strip */
+.forum-stats{
+  display:flex;align-items:stretch;
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:13px;overflow:hidden;margin-bottom:20px;
+}
+.f-stat{flex:1;text-align:center;padding:12px 8px}
+.f-stat-val{font-family:var(--fd);font-weight:900;font-size:1.25rem;color:var(--acc);line-height:1;margin-bottom:3px}
+.f-stat-lbl{font-size:.58rem;color:var(--tx3);letter-spacing:.01em}
+.f-stat-div{width:1px;background:var(--b0);flex-shrink:0}
+
+/* Section label */
+.f-section{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:9px}
+
+/* Category cards */
+.cat-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:13px;padding:13px 14px;margin-bottom:8px;
+  cursor:pointer;transition:border-color .14s;
+}
+.cat-card:active{border-color:var(--acc)}
+.cat-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+.cat-info{flex:1;min-width:0}
+.cat-name{font-family:var(--fd);font-weight:800;font-size:.88rem;color:var(--tx)}
+.cat-desc{font-size:.66rem;color:var(--tx3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.cat-count{font-family:var(--fd);font-size:.68rem;font-weight:800;color:var(--tx3)}
+.cat-arr{color:var(--txd)}
+
+/* Thread rows (list) */
+.threads-list{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;overflow:hidden}
+.thread-row{
+  display:block;padding:13px 14px;
+  border-bottom:1px solid var(--b0);
+  cursor:pointer;transition:background .1s;
+}
+.thread-row:last-child{border-bottom:none}
+.thread-row:active{background:var(--s2)}
+.t-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px}
+.t-pin{color:var(--acc);flex-shrink:0;margin-top:1px}
+.t-title{font-family:var(--fd);font-weight:800;font-size:.87rem;color:var(--tx);line-height:1.3;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.t-cat-tag{font-size:.54rem;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0;white-space:nowrap;background:var(--accd);color:var(--acc)}
+.t-bottom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.t-author{display:flex;align-items:center;gap:5px;font-size:.64rem;color:var(--tx3)}
+.t-ava-sm{width:18px;height:18px;border-radius:50%;background:var(--accd);color:var(--acc);font-family:var(--fd);font-weight:900;font-size:.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.t-time{font-size:.6rem;color:var(--txd)}
+.t-stats{display:flex;align-items:center;gap:8px;margin-left:auto}
+.t-stat{display:flex;align-items:center;gap:3px;font-size:.62rem;color:var(--tx3)}
+
+/* Category view */
+.cat-head{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:13px;padding:14px;margin-bottom:12px;
+  display:flex;align-items:center;gap:12px;
+}
+.cat-head-ico{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.cat-head-name{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
+.cat-head-desc{font-size:.7rem;color:var(--tx3);margin-top:2px}
+
+/* Filter tabs */
+.forum-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.forum-tabs::-webkit-scrollbar{display:none}
+.forum-tab{padding:6px 14px;border-radius:99px;border:1.5px solid var(--b0);background:var(--s1);cursor:pointer;font-size:.7rem;font-family:var(--fs);color:var(--tx3);font-weight:600;transition:all .14s;white-space:nowrap;flex-shrink:0}
+.forum-tab.active{background:var(--accd);border-color:var(--acc);color:var(--acc)}
+
+/* Thread view */
+.thread-head{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;padding:14px;margin-bottom:10px}
+.t-cat-pill{display:inline-flex;align-items:center;gap:5px;font-size:.58rem;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--accd);color:var(--acc);margin-bottom:8px}
+.t-h1{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);line-height:1.3;margin-bottom:8px}
+.t-hmeta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.t-hstat{display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--tx3)}
+
+/* Post cards (OP + replies) */
+.post{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:14px;margin-bottom:8px}
+.post.op{border-color:var(--accg)}
+.post-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.post-ava{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--accd);border:2px solid var(--accg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-weight:900;font-size:.78rem;color:var(--acc);
+  flex-shrink:0;
+}
+.post-ava.reply{background:var(--s2);border-color:var(--b1);color:var(--tx3)}
+.post-meta{flex:1;min-width:0}
+.post-name{font-family:var(--fd);font-weight:800;font-size:.82rem;color:var(--tx)}
+.post-time{font-size:.6rem;color:var(--tx3);margin-top:2px}
+.op-badge{font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--accd);color:var(--acc);letter-spacing:.04em;text-transform:uppercase}
+.post-body{font-size:.84rem;color:var(--tx2);line-height:1.72;white-space:pre-wrap;word-break:break-word}
+.post-foot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--b0)}
+.like-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:99px;
+  border:1.5px solid var(--b0);background:none;
+  font-family:var(--fs);font-size:.68rem;font-weight:600;
+  color:var(--tx3);cursor:pointer;transition:all .14s;
+}
+.like-btn.liked{border-color:var(--acc);color:var(--acc);background:var(--accd)}
+.like-btn:active{opacity:.7}
+.report-btn{
+  display:flex;align-items:center;gap:4px;
+  padding:5px 10px;border-radius:99px;border:none;
+  background:none;font-family:var(--fs);font-size:.64rem;
+  color:var(--txd);cursor:pointer;margin-left:auto;
+  transition:color .14s;
+}
+.report-btn:active{color:var(--tx3)}
+
+/* Replies divider */
+.replies-div{display:flex;align-items:center;gap:10px;margin:12px 0 10px}
+.replies-div-line{flex:1;height:1px;background:var(--b0)}
+.replies-div-lbl{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);font-weight:700;white-space:nowrap}
+
+/* Sticky reply form */
+.reply-form{
+  position:sticky;bottom:0;
+  margin:16px -20px -20px;
+  background:var(--s1);
+  border-top:1px solid var(--b0);
+  padding:10px 16px calc(12px + var(--safe-b));
+  z-index:80;
+}
+.reply-row{display:flex;align-items:flex-end;gap:8px}
+.reply-ava{width:30px;height:30px;border-radius:50%;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:.66rem;color:var(--acc);flex-shrink:0}
+.reply-textarea{
+  flex:1;background:var(--s2);
+  border:1.5px solid var(--b0);border-radius:13px;
+  padding:9px 12px;
+  font-family:var(--fs);font-size:.82rem;color:var(--tx);
+  outline:none;resize:none;
+  min-height:38px;max-height:120px;overflow-y:auto;
+  transition:border-color .15s;line-height:1.5;
+}
+.reply-textarea:focus{border-color:var(--acc)}
+.reply-textarea::placeholder{color:var(--tx3)}
+.reply-send{
+  width:38px;height:38px;border-radius:50%;border:none;
+  background:var(--acc);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:opacity .14s;
+}
+.reply-send:active{opacity:.75}
+.reply-send:disabled{opacity:.4;cursor:default}
+.reply-login{text-align:center;padding:10px 0;font-size:.74rem;color:var(--tx3)}
+.reply-login a{color:var(--acc);font-weight:700}
+
+/* New thread modal */
+.nt-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.38);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s;
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+}
+.nt-overlay.open{opacity:1;pointer-events:auto}
+.nt-sheet{
+  width:100%;background:var(--s1);
+  border-radius:22px 22px 0 0;
+  padding-bottom:calc(20px + var(--safe-b));
+  transform:translateY(100%);
+  transition:transform .3s var(--ease);
+  max-height:94svh;overflow-y:auto;
+}
+.nt-overlay.open .nt-sheet{transform:translateY(0)}
+.nt-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0}
+.nt-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--b0)}
+.nt-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
+.nt-close{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--b0);background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx3)}
+.nt-close:active{background:var(--accd);color:var(--acc)}
+.nt-body{padding:16px 20px}
+.nf{margin-bottom:13px}
+.nl{display:block;font-size:.56rem;letter-spacing:.15em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:5px}
+.ni{
+  width:100%;background:var(--s2);border:1.5px solid var(--b0);
+  border-radius:11px;padding:10px 13px;
+  font-family:var(--fs);font-size:.82rem;color:var(--tx);
+  outline:none;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.ni:focus{border-color:var(--acc)}
+.ni::placeholder{color:var(--tx3)}
+textarea.ni{resize:vertical;min-height:100px;line-height:1.6}
+.nt-submit{
+  width:100%;padding:14px;border:none;border-radius:13px;
+  background:var(--acc);color:#fff;
+  font-family:var(--fd);font-weight:900;font-size:.82rem;
+  letter-spacing:.04em;cursor:pointer;
+  transition:opacity .14s;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.nt-submit:active{opacity:.82}
+.nt-submit:disabled{opacity:.4;cursor:default}
+
+/* FAB */
+.fab{
+  position:fixed;right:20px;bottom:calc(22px + var(--safe-b));
+  width:52px;height:52px;border-radius:50%;
+  background:var(--acc);color:#fff;
+  border:none;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 4px 18px rgba(26,158,74,.38),0 1px 4px rgba(0,0,0,.12);
+  z-index:200;transition:transform .18s var(--ease),opacity .18s,box-shadow .18s;
+}
+.fab svg{transition:transform .2s var(--ease)}
+.fab:active{transform:scale(.9)}
+.fab.hidden{opacity:0;pointer-events:none;transform:scale(.8)}
+
+/* Loading */
+.f-loading{display:flex;justify-content:center;padding:36px}
+.f-spin{width:22px;height:22px;border:2.5px solid var(--b0);border-top-color:var(--acc);border-radius:50%;animation:fspin .7s linear infinite}
+@keyframes fspin{to{transform:rotate(360deg)}}
+
+/* Empty state */
+.f-empty{text-align:center;padding:36px 16px}
+.f-empty-ico{font-size:2rem;opacity:.22;margin-bottom:8px}
+.f-empty-txt{font-size:.8rem;color:var(--tx3)}
+.f-empty-btn{
+  margin-top:14px;padding:9px 22px;
+  border-radius:99px;border:1.5px solid var(--acc);
+  background:none;color:var(--acc);
+  font-family:var(--fd);font-weight:800;font-size:.74rem;
+  cursor:pointer;
+}
+
+/* Number badge */
+.unread-dot{width:7px;height:7px;background:var(--acc);border-radius:50%;display:inline-block;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER — НЕ ТРОГАТЬ ── -->
+<div class="header">
+  <div class="logo"><img src="dastdaroz.png" alt="dastdaroz"/></div>
+  <div class="header-right">
+    <button class="search-btn" id="search-btn" aria-label="Ҷустуҷӯ">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+    <button class="avatar-btn" id="avatar-btn" aria-label="Профил">
+      <svg id="ava-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="ava-initials" style="display:none"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ── SEARCH PANEL — НЕ ТРОГАТЬ ── -->
+<div class="search-panel" id="search-panel">
+  <div class="search-bar">
+    <span class="search-bar-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></span>
+    <input class="search-input" id="search-input" type="search" placeholder="Ҷустуҷӯ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+    <button class="search-clear" id="search-clear" aria-label="Тоза кардан"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="search-results" id="search-results"></div>
+</div>
+
+<div class="scroll">
+<div class="content">
+
+<!-- ▼▼▼  КОНТЕНТ START  ▼▼▼ -->
+
+<!-- ════════════════════════════════════
+     VIEW: HOME
+════════════════════════════════════ -->
+<div id="view-home" class="forum-view active">
+
+  <div class="forum-home-head">
+    <div class="forum-home-label">Ҷамоат · Dastdaroz</div>
+    <div class="forum-home-title">Форум</div>
+  </div>
+
+  <div class="forum-stats">
+    <div class="f-stat"><div class="f-stat-val" id="stat-threads">—</div><div class="f-stat-lbl">Мавзӯъҳо</div></div>
+    <div class="f-stat-div"></div>
+    <div class="f-stat"><div class="f-stat-val" id="stat-replies">—</div><div class="f-stat-lbl">Ҷавобҳо</div></div>
+    <div class="f-stat-div"></div>
+    <div class="f-stat"><div class="f-stat-val" id="stat-members">—</div><div class="f-stat-lbl">Аъзоён</div></div>
+  </div>
+
+  <div class="f-section">Категорияҳо</div>
+  <div id="cats-list"><div class="f-loading"><div class="f-spin"></div></div></div>
+
+  <div class="f-section" style="margin-top:20px">Охирин мавзӯъҳо</div>
+  <div class="threads-list" id="recent-list"><div class="f-loading"><div class="f-spin"></div></div></div>
+  <div style="margin-bottom:80px"></div>
+</div>
+
+<!-- ════════════════════════════════════
+     VIEW: CATEGORY
+════════════════════════════════════ -->
+<div id="view-cat" class="forum-view">
+
+  <div class="view-bar">
+    <button class="view-back" onclick="goHome()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="view-title" id="cat-view-title">Категория</div>
+  </div>
+
+  <div id="cat-head-block"></div>
+
+  <div class="forum-tabs">
+    <button class="forum-tab active" onclick="setCatFilter('new',this)">🕐 Нав</button>
+    <button class="forum-tab" onclick="setCatFilter('hot',this)">🔥 Маъруф</button>
+    <button class="forum-tab" onclick="setCatFilter('unanswered',this)">💬 Бе ҷавоб</button>
+  </div>
+
+  <div class="threads-list" id="cat-list"><div class="f-loading"><div class="f-spin"></div></div></div>
+  <div style="margin-bottom:80px"></div>
+</div>
+
+<!-- ════════════════════════════════════
+     VIEW: THREAD
+════════════════════════════════════ -->
+<div id="view-thread" class="forum-view">
+
+  <div class="view-bar">
+    <button class="view-back" id="thread-back" onclick="goBack()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="view-title" id="thread-view-title">Мавзӯъ</div>
+  </div>
+
+  <div id="thread-content"><div class="f-loading"><div class="f-spin"></div></div></div>
+
+  <div class="reply-form" id="reply-form"></div>
+
+</div>
+
+<!-- ▲▲▲  КОНТЕНТ END  ▲▲▲ -->
+
+</div>
+</div>
+
+<!-- ── FOOTER — НЕ ТРОГАТЬ ── -->
+<div class="footer">
+  <div class="divider"></div>
+  <div class="contacts">
+    <a href="tel:+992977178800" class="contact-item clickable">
+      <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <div class="ci-body"><div class="ci-val">+992 977 17 8800</div><div class="ci-sub">Хизмати дастгирӣ</div></div>
+      <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+    <a href="tel:+992878777788" class="contact-item clickable">
+      <div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.37 1.18 2 2 0 012.34 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.08 6.08l1.27-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <div class="ci-body"><div class="ci-val">+992 87 877 7788</div><div class="ci-sub">Хизмати дастгирӣ</div></div>
+      <svg class="ci-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+    <div class="contact-item"><div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="ci-body"><div class="ci-val">Душанбе, Тоҷикистон</div></div></div>
+    <a href="mailto:info@galelium.com" class="contact-item clickable"><div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="ci-body"><div class="ci-val">info@galelium.com</div></div></a>
+    <div class="contact-item"><div class="ci-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="ci-body"><div class="ci-val">Душ – Ҷум: 8:00 – 22:00</div></div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="socials-wrap">
+    <div class="socials">
+      <a href="#" class="soc-btn fb"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+      <a href="#" class="soc-btn ig"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      <a href="#" class="soc-btn tg"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c-.242-.213-.054-.333-.373-.12L7.17 13.267l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.292z"/></svg></a>
+      <a href="#" class="soc-btn yt"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROFILE OVERLAY — НЕ ТРОГАТЬ ── -->
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div class="sheet-ava" id="sheet-ava">?</div>
+      <div><div class="sheet-name" id="sheet-name">—</div><div class="sheet-phone" id="sheet-phone">—</div></div>
+    </div>
+    <div class="sheet-row" onclick="goHome();document.getElementById('overlay').classList.remove('open')">
+      <div class="sheet-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+      <span class="sheet-row-lbl">Форум</span>
+      <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="sheet-row" onclick="window.location.href='orders.html'">
+      <div class="sheet-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <span class="sheet-row-lbl">Фармоишҳои ман</span>
+      <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <button class="sheet-logout" id="btn-logout">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Хуруҷ
+    </button>
+  </div>
+</div>
+
+<!-- ══ NEW THREAD MODAL ══ -->
+<div class="nt-overlay" id="nt-overlay">
+  <div class="nt-sheet">
+    <div class="nt-handle"></div>
+    <div class="nt-head">
+      <div class="nt-title">Мавзӯи нав</div>
+      <button class="nt-close" onclick="closeNT()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="nt-body">
+      <div class="nf">
+        <label class="nl">Категория</label>
+        <select class="ni" id="nt-cat"></select>
+      </div>
+      <div class="nf">
+        <label class="nl">Сарлавҳа *</label>
+        <input class="ni" id="nt-title" type="text" placeholder="Мавзӯи муҳокимаро нависед…" maxlength="120"/>
+      </div>
+      <div class="nf">
+        <label class="nl">Матн *</label>
+        <textarea class="ni" id="nt-body" rows="5" placeholder="Тавсифи муфассали мавзӯъ…" maxlength="4000"></textarea>
+      </div>
+      <button class="nt-submit" id="nt-submit" onclick="submitNewThread()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Нашр кардан
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FAB ══ -->
+<button class="fab" id="fab" onclick="openNT()">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<!-- ── SEARCH SCRIPT — НЕ ТРОГАТЬ ── -->
+<script>
+const SEARCH_PAGES = [];
+(function(){
+  const searchBtn=document.getElementById('search-btn');
+  const searchPanel=document.getElementById('search-panel');
+  const searchInput=document.getElementById('search-input');
+  const searchClear=document.getElementById('search-clear');
+  const searchResults=document.getElementById('search-results');
+  let index=null,loading=false,timer=null;
+  function open(){searchPanel.classList.add('open');searchBtn.classList.add('active');searchInput.focus();if(!index&&!loading)buildIndex();}
+  function close(){searchPanel.classList.remove('open');searchBtn.classList.remove('active');searchInput.value='';searchClear.classList.remove('visible');searchResults.innerHTML='';}
+  searchBtn.addEventListener('click',()=>searchPanel.classList.contains('open')?close():open());
+  searchClear.addEventListener('click',()=>{searchInput.value='';searchClear.classList.remove('visible');searchResults.innerHTML='';searchInput.focus();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&searchPanel.classList.contains('open'))close();});
+  async function buildIndex(){index=[];loading=false;}
+  searchInput.addEventListener('input',()=>{const q=searchInput.value.trim();searchClear.classList.toggle('visible',q.length>0);clearTimeout(timer);timer=setTimeout(()=>doSearch(q),180);});
+  function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function doSearch(q){if(!q||q.length<2){searchResults.innerHTML='';return;}searchResults.innerHTML=`<div class="search-status">Ҷустуҷӯ дар форум…</div>`;}
+})();
+</script>
+
+<!-- ── FIREBASE AUTH — НЕ ТРОГАТЬ ── -->
+<script type="module">
+import { auth } from './firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+const avatarBtn=document.getElementById('avatar-btn');
+const avaIcon=document.getElementById('ava-icon');
+const avaInitials=document.getElementById('ava-initials');
+const overlay=document.getElementById('overlay');
+const sheetAva=document.getElementById('sheet-ava');
+const sheetName=document.getElementById('sheet-name');
+const sheetPhone=document.getElementById('sheet-phone');
+const btnLogout=document.getElementById('btn-logout');
+let currentUser=null;
+function initials(name){if(!name)return'?';const p=name.trim().split(/\s+/);return p.length>1?(p[0][0]+p[1][0]).toUpperCase():p[0][0].toUpperCase();}
+function emailToPhone(email){if(!email)return'—';const m=email.match(/^992(\d{9})@/);if(!m)return email;const d=m[1];return'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7,9);}
+onAuthStateChanged(auth,user=>{currentUser=user;if(user){const ini=initials(user.displayName);avaIcon.style.display='none';avaInitials.style.display='';avaInitials.textContent=ini;avatarBtn.classList.add('authed');sheetAva.textContent=ini;sheetName.textContent=user.displayName||'Корбар';sheetPhone.textContent=emailToPhone(user.email);}else{avaIcon.style.display='';avaInitials.style.display='none';avatarBtn.classList.remove('authed');}window.forumUser=user;if(window.onForumAuthReady)window.onForumAuthReady(user);});
+avatarBtn.addEventListener('click',()=>{if(currentUser){overlay.classList.add('open');}else{window.location.href='login.html';}});
+overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('open');});
+btnLogout.addEventListener('click',async()=>{await signOut(auth);overlay.classList.remove('open');});
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FORUM MODULE
+══════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import {
+  getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, setDoc,
+  query, orderBy, limit, where, increment, arrayUnion, arrayRemove,
+  serverTimestamp, onSnapshot,
+} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+
+/* ── FIREBASE INIT ── */
+const cfg={apiKey:'AIzaSyCjIAMFuwLKwmjChCuiz-MHLv5WZOczAAE',authDomain:'delivery-galelium.firebaseapp.com',projectId:'delivery-galelium',storageBucket:'delivery-galelium.firebasestorage.app',messagingSenderId:'982466555080',appId:'1:982466555080:web:c77ccbff0e71e540ddc9fd'};
+const app = getApps().length ? getApp() : initializeApp(cfg);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* ── CATEGORIES CONFIG ── */
+const CATS = [
+  { id:'general',  name:'Умумӣ',               desc:'Ҳар гуна мавзӯъ ва муҳокима',        icon:'💬', bg:'rgba(26,158,74,.1)',  color:'#1a9e4a', order:1 },
+  { id:'delivery', name:'Мушкилоти расонидан', desc:'Мушкилот бо фармоишҳо ва расонидан', icon:'🚚', bg:'rgba(245,158,11,.1)', color:'#b45309', order:2 },
+  { id:'ideas',    name:'Пешниҳодҳо',          desc:'Идеяҳо барои беҳтар кардани хидмат', icon:'💡', bg:'rgba(59,130,246,.1)', color:'#2563eb', order:3 },
+  { id:'reviews',  name:'Баҳо ва шарҳ',        desc:'Таассуроти шумо аз Dastdaroz',       icon:'⭐', bg:'rgba(234,179,8,.1)',  color:'#a16207', order:4 },
+  { id:'support',  name:'Ёрии техникӣ',        desc:'Масъалаҳои барнома ва ҳисоб',        icon:'🔧', bg:'rgba(139,92,246,.1)', color:'#7c3aed', order:5 },
+];
+
+/* ── STATE ── */
+let me = null;          // current Firebase user
+let view = 'home';      // 'home' | 'cat' | 'thread'
+let prevView = 'home';
+let currentCatId = null;
+let currentCatName = null;
+let currentCatIcon = null;
+let currentCatColor = null;
+let currentCatBg = null;
+let currentCatDesc = null;
+let currentThreadId = null;
+let catFilter = 'new';
+let unsub = null; // Firestore listener
+
+/* ── AUTH ── */
+onAuthStateChanged(auth, user => {
+  me = user;
+  renderReplyForm();
+  renderNtCatSelect();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+function showView(id) {
+  document.querySelectorAll('.forum-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  view = id;
+  const fab = document.getElementById('fab');
+  fab.classList.toggle('hidden', id === 'thread');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (unsub) { unsub(); unsub = null; }
+}
+
+window.goHome = function() {
+  prevView = 'home';
+  currentCatId = null;
+  showView('home');
+  loadHome();
+};
+
+function goCat(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  if (!cat) return;
+  prevView = 'home';
+  currentCatId = catId;
+  currentCatName = cat.name;
+  currentCatIcon = cat.icon;
+  currentCatColor = cat.color;
+  currentCatBg = cat.bg;
+  currentCatDesc = cat.desc;
+  catFilter = 'new';
+  document.getElementById('cat-view-title').textContent = cat.icon + ' ' + cat.name;
+  document.getElementById('cat-head-block').innerHTML = `
+    <div class="cat-head">
+      <div class="cat-head-ico" style="background:${cat.bg}">${cat.icon}</div>
+      <div><div class="cat-head-name">${esc(cat.name)}</div><div class="cat-head-desc">${esc(cat.desc)}</div></div>
+    </div>`;
+  document.querySelectorAll('.forum-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  showView('cat');
+  loadCat();
+};
+
+function goThread(threadId, fromCat) {
+  prevView = fromCat ? 'cat' : 'home';
+  currentThreadId = threadId;
+  showView('thread');
+  loadThread();
+};
+
+window.goBack = function() {
+  if (prevView === 'cat' && currentCatId) {
+    showView('cat');
+    loadCat();
+  } else {
+    goHome();
+  }
+};
+
+window.setCatFilter = function(filter, btn) {
+  catFilter = filter;
+  document.querySelectorAll('.forum-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadCat();
+};
+
+/* ═══════════════════════════════════════════════════════════
+   SEED CATEGORIES (run once if empty)
+═══════════════════════════════════════════════════════════ */
+async function seedCats() {
+  try {
+    const snap = await getDocs(collection(db, 'forum_categories'));
+    if (!snap.empty) return;
+    for (const c of CATS) {
+      await setDoc(doc(db, 'forum_categories', c.id), {
+        name: c.name, desc: c.desc, icon: c.icon,
+        bg: c.bg, color: c.color, order: c.order,
+        threadCount: 0, replyCount: 0,
+      });
+    }
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOAD HOME
+═══════════════════════════════════════════════════════════ */
+async function loadHome() {
+  // Stats
+  try {
+    const [tSnap, rSnap] = await Promise.all([
+      getDocs(collection(db, 'forum_threads')),
+      getDocs(collection(db, 'forum_replies')),
+    ]);
+    document.getElementById('stat-threads').textContent = tSnap.size;
+    document.getElementById('stat-replies').textContent = rSnap.size;
+    document.getElementById('stat-members').textContent = '—';
+  } catch(e) {}
+
+  // Categories
+  const catEl = document.getElementById('cats-list');
+  catEl.innerHTML = CATS.map(c => `
+    <div class="cat-card" onclick="goCat('${c.id}')">
+      <div class="cat-ico" style="background:${c.bg}">${c.icon}</div>
+      <div class="cat-info">
+        <div class="cat-name">${esc(c.name)}</div>
+        <div class="cat-desc">${esc(c.desc)}</div>
+      </div>
+      <div class="cat-right">
+        <div class="cat-arr"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+    </div>`).join('');
+
+  // Recent threads (live)
+  const recentEl = document.getElementById('recent-list');
+  recentEl.innerHTML = '<div class="f-loading"><div class="f-spin"></div></div>';
+  try {
+    const q = query(collection(db, 'forum_threads'), orderBy('lastActivity','desc'), limit(12));
+    unsub = onSnapshot(q, snap => {
+      if (snap.empty) {
+        recentEl.innerHTML = `
+          <div class="f-empty">
+            <div class="f-empty-ico">💬</div>
+            <div class="f-empty-txt">Ҳанӯз мавзӯе нест. Аввалин шавед!</div>
+            <button class="f-empty-btn" onclick="openNT()">+ Мавзӯи нав</button>
+          </div>`;
+        return;
+      }
+      const threads = snap.docs.map(d => ({id:d.id,...d.data()}));
+      recentEl.innerHTML = threads.map(t => renderThreadRow(t, true)).join('');
+    });
+  } catch(e) {
+    recentEl.innerHTML = '<div class="f-empty"><div class="f-empty-ico">⚠️</div><div class="f-empty-txt">Хатои пайваст</div></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOAD CATEGORY
+═══════════════════════════════════════════════════════════ */
+async function loadCat() {
+  const el = document.getElementById('cat-list');
+  el.innerHTML = '<div class="f-loading"><div class="f-spin"></div></div>';
+  if (!currentCatId) return;
+  if (unsub) { unsub(); unsub = null; }
+  try {
+    let q;
+    if (catFilter === 'hot') {
+      q = query(collection(db,'forum_threads'), where('categoryId','==',currentCatId), orderBy('replyCount','desc'), limit(30));
+    } else if (catFilter === 'unanswered') {
+      q = query(collection(db,'forum_threads'), where('categoryId','==',currentCatId), where('replyCount','==',0), orderBy('createdAt','desc'), limit(30));
+    } else {
+      q = query(collection(db,'forum_threads'), where('categoryId','==',currentCatId), orderBy('lastActivity','desc'), limit(30));
+    }
+    unsub = onSnapshot(q, snap => {
+      if (snap.empty) {
+        el.innerHTML = `
+          <div class="f-empty">
+            <div class="f-empty-ico">💬</div>
+            <div class="f-empty-txt">Дар ин категория мавзӯе нест</div>
+            <button class="f-empty-btn" onclick="openNT()">+ Мавзӯи нав</button>
+          </div>`;
+        return;
+      }
+      const threads = snap.docs.map(d => ({id:d.id,...d.data()}));
+      el.innerHTML = threads.map(t => renderThreadRow(t, false)).join('');
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">⚠️</div><div class="f-empty-txt">Хатои пайваст</div></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOAD THREAD
+═══════════════════════════════════════════════════════════ */
+async function loadThread() {
+  const el = document.getElementById('thread-content');
+  el.innerHTML = '<div class="f-loading"><div class="f-spin"></div></div>';
+  renderReplyForm();
+  if (!currentThreadId) return;
+  try {
+    // Increment views
+    updateDoc(doc(db,'forum_threads',currentThreadId), { views: increment(1) }).catch(()=>{});
+
+    // Live thread + replies
+    if (unsub) { unsub(); unsub = null; }
+    unsub = onSnapshot(doc(db,'forum_threads',currentThreadId), async tSnap => {
+      if (!tSnap.exists()) { el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">🗑️</div><div class="f-empty-txt">Мавзӯъ ёфт нашуд</div></div>'; return; }
+      const thread = { id: tSnap.id, ...tSnap.data() };
+      document.getElementById('thread-view-title').textContent = thread.title || 'Мавзӯъ';
+
+      // Load replies
+      const rSnap = await getDocs(query(collection(db,'forum_replies'), where('threadId','==',currentThreadId), orderBy('createdAt','asc')));
+      const replies = rSnap.docs.map(d => ({id:d.id,...d.data()}));
+
+      // Find cat info
+      const cat = CATS.find(c => c.id === thread.categoryId);
+
+      el.innerHTML = `
+        <!-- Thread header -->
+        <div class="thread-head">
+          <div class="t-cat-pill" style="${cat?`background:${cat.bg};color:${cat.color}`:''}">
+            ${cat ? cat.icon : '💬'} ${esc(thread.categoryName||'')}
+          </div>
+          <div class="t-h1">${esc(thread.title||'')}</div>
+          <div class="t-hmeta">
+            <div class="t-hstat">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              ${thread.views||0}
+            </div>
+            <div class="t-hstat">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              ${thread.replyCount||0} ҷавоб
+            </div>
+            <div class="t-hstat">${timeAgo(thread.createdAt)}</div>
+          </div>
+        </div>
+
+        <!-- OP post -->
+        <div class="post op">
+          <div class="post-head">
+            <div class="post-ava">${esc(ini(thread.authorName))}</div>
+            <div class="post-meta">
+              <div class="post-name">${esc(thread.authorName||'Номаълум')}</div>
+              <div class="post-time">${timeAgo(thread.createdAt)}</div>
+            </div>
+            <span class="op-badge">OP</span>
+          </div>
+          <div class="post-body">${esc(thread.body||'')}</div>
+          <div class="post-foot">
+            <button class="like-btn ${(thread.likedBy||[]).includes(me?.uid)?'liked':''}"
+              onclick="likeThread('${thread.id}',${JSON.stringify(thread.likedBy||[])})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="${(thread.likedBy||[]).includes(me?.uid)?'currentColor':'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              ${thread.likeCount||0}
+            </button>
+            <button class="report-btn" onclick="scrollToReply()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              Ҷавоб
+            </button>
+          </div>
+        </div>
+
+        ${replies.length > 0 ? `
+          <div class="replies-div">
+            <div class="replies-div-line"></div>
+            <div class="replies-div-lbl">${replies.length} ҷавоб</div>
+            <div class="replies-div-line"></div>
+          </div>
+          ${replies.map(r => `
+            <div class="post" id="reply-${r.id}">
+              <div class="post-head">
+                <div class="post-ava reply">${esc(ini(r.authorName))}</div>
+                <div class="post-meta">
+                  <div class="post-name">${esc(r.authorName||'Номаълум')}</div>
+                  <div class="post-time">${timeAgo(r.createdAt)}</div>
+                </div>
+              </div>
+              <div class="post-body">${esc(r.body||'')}</div>
+              <div class="post-foot">
+                <button class="like-btn ${(r.likedBy||[]).includes(me?.uid)?'liked':''}"
+                  onclick="likeReply('${r.id}',${JSON.stringify(r.likedBy||[])})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="${(r.likedBy||[]).includes(me?.uid)?'currentColor':'none'}" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                  </svg>
+                  ${r.likeCount||0}
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        ` : ''}
+        <div style="height:10px"></div>
+      `;
+      renderReplyForm();
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">⚠️</div><div class="f-empty-txt">Хатои пайваст</div></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════════════════════════ */
+function renderThreadRow(t, showCatTag) {
+  const cat = CATS.find(c => c.id === t.categoryId);
+  return `
+    <div class="thread-row" onclick="goThread('${t.id}', ${!showCatTag})">
+      <div class="t-top">
+        ${t.pinned ? `<span class="t-pin"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.5 6.5H21l-5.5 4 2 6.5L12 15l-5.5 4 2-6.5L3 8.5h6.5z"/></svg></span>` : ''}
+        <div class="t-title">${esc(t.title||'')}</div>
+        ${showCatTag && cat ? `<span class="t-cat-tag" style="background:${cat.bg};color:${cat.color}">${cat.icon}</span>` : ''}
+      </div>
+      <div class="t-bottom">
+        <span class="t-author">
+          <span class="t-ava-sm">${esc(ini(t.authorName))}</span>
+          ${esc(t.authorName||'—')}
+        </span>
+        <span class="t-time">${timeAgo(t.lastActivity||t.createdAt)}</span>
+        <span class="t-stats">
+          <span class="t-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            ${t.replyCount||0}
+          </span>
+          <span class="t-stat">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            ${t.likeCount||0}
+          </span>
+        </span>
+      </div>
+    </div>`;
+}
+
+function renderReplyForm() {
+  const wrap = document.getElementById('reply-form');
+  if (!wrap) return;
+  if (view !== 'thread') return;
+  if (me) {
+    wrap.innerHTML = `
+      <div class="reply-row">
+        <div class="reply-ava">${esc(ini(me.displayName))}</div>
+        <textarea class="reply-textarea" id="r-input" rows="1" placeholder="Ҷавоб нависед…" maxlength="2000"></textarea>
+        <button class="reply-send" id="r-send" onclick="submitReply()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>`;
+    const ta = document.getElementById('r-input');
+    if (ta) ta.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  } else {
+    wrap.innerHTML = `
+      <div class="reply-login">
+        Барои ҷавоб додан <a href="login.html">ворид шавед</a>
+      </div>`;
+  }
+}
+
+function renderNtCatSelect() {
+  const sel = document.getElementById('nt-cat');
+  if (!sel) return;
+  sel.innerHTML = CATS.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  if (currentCatId) sel.value = currentCatId;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIONS
+═══════════════════════════════════════════════════════════ */
+window.likeThread = async function(threadId, likedBy) {
+  if (!me) { window.location.href = 'login.html'; return; }
+  const liked = likedBy.includes(me.uid);
+  try {
+    await updateDoc(doc(db,'forum_threads',threadId), {
+      likedBy: liked ? arrayRemove(me.uid) : arrayUnion(me.uid),
+      likeCount: increment(liked ? -1 : 1),
+    });
+  } catch(e) {}
+};
+
+window.likeReply = async function(replyId, likedBy) {
+  if (!me) { window.location.href = 'login.html'; return; }
+  const liked = likedBy.includes(me.uid);
+  try {
+    await updateDoc(doc(db,'forum_replies',replyId), {
+      likedBy: liked ? arrayRemove(me.uid) : arrayUnion(me.uid),
+      likeCount: increment(liked ? -1 : 1),
+    });
+    loadThread();
+  } catch(e) {}
+};
+
+window.submitReply = async function() {
+  if (!me) { window.location.href = 'login.html'; return; }
+  const ta = document.getElementById('r-input');
+  const btn = document.getElementById('r-send');
+  if (!ta) return;
+  const body = ta.value.trim();
+  if (!body) return;
+  if (btn) btn.disabled = true;
+  try {
+    await addDoc(collection(db,'forum_replies'), {
+      threadId: currentThreadId,
+      body,
+      authorId: me.uid,
+      authorName: me.displayName || 'Корбар',
+      likeCount: 0,
+      likedBy: [],
+      createdAt: serverTimestamp(),
+    });
+    await updateDoc(doc(db,'forum_threads',currentThreadId), {
+      replyCount: increment(1),
+      lastActivity: serverTimestamp(),
+      lastReplyBy: me.displayName || 'Корбар',
+    });
+    ta.value = '';
+    ta.style.height = 'auto';
+    loadThread();
+  } catch(e) {
+    alert('Хатои фиристодан');
+  }
+  if (btn) btn.disabled = false;
+};
+
+window.submitNewThread = async function() {
+  if (!me) { closeNT(); window.location.href = 'login.html'; return; }
+  const catId = document.getElementById('nt-cat').value;
+  const title = document.getElementById('nt-title').value.trim();
+  const body  = document.getElementById('nt-body').value.trim();
+  if (!title || !body) {
+    if (!title) document.getElementById('nt-title').style.borderColor = 'var(--acc)';
+    if (!body)  document.getElementById('nt-body').style.borderColor  = 'var(--acc)';
+    return;
+  }
+  const btn = document.getElementById('nt-submit');
+  btn.disabled = true; btn.textContent = 'Нашр мешавад…';
+  const cat = CATS.find(c => c.id === catId);
+  try {
+    const ref = await addDoc(collection(db,'forum_threads'), {
+      title, body,
+      categoryId: catId,
+      categoryName: cat?.name || catId,
+      authorId: me.uid,
+      authorName: me.displayName || 'Корбар',
+      likeCount: 0,
+      likedBy: [],
+      replyCount: 0,
+      views: 0,
+      pinned: false,
+      createdAt: serverTimestamp(),
+      lastActivity: serverTimestamp(),
+    });
+    closeNT();
+    goThread(ref.id, catId === currentCatId);
+  } catch(e) {
+    alert('Хатои нашр: ' + e.message);
+  }
+  btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Нашр кардан`;
+};
+
+window.scrollToReply = function() {
+  const ta = document.getElementById('r-input');
+  if (ta) { ta.focus(); ta.scrollIntoView({ behavior:'smooth', block:'center' }); }
+  else window.location.href = 'login.html';
+};
+
+/* ═══════════════════════════════════════════════════════════
+   NEW THREAD MODAL
+═══════════════════════════════════════════════════════════ */
+window.openNT = function() {
+  if (!me) { window.location.href = 'login.html'; return; }
+  renderNtCatSelect();
+  document.getElementById('nt-title').value = '';
+  document.getElementById('nt-body').value = '';
+  document.getElementById('nt-title').style.borderColor = '';
+  document.getElementById('nt-body').style.borderColor = '';
+  document.getElementById('nt-overlay').classList.add('open');
+};
+window.closeNT = function() {
+  document.getElementById('nt-overlay').classList.remove('open');
+};
+document.getElementById('nt-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('nt-overlay')) closeNT();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ini(name) {
+  if (!name) return '?';
+  const p = name.trim().split(/\s+/);
+  return p.length > 1 ? (p[0][0]+p[1][0]).toUpperCase() : p[0].slice(0,2).toUpperCase();
+}
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 55)    return 'ҳозир';
+  if (s < 3540)  return Math.round(s/60) + ' дақ пеш';
+  if (s < 82800) return Math.round(s/3600) + ' соат пеш';
+  if (s < 518400)return Math.round(s/86400) + ' рӯз пеш';
+  return d.toLocaleDateString('ru-RU', {day:'2-digit', month:'short'});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+window.goCat = goCat;
+window.goThread = goThread;
+seedCats().then(() => loadHome());
+</script>
+
+</body>
+</html>
