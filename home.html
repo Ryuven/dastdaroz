@@ -374,24 +374,50 @@ select.addr-inp{cursor:pointer}
 
 /* ── STORES ── */
 .stores-section{margin-bottom:28px}
-.stores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.store-card{position:relative;border-radius:18px;overflow:hidden;cursor:pointer;aspect-ratio:512/256;border:1.5px solid var(--b0);box-shadow:var(--shadow);transition:transform .22s var(--spring),box-shadow .22s,border-color .18s;background:var(--s2)}
-.store-card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 12px 36px rgba(0,0,0,.13);border-color:var(--accg)}
-.store-card:active{transform:scale(.98)}
+
+/* Горизонтальный скролл — выходит за паддинг страницы */
+.stores-scroll{
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  margin:0 -22px;
+  padding:4px 22px 10px;
+}
+.stores-scroll::-webkit-scrollbar{display:none}
+
+/* 2 ряда, авто-колонки, течёт горизонтально */
+.stores-grid{
+  display:grid;
+  grid-template-rows:repeat(2,auto);
+  grid-auto-flow:column;
+  grid-auto-columns:190px;
+  gap:10px;
+  width:max-content;
+}
+
+.store-card{
+  position:relative;border-radius:14px;overflow:hidden;cursor:pointer;
+  width:190px;aspect-ratio:512/256;
+  border:1.5px solid var(--b0);box-shadow:var(--shadow);
+  transition:transform .22s var(--spring),box-shadow .22s,border-color .18s;
+  background:var(--s2);flex-shrink:0;
+}
+.store-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 28px rgba(0,0,0,.13);border-color:var(--accg)}
+.store-card:active{transform:scale(.97)}
 .store-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s var(--ease)}
-.store-card:hover .store-card-img{transform:scale(1.04)}
-.store-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 50%,transparent 100%);transition:opacity .2s}
-.store-card:hover .store-card-overlay{opacity:.85}
-.store-card-body{position:absolute;bottom:0;left:0;right:0;padding:14px 16px 13px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-.store-card-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.4);letter-spacing:-.01em;line-height:1.1}
-.store-card-meta{font-size:.58rem;color:rgba(255,255,255,.8);margin-top:3px;font-weight:500}
-.store-card-badge{background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.store-card:hover .store-card-img{transform:scale(1.05)}
+.store-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 0%,rgba(0,0,0,.08) 50%,transparent 100%);transition:opacity .2s}
+.store-card:hover .store-card-overlay{opacity:.9}
+.store-card-body{position:absolute;bottom:0;left:0;right:0;padding:8px 10px 9px;display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
+.store-card-name{font-family:var(--fd);font-weight:900;font-size:.82rem;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5);letter-spacing:-.01em;line-height:1.1}
+.store-card-meta{display:none} /* убрали время/мин */
+.store-card-badge{background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.46rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0}
 .store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .store-card-img-wrap{position:absolute;inset:0;overflow:hidden}
 .store-card-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--tx3)}
 .store-card-placeholder svg{opacity:.2}
-.store-card-placeholder span{font-size:.68rem;opacity:.4}
+.store-card-placeholder span{font-size:.6rem;opacity:.4}
 
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
@@ -441,7 +467,8 @@ select.addr-inp{cursor:pointer}
   .pg2{grid-template-columns:1fr}
   .cat-panels{grid-template-columns:repeat(2,1fr)}
   .pg{grid-template-columns:repeat(2,1fr)}
-  .stores-grid{grid-template-columns:1fr}
+  .stores-scroll{margin:0 -14px;padding:4px 14px 10px}
+  .stores-grid{grid-auto-columns:150px}
   .store-cat-header{aspect-ratio:512/200}
   /* На мобиле гостевой топбар чуть компактнее */
   .guest-topbar-line1{font-size:.68rem}
@@ -873,10 +900,13 @@ select.addr-inp{cursor:pointer}
         <div class="sh" style="margin-bottom:14px">
           <div><div class="sh-tag">Дӯконҳо</div><div class="sh-title">Каталогҳои <em>мо</em></div></div>
         </div>
-        <div class="stores-grid" id="stores-grid">
-          <div class="store-card store-card-skeleton"></div>
-          <div class="store-card store-card-skeleton"></div>
-          <div class="store-card store-card-skeleton"></div>
+        <div class="stores-scroll">
+          <div class="stores-grid" id="stores-grid">
+            <div class="store-card store-card-skeleton"></div>
+            <div class="store-card store-card-skeleton"></div>
+            <div class="store-card store-card-skeleton"></div>
+            <div class="store-card store-card-skeleton"></div>
+          </div>
         </div>
       </div>
 
