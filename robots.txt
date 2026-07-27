@@ -1,17 +1,4 @@
-# Привет, Googlebot! Добро пожаловать.
 User-agent: *
-
-# Разрешаем сканировать все страницы, которые мы не запретили.
 Allow: /
 
-# Запрещаем сканировать служебные страницы (чтобы не засорять поиск).
-# Это страницы, которые нужны для работы приложения, но не для пользователей.
-Disallow: /dashboard.html
-Disallow: /profile/
-Disallow: /admin/
-Disallow: /api/
-Disallow: /static/tmp/
-Disallow: /private/
-
-# Указываем роботу путь к карте сайта, чтобы он сразу нашёл все страницы.
 Sitemap: https://dastdaroz.shop/sitemap.xml
