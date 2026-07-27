@@ -115,7 +115,7 @@ a{color:inherit;text-decoration:none}
 .sb-logo-text{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx);line-height:1.1}
 .sb-logo-text em{color:var(--acc);font-style:normal}
 .sb-logo-sub{font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;color:var(--tx3);margin-top:2px}
-.sb-addr{margin:10px 14px 8px;padding:10px 13px;background:var(--s2);border:1px solid var(--b0);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:border-color var(--tf),background var(--tf)}
+.sb-addr{margin:10px 14px 8px;padding:10px 13px;background:var(--s2);border:1px solid var(--b0);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:border-color var(--tf),background var(--tf);box-sizing:border-box;width:calc(100% - 28px);min-width:0;overflow:hidden}
 .sb-addr:hover{border-color:var(--accg);background:var(--s3)}
 .sb-addr-ico{width:28px;height:36px;border-radius:8px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
 .sb-addr-lbl{font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
@@ -440,7 +440,7 @@ select.addr-inp{cursor:pointer}
 .mob-nav{display:none}
 .sb-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.38);backdrop-filter:blur(4px)}
 @media(max-width:860px){
-  .sb{position:fixed;left:0;top:0;bottom:0;z-index:200;transform:translateX(-110%)}
+  .sb{position:fixed;left:0;top:0;bottom:0;z-index:200;transform:translateX(-110%);width:min(var(--sw),78vw)}
   .sb.open{transform:translateX(0);box-shadow:20px 0 60px rgba(0,0,0,.12)}
   .sb-overlay.open{display:block}
   .mob-btn{display:flex}
@@ -854,7 +854,6 @@ select.addr-inp{cursor:pointer}
     <!-- Кнопка входа — только для гостя -->
     <button class="ni guest-only" style="display:none;color:var(--acc)" onclick="goLogin()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>Ворид шавед</button>
   </nav>
-  <div class="sb-promo"><div class="sb-promo-t">🎉 Фармоиши аввал</div><div class="sb-promo-d">Тахфиф <em>20%</em> аз 50 сомонӣ</div></div>
   <div class="sb-bottom">
     <div class="sb-user" onclick="goPage('profile')">
       <div class="sb-av" id="sb-av">?</div>
