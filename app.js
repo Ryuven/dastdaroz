@@ -364,22 +364,12 @@ function renderStoresGrid() {
   }
   el.innerHTML = stores.map(s => {
     const imgUrl  = s.imageUrl || '';
-    const prodCnt = prods.filter(p => p.storeId === s.id && p.available !== false).length;
-    const badge   = s.badge || (prodCnt > 0 ? prodCnt + ' маҳсулот' : 'Ба зудӣ');
     return `
     <div class="store-card" onclick="openStore('${s.id}')" title="${s.name}">
       <div class="store-card-img-wrap">
         ${imgUrl
           ? `<img class="store-card-img" src="${imgUrl}" alt="${s.name}" loading="lazy" onerror="this.style.display='none'">`
-          : `<div class="store-card-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>${s.name}</span></div>`}
-      </div>
-      <div class="store-card-overlay"></div>
-      <div class="store-card-body">
-        <div>
-          <div class="store-card-name">${s.name}</div>
-          ${s.description ? `<div class="store-card-meta">${s.description}</div>` : ''}
-        </div>
-        <div class="store-card-badge">${badge}</div>
+          : `<div class="store-card-placeholder"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>${s.name}</span></div>`}
       </div>
     </div>`;
   }).join('');

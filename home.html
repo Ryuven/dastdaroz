@@ -406,18 +406,20 @@ select.addr-inp{cursor:pointer}
 .store-card:active{transform:scale(.97)}
 .store-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s var(--ease)}
 .store-card:hover .store-card-img{transform:scale(1.05)}
-.store-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 0%,rgba(0,0,0,.08) 50%,transparent 100%);transition:opacity .2s}
-.store-card:hover .store-card-overlay{opacity:.9}
-.store-card-body{position:absolute;bottom:0;left:0;right:0;padding:8px 10px 9px;display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
-.store-card-name{font-family:var(--fd);font-weight:900;font-size:.82rem;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5);letter-spacing:-.01em;line-height:1.1}
-.store-card-meta{display:none} /* убрали время/мин */
-.store-card-badge{background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.46rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0}
-.store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-@keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .store-card-img-wrap{position:absolute;inset:0;overflow:hidden}
-.store-card-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--tx3)}
+.store-card-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--tx3)}
 .store-card-placeholder svg{opacity:.2}
 .store-card-placeholder span{font-size:.6rem;opacity:.4}
+.store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+@keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── PRODUCT SKELETON ── */
+.pc-skeleton{pointer-events:none;cursor:default}
+.pc-skeleton:hover{transform:none!important;border-color:var(--b0)!important;box-shadow:var(--shadow)!important}
+.skl-block{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;border-radius:6px}
+.pc-skeleton .pc-img{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.pc-skeleton .pc-body{gap:8px}
+.pc-skeleton .pc-footer{border-top:1px solid var(--b0);padding-top:9px;margin-top:auto}
 
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
@@ -918,14 +920,28 @@ select.addr-inp{cursor:pointer}
         </button>
       </div>
       <div class="sh"><div><div class="sh-tag">Машҳур</div><div class="sh-title">Хитҳои <em>меню</em></div></div><button class="sh-link" onclick="goPage('catalog')">Ҳамаи каталог →</button></div>
-      <div class="pg" id="home-prods"><div class="pload"><div class="spin"></div> Боргузорӣ…</div></div>
+      <div class="pg" id="home-prods">
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:40%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%"></div><div class="skl-block" style="height:8px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:35%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%"></div><div class="skl-block" style="height:8px;width:75%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:42%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:8px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:38%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:44%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:36%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+      </div>
     </div>
 
     <!-- CATALOG -->
     <div class="page" id="page-catalog">
       <div class="sh"><div><div class="sh-tag">Ҳамаи мавқеъҳо</div><div class="sh-title">Каталог</div></div></div>
       <div class="cats" id="cats"><button class="cat active" onclick="filterCat('all')">Ҳама</button></div>
-      <div class="pg" id="cat-prods"><div class="pload"><div class="spin"></div> Боргузорӣ…</div></div>
+      <div class="pg" id="cat-prods">
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:40%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%"></div><div class="skl-block" style="height:8px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:35%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%"></div><div class="skl-block" style="height:8px;width:75%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:42%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:8px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:38%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:44%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:36%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+      </div>
     </div>
 
     <!-- CART -->
@@ -991,7 +1007,14 @@ select.addr-inp{cursor:pointer}
       </button>
       <div id="store-header"></div>
       <div class="cats" id="store-cats"><button class="cat active" onclick="filterStoreCat('all')">Ҳама</button></div>
-      <div class="pg" id="store-prods"><div class="pload"><div class="spin"></div> Боргузорӣ…</div></div>
+      <div class="pg" id="store-prods">
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:40%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%"></div><div class="skl-block" style="height:8px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:35%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%"></div><div class="skl-block" style="height:8px;width:75%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:42%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:8px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:38%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:44%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:36%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+      </div>
     </div>
 
     <!-- STATUS -->
