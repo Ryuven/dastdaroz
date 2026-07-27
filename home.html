@@ -28,8 +28,8 @@
 <!-- ── Open Graph (Facebook, Telegram, WhatsApp) ── -->
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://dastdaroz.shop/"/>
-<meta property="og:site_name" content="Dastdaroz"/>
-<meta property="og:title" content="Dastdaroz — Расонидан дар Душанбе"/>
+<meta property="og:site_name" content="dastdaroz"/>
+<meta property="og:title" content="dastdaroz - расонидани фармоишҳо"/>
 <meta property="og:description" content="Расонидани маҳсулот ва хӯрок ба хона дар Душанбе. Доставка продуктов на дом в Душанбе — быстро и удобно."/>
 <meta property="og:image" content="https://dastdaroz.shop/dastdaroz.png"/>
 <meta property="og:image:width" content="512"/>
@@ -477,7 +477,10 @@ select.addr-inp{cursor:pointer}
   .guest-topbar-btn{font-size:.62rem;padding:6px 11px}
 }
 @media(max-width:480px){.cat-panels{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:360px){.pg{grid-template-columns:1fr}}
+@media(max-width:360px){.pg{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:861px){.pg{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1100px){.pg{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1400px){.pg{grid-template-columns:repeat(5,1fr)}}
 /* ── ORDER MODAL ── */
 .o-modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .o-modal-bg.open{opacity:1;pointer-events:all}
