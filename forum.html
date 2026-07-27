@@ -122,14 +122,15 @@ a{color:inherit;text-decoration:none}
 
 /* Stats strip */
 .forum-stats{
-  display:flex;align-items:stretch;
+  display:grid;
+  grid-template-columns:1fr 1px 1fr 1px 1fr;
   background:var(--s1);border:1.5px solid var(--b0);
   border-radius:13px;overflow:hidden;margin-bottom:20px;
 }
-.f-stat{flex:1;text-align:center;padding:12px 8px}
-.f-stat-val{font-family:var(--fd);font-weight:900;font-size:1.25rem;color:var(--acc);line-height:1;margin-bottom:3px}
-.f-stat-lbl{font-size:.58rem;color:var(--tx3);letter-spacing:.01em}
-.f-stat-div{width:1px;background:var(--b0);flex-shrink:0}
+.f-stat{padding:14px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.f-stat-val{font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--acc);line-height:1;margin-bottom:4px}
+.f-stat-lbl{font-size:.57rem;color:var(--tx3)}
+.f-stat-div{background:var(--b0)}
 
 /* Section label */
 .f-section{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:9px}
@@ -628,7 +629,8 @@ let currentCatBg = null;
 let currentCatDesc = null;
 let currentThreadId = null;
 let catFilter = 'new';
-let unsub = null; // Firestore listener
+let unsub = null;        // main Firestore listener
+let unsubReplies = null; // separate replies listener
 
 /* ── AUTH ── */
 onAuthStateChanged(auth, user => {
@@ -648,6 +650,7 @@ function showView(id) {
   fab.classList.toggle('hidden', id === 'thread');
   window.scrollTo({ top: 0, behavior: 'instant' });
   if (unsub) { unsub(); unsub = null; }
+  if (unsubReplies) { unsubReplies(); unsubReplies = null; }
 }
 
 window.goHome = function() {
@@ -807,112 +810,135 @@ async function loadCat() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LOAD THREAD
+   LOAD THREAD  (getDoc once + live replies snapshot)
 ═══════════════════════════════════════════════════════════ */
 async function loadThread() {
   const el = document.getElementById('thread-content');
-  el.innerHTML = '<div class="f-loading"><div class="f-spin"></div></div>';
+  // Split container into static (OP) + dynamic (replies)
+  el.innerHTML = `
+    <div id="t-static"><div class="f-loading"><div class="f-spin"></div></div></div>
+    <div id="t-replies"></div>
+    <div style="height:10px"></div>`;
   renderReplyForm();
   if (!currentThreadId) return;
+
+  if (unsubReplies) { unsubReplies(); unsubReplies = null; }
+
   try {
-    // Increment views
-    updateDoc(doc(db,'forum_threads',currentThreadId), { views: increment(1) }).catch(()=>{});
+    // One-time thread read (no loop, no extra writes triggered)
+    const tSnap = await getDoc(doc(db, 'forum_threads', currentThreadId));
+    if (!tSnap.exists()) {
+      el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">🗑️</div><div class="f-empty-txt">Мавзӯъ ёфт нашуд</div></div>';
+      return;
+    }
+    const thread = { id: tSnap.id, ...tSnap.data() };
+    document.getElementById('thread-view-title').textContent = thread.title || 'Мавзӯъ';
 
-    // Live thread + replies
-    if (unsub) { unsub(); unsub = null; }
-    unsub = onSnapshot(doc(db,'forum_threads',currentThreadId), async tSnap => {
-      if (!tSnap.exists()) { el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">🗑️</div><div class="f-empty-txt">Мавзӯъ ёфт нашуд</div></div>'; return; }
-      const thread = { id: tSnap.id, ...tSnap.data() };
-      document.getElementById('thread-view-title').textContent = thread.title || 'Мавзӯъ';
+    // Increment views once, fire-and-forget
+    updateDoc(doc(db, 'forum_threads', currentThreadId), { views: increment(1) }).catch(() => {});
 
-      // Load replies
-      const rSnap = await getDocs(query(collection(db,'forum_replies'), where('threadId','==',currentThreadId), orderBy('createdAt','asc')));
-      const replies = rSnap.docs.map(d => ({id:d.id,...d.data()}));
+    // Render OP post
+    renderThreadStatic(thread);
+    renderReplyForm();
 
-      // Find cat info
-      const cat = CATS.find(c => c.id === thread.categoryId);
+    // Live replies — only ONE field in where(), no composite index needed
+    // Sort by createdAt in JS to avoid requiring a Firestore composite index
+    const rQuery = query(
+      collection(db, 'forum_replies'),
+      where('threadId', '==', currentThreadId)
+    );
+    unsubReplies = onSnapshot(rQuery, snap => {
+      const replies = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+      renderReplies(replies);
+      // Update reply count badge without re-rendering OP
+      const badge = document.getElementById('t-reply-count');
+      if (badge) badge.textContent = replies.length + ' ҷавоб';
+    }, err => { console.warn('Replies listener:', err); });
 
-      el.innerHTML = `
-        <!-- Thread header -->
-        <div class="thread-head">
-          <div class="t-cat-pill" style="${cat?`background:${cat.bg};color:${cat.color}`:''}">
-            ${cat ? cat.icon : '💬'} ${esc(thread.categoryName||'')}
-          </div>
-          <div class="t-h1">${esc(thread.title||'')}</div>
-          <div class="t-hmeta">
-            <div class="t-hstat">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              ${thread.views||0}
-            </div>
-            <div class="t-hstat">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              ${thread.replyCount||0} ҷавоб
-            </div>
-            <div class="t-hstat">${timeAgo(thread.createdAt)}</div>
-          </div>
-        </div>
-
-        <!-- OP post -->
-        <div class="post op">
-          <div class="post-head">
-            <div class="post-ava">${esc(ini(thread.authorName))}</div>
-            <div class="post-meta">
-              <div class="post-name">${esc(thread.authorName||'Номаълум')}</div>
-              <div class="post-time">${timeAgo(thread.createdAt)}</div>
-            </div>
-            <span class="op-badge">OP</span>
-          </div>
-          <div class="post-body">${esc(thread.body||'')}</div>
-          <div class="post-foot">
-            <button class="like-btn ${(thread.likedBy||[]).includes(me?.uid)?'liked':''}"
-              onclick="likeThread('${thread.id}',${JSON.stringify(thread.likedBy||[])})">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="${(thread.likedBy||[]).includes(me?.uid)?'currentColor':'none'}" stroke="currentColor" stroke-width="2">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-              </svg>
-              ${thread.likeCount||0}
-            </button>
-            <button class="report-btn" onclick="scrollToReply()">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              Ҷавоб
-            </button>
-          </div>
-        </div>
-
-        ${replies.length > 0 ? `
-          <div class="replies-div">
-            <div class="replies-div-line"></div>
-            <div class="replies-div-lbl">${replies.length} ҷавоб</div>
-            <div class="replies-div-line"></div>
-          </div>
-          ${replies.map(r => `
-            <div class="post" id="reply-${r.id}">
-              <div class="post-head">
-                <div class="post-ava reply">${esc(ini(r.authorName))}</div>
-                <div class="post-meta">
-                  <div class="post-name">${esc(r.authorName||'Номаълум')}</div>
-                  <div class="post-time">${timeAgo(r.createdAt)}</div>
-                </div>
-              </div>
-              <div class="post-body">${esc(r.body||'')}</div>
-              <div class="post-foot">
-                <button class="like-btn ${(r.likedBy||[]).includes(me?.uid)?'liked':''}"
-                  onclick="likeReply('${r.id}',${JSON.stringify(r.likedBy||[])})">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="${(r.likedBy||[]).includes(me?.uid)?'currentColor':'none'}" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-                  </svg>
-                  ${r.likeCount||0}
-                </button>
-              </div>
-            </div>
-          `).join('')}
-        ` : ''}
-        <div style="height:10px"></div>
-      `;
-      renderReplyForm();
-    });
-  } catch(e) {
+  } catch (e) {
     el.innerHTML = '<div class="f-empty"><div class="f-empty-ico">⚠️</div><div class="f-empty-txt">Хатои пайваст</div></div>';
   }
+}
+
+function renderThreadStatic(thread) {
+  const el = document.getElementById('t-static');
+  if (!el) return;
+  const cat = CATS.find(c => c.id === thread.categoryId);
+  const liked = (thread.likedBy || []).includes(me?.uid);
+  el.innerHTML = `
+    <div class="thread-head">
+      <div class="t-cat-pill" style="${cat ? `background:${cat.bg};color:${cat.color}` : ''}">
+        ${cat ? cat.icon : '💬'} ${esc(thread.categoryName || '')}
+      </div>
+      <div class="t-h1">${esc(thread.title || '')}</div>
+      <div class="t-hmeta">
+        <div class="t-hstat">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          ${thread.views || 0}
+        </div>
+        <div class="t-hstat" id="t-reply-count">${thread.replyCount || 0} ҷавоб</div>
+        <div class="t-hstat">${timeAgo(thread.createdAt)}</div>
+      </div>
+    </div>
+    <div class="post op">
+      <div class="post-head">
+        <div class="post-ava">${esc(ini(thread.authorName))}</div>
+        <div class="post-meta">
+          <div class="post-name">${esc(thread.authorName || 'Номаълум')}</div>
+          <div class="post-time">${timeAgo(thread.createdAt)}</div>
+        </div>
+        <span class="op-badge">OP</span>
+      </div>
+      <div class="post-body">${esc(thread.body || '')}</div>
+      <div class="post-foot">
+        <button class="like-btn ${liked ? 'liked' : ''}" data-id="${thread.id}" data-type="thread" onclick="toggleLike(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+          <span>${thread.likeCount || 0}</span>
+        </button>
+        <button class="report-btn" onclick="scrollToReply()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Ҷавоб
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderReplies(replies) {
+  const el = document.getElementById('t-replies');
+  if (!el) return;
+  if (!replies.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="replies-div">
+      <div class="replies-div-line"></div>
+      <div class="replies-div-lbl">${replies.length} ҷавоб</div>
+      <div class="replies-div-line"></div>
+    </div>
+    ${replies.map(r => {
+      const liked = (r.likedBy || []).includes(me?.uid);
+      return `
+        <div class="post" id="reply-${r.id}">
+          <div class="post-head">
+            <div class="post-ava reply">${esc(ini(r.authorName))}</div>
+            <div class="post-meta">
+              <div class="post-name">${esc(r.authorName || 'Номаълум')}</div>
+              <div class="post-time">${timeAgo(r.createdAt)}</div>
+            </div>
+          </div>
+          <div class="post-body">${esc(r.body || '')}</div>
+          <div class="post-foot">
+            <button class="like-btn ${liked ? 'liked' : ''}" data-id="${r.id}" data-type="reply" onclick="toggleLike(this)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              <span>${r.likeCount || 0}</span>
+            </button>
+          </div>
+        </div>`;
+    }).join('')}`;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -983,55 +1009,61 @@ function renderNtCatSelect() {
 /* ═══════════════════════════════════════════════════════════
    ACTIONS
 ═══════════════════════════════════════════════════════════ */
-window.likeThread = async function(threadId, likedBy) {
+/* Unified like toggle — thread OP and replies share one handler */
+window.toggleLike = async function(btn) {
   if (!me) { window.location.href = 'login.html'; return; }
-  const liked = likedBy.includes(me.uid);
-  try {
-    await updateDoc(doc(db,'forum_threads',threadId), {
-      likedBy: liked ? arrayRemove(me.uid) : arrayUnion(me.uid),
-      likeCount: increment(liked ? -1 : 1),
-    });
-  } catch(e) {}
-};
+  const id      = btn.dataset.id;
+  const type    = btn.dataset.type; // 'thread' | 'reply'
+  const liked   = btn.classList.contains('liked');
+  const collRef = type === 'thread' ? 'forum_threads' : 'forum_replies';
 
-window.likeReply = async function(replyId, likedBy) {
-  if (!me) { window.location.href = 'login.html'; return; }
-  const liked = likedBy.includes(me.uid);
+  // Optimistic UI
+  btn.classList.toggle('liked', !liked);
+  const svg  = btn.querySelector('svg');
+  const span = btn.querySelector('span');
+  if (svg)  svg.setAttribute('fill', !liked ? 'currentColor' : 'none');
+  if (span) span.textContent = Math.max(0, (parseInt(span.textContent) || 0) + (!liked ? 1 : -1));
+
   try {
-    await updateDoc(doc(db,'forum_replies',replyId), {
-      likedBy: liked ? arrayRemove(me.uid) : arrayUnion(me.uid),
+    await updateDoc(doc(db, collRef, id), {
+      likedBy:   liked ? arrayRemove(me.uid) : arrayUnion(me.uid),
       likeCount: increment(liked ? -1 : 1),
     });
-    loadThread();
-  } catch(e) {}
+  } catch(e) {
+    // Revert
+    btn.classList.toggle('liked', liked);
+    if (svg)  svg.setAttribute('fill', liked ? 'currentColor' : 'none');
+    if (span) span.textContent = Math.max(0, (parseInt(span.textContent) || 0) + (liked ? 1 : -1));
+  }
 };
 
 window.submitReply = async function() {
   if (!me) { window.location.href = 'login.html'; return; }
-  const ta = document.getElementById('r-input');
+  const ta  = document.getElementById('r-input');
   const btn = document.getElementById('r-send');
   if (!ta) return;
   const body = ta.value.trim();
   if (!body) return;
   if (btn) btn.disabled = true;
   try {
-    await addDoc(collection(db,'forum_replies'), {
-      threadId: currentThreadId,
+    await addDoc(collection(db, 'forum_replies'), {
+      threadId:   currentThreadId,
       body,
-      authorId: me.uid,
+      authorId:   me.uid,
       authorName: me.displayName || 'Корбар',
-      likeCount: 0,
-      likedBy: [],
-      createdAt: serverTimestamp(),
+      likeCount:  0,
+      likedBy:    [],
+      createdAt:  serverTimestamp(),
     });
-    await updateDoc(doc(db,'forum_threads',currentThreadId), {
-      replyCount: increment(1),
+    await updateDoc(doc(db, 'forum_threads', currentThreadId), {
+      replyCount:   increment(1),
       lastActivity: serverTimestamp(),
-      lastReplyBy: me.displayName || 'Корбар',
+      lastReplyBy:  me.displayName || 'Корбар',
     });
+    // Clear — onSnapshot fires and renders the new reply automatically
     ta.value = '';
     ta.style.height = 'auto';
-    loadThread();
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 400);
   } catch(e) {
     alert('Хатои фиристодан');
   }
