@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Натиҷаи пардохт — Dastdaroz</title>
+<link rel="icon" type="image/png" href="favicon.png" sizes="48x48"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
+<style>
+:root{
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --acc-shadow:rgba(26,158,74,.25);
+  --red:#dc2626;--redd:rgba(220,38,38,.1);
+  --amber:#d97706;--amber-d:rgba(217,119,6,.1);
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;--s3:#e0ede3;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.11);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.32,0,.18,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100svh;background:var(--bg);color:var(--tx);font-family:var(--fs);-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center}
+
+.wrap{max-width:440px;width:100%;padding:24px 16px;text-align:center}
+
+/* ── Icon circle ── */
+.icon-ring{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:2.6rem;position:relative}
+.icon-ring.success{background:rgba(26,158,74,.1);border:3px solid rgba(26,158,74,.25);animation:popIn .5s var(--spring) both}
+.icon-ring.fail{background:var(--redd);border:3px solid rgba(220,38,38,.2);animation:popIn .5s var(--spring) both}
+.icon-ring.loading{background:var(--s2);border:3px solid var(--b1)}
+@keyframes popIn{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* ── Spinner inside ring ── */
+.ring-spin{width:100%;height:100%;border-radius:50%;border:3px solid var(--b1);border-top-color:var(--acc);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Titles ── */
+.main-title{font-family:var(--fd);font-weight:900;font-size:1.5rem;letter-spacing:-.02em;color:var(--tx);margin-bottom:8px}
+.main-title.success{color:var(--acc)}
+.main-title.fail{color:var(--red)}
+.sub-text{font-size:.82rem;color:var(--tx3);line-height:1.6;margin-bottom:28px;max-width:320px;margin-left:auto;margin-right:auto}
+
+/* ── Redirect bar ── */
+.redirect-bar{background:var(--s2);border:1px solid var(--b0);border-radius:12px;padding:12px 16px;font-size:.76rem;color:var(--tx3);margin-bottom:22px;display:none}
+.redirect-bar.show{display:block}
+.redirect-progress{height:3px;background:var(--b1);border-radius:99px;overflow:hidden;margin-top:8px}
+.redirect-fill{height:100%;background:var(--acc);border-radius:99px;width:0%;transition:width linear}
+.redirect-fill.fail-color{background:var(--red)}
+
+/* ── Buttons ── */
+.btn-primary{display:block;width:100%;padding:15px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.92rem;cursor:pointer;text-decoration:none;box-shadow:0 5px 18px var(--acc-shadow);transition:opacity .15s,transform .12s;margin-bottom:10px}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-secondary{display:block;width:100%;padding:13px;background:var(--s1);border:1.5px solid var(--b1);border-radius:14px;color:var(--tx2);font-family:var(--fd);font-weight:800;font-size:.82rem;cursor:pointer;text-decoration:none;transition:background .13s}
+.btn-secondary:hover{background:var(--s2)}
+
+/* ── Order summary card (success) ── */
+.summary-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:18px;margin-bottom:22px;text-align:left;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.summary-row{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:6px 0;border-bottom:1px solid var(--b0)}
+.summary-row:last-child{border-bottom:none}
+.summary-row-lbl{color:var(--tx3)}
+.summary-row-val{font-weight:700;color:var(--tx)}
+.summary-row-val.green{color:var(--acc)}
+
+@media(max-width:480px){.wrap{padding:20px 14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Loading state -->
+  <div id="state-loading">
+    <div class="icon-ring loading"><div class="ring-spin"></div></div>
+    <div class="main-title" style="color:var(--tx3)">Коркарди натиҷа…</div>
+    <div class="sub-text">Лутфан мунтазир бошед</div>
+  </div>
+
+  <!-- Success state -->
+  <div id="state-success" style="display:none">
+    <div class="icon-ring success">✅</div>
+    <div class="main-title success">Пардохт муваффақ шуд!</div>
+    <div class="sub-text" id="success-sub">Фармоиши шумо қабул шуд ва ба омодасозӣ фиристода шуд.</div>
+
+    <div class="summary-card" id="success-summary"></div>
+
+    <div class="redirect-bar show" id="redirect-bar-success">
+      <span id="redirect-text-success">3 сонияи дигар ба саҳифаи фармоиш…</span>
+      <div class="redirect-progress"><div class="redirect-fill" id="redirect-fill-success"></div></div>
+    </div>
+
+    <a href="#" class="btn-primary" id="btn-view-order">Фармоишро дидан</a>
+    <a href="home.html" class="btn-secondary">Ба магазин баргаштан</a>
+  </div>
+
+  <!-- Fail state -->
+  <div id="state-fail" style="display:none">
+    <div class="icon-ring fail">❌</div>
+    <div class="main-title fail" id="fail-title">Пардохт нокомёб шуд</div>
+    <div class="sub-text" id="fail-sub">Хатое рух дод. Лутфан аз нав кӯшиш кунед.</div>
+
+    <div class="redirect-bar show" id="redirect-bar-fail">
+      <span id="redirect-text-fail">3 сонияи дигар ба саҳифаи пардохт…</span>
+      <div class="redirect-progress"><div class="redirect-fill fail-color" id="redirect-fill-fail"></div></div>
+    </div>
+
+    <a href="#" class="btn-primary" id="btn-retry">Аз нав кӯшиш кунед</a>
+    <a href="home.html" class="btn-secondary">Ба саҳифаи асосӣ</a>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+import { firebaseConfig }  from './firebase.js';
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Parse URL params ──────────────────────────────────────────
+const params     = new URLSearchParams(location.search);
+const STATUS     = params.get('status');       // success | fail | cancel
+const ORDER_ID   = params.get('order_id');
+const EXTERNAL_ID = params.get('external_id') || null;
+
+// ── Restore session data if params are missing ────────────────
+let sessionOrder = null;
+try {
+  const raw = sessionStorage.getItem('ddr_order');
+  if (raw) sessionOrder = JSON.parse(raw);
+} catch {}
+
+const resolvedOrderId = ORDER_ID || sessionOrder?.orderId;
+
+// ── Show a state ──────────────────────────────────────────────
+function showState(id) {
+  ['state-loading','state-success','state-fail'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+}
+
+// ── Animated redirect countdown ───────────────────────────────
+function startRedirect(fillId, textId, seconds, url) {
+  const fill = document.getElementById(fillId);
+  const txt  = document.getElementById(textId);
+  let remaining = seconds;
+
+  fill.style.transition = `width ${seconds}s linear`;
+  requestAnimationFrame(() => { fill.style.width = '100%'; });
+
+  const iv = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(iv);
+      window.location.href = url;
+    } else {
+      txt.textContent = `${remaining} сонияи дигар…`;
+    }
+  }, 1000);
+}
+
+// ── Format Firestore timestamp ────────────────────────────────
+function fmtTs(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ru-RU', { day:'2-digit', month:'short' })
+    + ', ' + d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ── Handle SUCCESS ────────────────────────────────────────────
+async function handleSuccess(orderId) {
+  if (!orderId) { showState('state-fail'); return; }
+
+  try {
+    // 1. Read order to verify amount & status
+    const snap = await getDoc(doc(db, 'orders', orderId));
+    if (!snap.exists()) throw new Error('Фармоиш ёфт нашуд');
+
+    const o = snap.data();
+
+    // Guard: already paid — skip double-update
+    if (o.status !== 'paid') {
+      // 2. Mark as paid → triggers courier assignment (same flow as before)
+      await updateDoc(doc(db, 'orders', orderId), {
+        status:      'pending',   // back to pending so courier pipeline picks it up
+        paymentStatus: 'paid',
+        paidAt:      serverTimestamp(),
+        externalId:  EXTERNAL_ID,
+        updatedAt:   serverTimestamp(),
+      });
+    }
+
+    // 3. Clear session
+    sessionStorage.removeItem('ddr_order');
+
+    // 4. Render success UI
+    const num = o.orderNumber ? '#' + o.orderNumber : '#' + orderId.slice(-6);
+    document.getElementById('success-sub').textContent =
+      `Фармоиш ${num} муваффақона пардохт шуд ва ба омодасозӣ фиристода шуд.`;
+
+    document.getElementById('success-summary').innerHTML = `
+      <div class="summary-row">
+        <span class="summary-row-lbl">Рақами фармоиш</span>
+        <span class="summary-row-val">${num}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-lbl">Ҷамъи пардохт</span>
+        <span class="summary-row-val green">${o.total || 0} см</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-row-lbl">Суроғ</span>
+        <span class="summary-row-val" style="max-width:200px;text-align:right;font-size:.72rem">${o.address || '—'}</span>
+      </div>
+      ${EXTERNAL_ID ? `<div class="summary-row">
+        <span class="summary-row-lbl">ID транзаксия</span>
+        <span class="summary-row-val" style="font-size:.68rem;color:var(--tx3)">${EXTERNAL_ID}</span>
+      </div>` : ''}
+    `;
+
+    // 5. Set up "View order" link → home.html#order-{orderId}
+    const viewUrl = `home.html#order-${orderId}`;
+    document.getElementById('btn-view-order').href = viewUrl;
+
+    showState('state-success');
+
+    // 6. Auto-redirect to order confirmation page
+    const confirmUrl = `order-confirmation.html?order_id=${orderId}`;
+    startRedirect('redirect-fill-success', 'redirect-text-success', 3, confirmUrl);
+
+  } catch (e) {
+    console.error(e);
+    showState('state-fail');
+    document.getElementById('fail-title').textContent = 'Хатои коркард';
+    document.getElementById('fail-sub').textContent   = e.message;
+  }
+}
+
+// ── Handle FAIL / CANCEL ──────────────────────────────────────
+async function handleFail(orderId, isCancelled) {
+  if (orderId) {
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status:        'payment_failed',
+        paymentStatus: isCancelled ? 'cancelled' : 'failed',
+        updatedAt:     serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('Could not update failed order:', e);
+    }
+  }
+
+  const title = isCancelled ? 'Пардохт бекор карда шуд' : 'Пардохт нокомёб шуд';
+  const sub   = isCancelled
+    ? 'Шумо пардохтро бекор кардед. Метавонед аз нав кӯшиш кунед.'
+    : 'Банк пардохтро рад кард. Лутфан маълумоти корт ё тавозунро тафтиш кунед.';
+
+  document.getElementById('fail-title').textContent = title;
+  document.getElementById('fail-sub').textContent   = sub;
+
+  // Retry link
+  const amount = sessionOrder?.amount || 0;
+  const retryUrl = orderId
+    ? `transaction.html?order_id=${orderId}&amount=${amount}&retry=true`
+    : 'home.html';
+  document.getElementById('btn-retry').href = retryUrl;
+
+  showState('state-fail');
+
+  // Auto-redirect to retry page
+  if (orderId) {
+    startRedirect('redirect-fill-fail', 'redirect-text-fail', 3, retryUrl);
+  }
+}
+
+// ── Entry point ───────────────────────────────────────────────
+(async function init() {
+  if (!STATUS) {
+    showState('state-fail');
+    document.getElementById('fail-sub').textContent = 'Параметри статус нишон дода нашудааст';
+    return;
+  }
+
+  if (STATUS === 'success') {
+    await handleSuccess(resolvedOrderId);
+  } else {
+    await handleFail(resolvedOrderId, STATUS === 'cancel');
+  }
+})();
+</script>
+</body>
+</html>

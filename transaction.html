@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Оплата заказа — Dastdaroz</title>
+<link rel="icon" type="image/png" href="favicon.png" sizes="48x48"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
+<style>
+:root{
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --acc-shadow:rgba(26,158,74,.25);
+  --red:#dc2626;--redd:rgba(220,38,38,.1);
+  --amber:#d97706;
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;--s3:#e0ede3;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.11);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease:cubic-bezier(.32,0,.18,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100svh;background:var(--bg);color:var(--tx);font-family:var(--fs);-webkit-font-smoothing:antialiased}
+
+/* ── Layout ── */
+.wrap{max-width:480px;margin:0 auto;padding:24px 16px calc(env(safe-area-inset-bottom,0px)+24px)}
+
+/* ── Header ── */
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;box-shadow:0 4px 12px var(--acc-shadow)}
+.logo-name{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx)}
+.logo-name em{color:var(--acc);font-style:normal}
+
+/* ── Card ── */
+.card{background:var(--s1);border:1.5px solid var(--b0);border-radius:20px;padding:24px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.card-tag{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:var(--tx3);margin-bottom:4px;font-weight:700}
+.card-title{font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);letter-spacing:-.02em;margin-bottom:0}
+
+/* ── Order Info ── */
+.order-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--b0);font-size:.8rem}
+.order-row:last-child{border-bottom:none}
+.order-row-lbl{color:var(--tx3);font-weight:500}
+.order-row-val{color:var(--tx);font-weight:700}
+.order-row-val.price{color:var(--acc);font-family:var(--fd);font-weight:900;font-size:1rem}
+
+/* ── Timer ── */
+.timer-wrap{text-align:center;padding:22px 0 18px;border-bottom:1px solid var(--b0);margin-bottom:4px}
+.timer-lbl{font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:10px}
+.timer-display{font-family:var(--fd);font-weight:900;font-size:2.8rem;letter-spacing:.04em;color:var(--acc);line-height:1;transition:color .4s}
+.timer-display.warn{color:var(--amber)}
+.timer-display.danger{color:var(--red);animation:timerPulse .9s ease-in-out infinite}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.timer-sub{font-size:.7rem;color:var(--tx3);margin-top:6px}
+
+/* ── Buttons ── */
+.btn-pay{width:100%;padding:16px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.96rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 20px var(--acc-shadow);transition:opacity .15s,transform .12s;margin-bottom:10px;letter-spacing:-.01em}
+.btn-pay:hover{opacity:.92;transform:translateY(-1px)}
+.btn-pay:active{transform:scale(.98);opacity:1}
+.btn-pay:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
+
+.btn-cancel{width:100%;padding:13px;background:var(--redd);border:1.5px solid rgba(220,38,38,.2);border-radius:14px;color:var(--red);font-family:var(--fd);font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}
+.btn-cancel:hover{background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.35)}
+.btn-cancel:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Expired Banner ── */
+.expired-banner{display:none;text-align:center;padding:28px 20px;background:var(--redd);border:1.5px solid rgba(220,38,38,.2);border-radius:16px;margin-bottom:14px}
+.expired-banner.show{display:block;animation:fadeIn .3s var(--ease)}
+.expired-ico{font-size:2.4rem;margin-bottom:10px}
+.expired-t{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--red);margin-bottom:6px}
+.expired-s{font-size:.76rem;color:var(--red);opacity:.75}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── Security Note ── */
+.sec-note{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--accd);border:1px solid var(--accg);border-radius:12px;font-size:.72rem;color:var(--tx2);margin-bottom:14px}
+.sec-note svg{flex-shrink:0;color:var(--acc)}
+
+/* ── Loading ── */
+.spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Error State ── */
+.error-wrap{text-align:center;padding:52px 20px}
+.error-ico{font-size:3rem;margin-bottom:14px}
+.error-t{font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px}
+.error-s{font-size:.76rem;color:var(--tx3);margin-bottom:24px;line-height:1.6}
+.btn-home{display:inline-block;padding:11px 28px;background:var(--acc);border:none;border-radius:10px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.78rem;cursor:pointer;text-decoration:none;box-shadow:0 3px 12px var(--acc-shadow)}
+
+/* ── Items list ── */
+.items-wrap{margin-top:12px;padding-top:12px;border-top:1px solid var(--b0)}
+.items-title{font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:9px}
+.item-row{display:flex;justify-content:space-between;align-items:baseline;font-size:.75rem;padding:3px 0;color:var(--tx2)}
+.item-row span:last-child{font-weight:600;color:var(--tx);flex-shrink:0;margin-left:8px}
+
+@media(max-width:480px){.wrap{padding:16px 12px calc(env(safe-area-inset-bottom,0px)+16px)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-mark">🌿</div>
+    <div><div class="logo-name">dast<em>daroz</em></div></div>
+    <div style="margin-left:auto;font-size:.64rem;color:var(--tx3);font-weight:500">Бехатар пардохт</div>
+  </div>
+
+  <!-- Error state (hidden by default) -->
+  <div id="error-state" style="display:none">
+    <div class="error-wrap">
+      <div class="error-ico">⚠️</div>
+      <div class="error-t" id="error-title">Хатое рух дод</div>
+      <div class="error-s" id="error-msg">Параметрҳои фармоиш ёфт нашуд</div>
+      <a href="home.html" class="btn-home">Ба саҳифаи асосӣ</a>
+    </div>
+  </div>
+
+  <!-- Main content (shown after load) -->
+  <div id="main-content" style="display:none">
+
+    <!-- Expired banner -->
+    <div class="expired-banner" id="expired-banner">
+      <div class="expired-ico">⏰</div>
+      <div class="expired-t">Вақти бронирование тамом шуд</div>
+      <div class="expired-s">Фармоиш бекор карда шуд. Лутфан фармоишро аз нав диҳед.</div>
+    </div>
+
+    <!-- Order Card -->
+    <div class="card">
+      <div class="card-tag">Пардохт</div>
+      <div class="card-title" id="order-num-title">Фармоиш #...</div>
+
+      <!-- Timer -->
+      <div class="timer-wrap">
+        <div class="timer-lbl">⏳ Вақти бронирование</div>
+        <div class="timer-display" id="timer-display">10:00</div>
+        <div class="timer-sub" id="timer-sub">Дар ин вақт пардохт кунед</div>
+      </div>
+
+      <!-- Order rows -->
+      <div class="order-row">
+        <span class="order-row-lbl">Рақами фармоиш</span>
+        <span class="order-row-val" id="disp-order-num">—</span>
+      </div>
+      <div class="order-row">
+        <span class="order-row-lbl">Ҷамъи маҳсулот</span>
+        <span class="order-row-val" id="disp-subtotal">—</span>
+      </div>
+      <div class="order-row">
+        <span class="order-row-lbl">Расонидан</span>
+        <span class="order-row-val" id="disp-delivery">—</span>
+      </div>
+      <div class="order-row">
+        <span class="order-row-lbl">Ҷамъи пардохт</span>
+        <span class="order-row-val price" id="disp-total">—</span>
+      </div>
+
+      <!-- Items breakdown -->
+      <div class="items-wrap" id="items-wrap"></div>
+    </div>
+
+    <!-- Security note -->
+    <div class="sec-note">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-10V5l-8-3-8 3v7c0 5.5 8 10 8 10z"/></svg>
+      Пардохт тавассути шабакаи бехатари банк анҷом дода мешавад
+    </div>
+
+    <!-- Pay button -->
+    <button class="btn-pay" id="btn-pay" onclick="doPay()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Тавассути банк пардохт кунед
+    </button>
+
+    <!-- Cancel button -->
+    <button class="btn-cancel" id="btn-cancel" onclick="doCancel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      Бекор кардани фармоиш
+    </button>
+
+  </div><!-- /main-content -->
+</div><!-- /wrap -->
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+import { getAuth, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+import { firebaseConfig } from './firebase.js';
+
+// ── Init ──────────────────────────────────────────────────────
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+// ── Parse URL params ──────────────────────────────────────────
+const params   = new URLSearchParams(location.search);
+const ORDER_ID = params.get('order_id');
+const AMOUNT   = parseFloat(params.get('amount')) || 0;
+const IS_RETRY = params.get('retry') === 'true';
+
+let orderData    = null;
+let timerInterval = null;
+let isExpired    = false;
+
+// ── Show error ─────────────────────────────────────────────────
+function showError(title, msg) {
+  document.getElementById('error-state').style.display = '';
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-msg').textContent   = msg;
+}
+
+// ── Load order from Firestore ──────────────────────────────────
+async function loadOrder(user) {
+  if (!ORDER_ID) { showError('Хато', 'Рақами фармоиш нишон дода нашудааст'); return; }
+
+  try {
+    const snap = await getDoc(doc(db, 'orders', ORDER_ID));
+    if (!snap.exists()) { showError('Фармоиш ёфт нашуд', 'Шояд фармоиш аллакай бекор карда шуда бошад'); return; }
+
+    orderData = { id: snap.id, ...snap.data() };
+
+    // Security: ensure this order belongs to current user
+    if (user && orderData.clientId !== user.uid) {
+      showError('Дастрас нест', 'Ин фармоиш ба шумо тааллуқ надорад');
+      return;
+    }
+
+    // Check already paid
+    if (orderData.status === 'paid' || orderData.status === 'delivered' ||
+        orderData.status === 'confirmed' || orderData.status === 'preparing' ||
+        orderData.status === 'delivering') {
+      window.location.href = `order-confirmation.html?order_id=${ORDER_ID}`;
+      return;
+    }
+
+    // Check already cancelled
+    if (orderData.status === 'cancelled' || orderData.status === 'payment_failed') {
+      showError('Фармоиш бекор карда шуд', 'Ин фармоиш бекор карда шудааст. Фармоиши нав диҳед.');
+      return;
+    }
+
+    // Save session data for callback restoration
+    sessionStorage.setItem('ddr_order', JSON.stringify({
+      orderId:     ORDER_ID,
+      orderNumber: orderData.orderNumber,
+      amount:      orderData.total || AMOUNT,
+    }));
+
+    renderOrderInfo();
+    startTimer();
+    document.getElementById('main-content').style.display = '';
+
+  } catch (e) {
+    showError('Хато', 'Маълумоти фармоиш боргузорӣ нашуд: ' + e.message);
+  }
+}
+
+// ── Render order info ──────────────────────────────────────────
+function renderOrderInfo() {
+  const o   = orderData;
+  const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+  document.getElementById('order-num-title').textContent = 'Фармоиш ' + num;
+  document.getElementById('disp-order-num').textContent  = num;
+  document.getElementById('disp-subtotal').textContent   = (o.subtotal || 0) + ' см';
+  document.getElementById('disp-delivery').textContent   = (o.deliveryFee || 7) + ' см';
+  document.getElementById('disp-total').textContent      = (o.total || AMOUNT) + ' см';
+
+  // Items breakdown
+  const items = o.items || [];
+  if (items.length) {
+    document.getElementById('items-wrap').innerHTML = `
+      <div class="items-title">Маҳсулот</div>
+      ${items.map(i => `
+        <div class="item-row">
+          <span>${i.name} ×${i.quantity}</span>
+          <span>${i.price * i.quantity} см</span>
+        </div>`).join('')}`;
+  }
+}
+
+// ── Timer ──────────────────────────────────────────────────────
+function startTimer() {
+  const o = orderData;
+
+  // reserved_until from Firestore (Timestamp or ISO string)
+  let deadline;
+  if (o.reserved_until?.toDate) {
+    deadline = o.reserved_until.toDate().getTime();
+  } else if (o.reserved_until) {
+    deadline = new Date(o.reserved_until).getTime();
+  } else {
+    // Fallback: 10 min from order creation
+    const created = o.createdAt?.toDate ? o.createdAt.toDate().getTime() : Date.now();
+    deadline = created + 10 * 60 * 1000;
+  }
+
+  const display = document.getElementById('timer-display');
+  const sub     = document.getElementById('timer-sub');
+
+  function tick() {
+    const remaining = Math.max(0, deadline - Date.now());
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    display.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+    // Color change at 2 minutes
+    display.classList.toggle('warn',   remaining <= 120000 && remaining > 30000);
+    display.classList.toggle('danger', remaining <= 30000  && remaining > 0);
+
+    if (remaining <= 0 && !isExpired) {
+      isExpired = true;
+      clearInterval(timerInterval);
+      display.textContent = '00:00';
+      sub.textContent = 'Вақт тамом шуд';
+      handleExpiry();
+    }
+  }
+
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+// ── Handle expiry on client side ──────────────────────────────
+async function handleExpiry() {
+  document.getElementById('expired-banner').classList.add('show');
+  document.getElementById('btn-pay').disabled    = true;
+  document.getElementById('btn-cancel').disabled = true;
+
+  // Update Firestore: cancel the order
+  try {
+    await updateDoc(doc(db, 'orders', ORDER_ID), {
+      status:    'cancelled',
+      updatedAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('Could not auto-cancel order:', e);
+  }
+
+  // Redirect to home after 4s
+  setTimeout(() => { window.location.href = 'home.html'; }, 4000);
+}
+
+// ── Pay button ────────────────────────────────────────────────
+window.doPay = async function () {
+  if (isExpired) return;
+
+  // Re-check reservation hasn't expired
+  try {
+    const snap = await getDoc(doc(db, 'orders', ORDER_ID));
+    const fresh = snap.data();
+    let deadline;
+    if (fresh.reserved_until?.toDate) {
+      deadline = fresh.reserved_until.toDate().getTime();
+    } else if (fresh.reserved_until) {
+      deadline = new Date(fresh.reserved_until).getTime();
+    }
+    if (deadline && Date.now() > deadline) {
+      await handleExpiry();
+      return;
+    }
+    // Check not already paid
+    if (['paid','cancelled','payment_failed'].includes(fresh.status)) {
+      window.location.reload();
+      return;
+    }
+  } catch (e) { /* proceed */ }
+
+  const btn = document.getElementById('btn-pay');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> Пайваст шудан ба банк…';
+
+  const amount  = orderData.total || AMOUNT;
+  const ordNum  = orderData.orderNumber || ORDER_ID.slice(-6);
+  const returnBase = encodeURIComponent(location.origin + '/transaction-callback.html');
+
+  // ─────────────────────────────────────────────────────────────
+  // BANK GATEWAY URL
+  // Replace this block with your real bank's payment URL.
+  // Eskhata Bank / Alif Bank example placeholders shown below.
+  //
+  // Eskhata Bank (когда получите реальный доступ):
+  //   const payUrl = `https://pay.eskhata.com/pay?amount=${amount*100}&order_id=${ORDER_ID}&desc=Dastdaroz+%23${ordNum}&back_url=${returnBase}%3Forder_id%3D${ORDER_ID}%26external_id%3D{txid}%26status%3Dsuccess&fail_url=${returnBase}%3Forder_id%3D${ORDER_ID}%26status%3Dfail`;
+  //
+  // Alif Bank (когда получите реальный доступ):
+  //   const payUrl = `https://pay.alif.tj/checkout?amount=${amount}&currency=TJS&order_ref=${ORDER_ID}&merchant_id=YOUR_MERCHANT_ID&return_url=${returnBase}`;
+  //
+  // ТЕСТОВЫЙ режим — симуляция успешного платежа через 2 секунды:
+  // ─────────────────────────────────────────────────────────────
+  const IS_TEST_MODE = true; // ← сменить на false при подключении реального банка
+
+  if (IS_TEST_MODE) {
+    // Simulate bank redirect & return
+    setTimeout(() => {
+      const fakeExtId = 'TEST_' + Date.now();
+      window.location.href = `transaction-callback.html?status=success&order_id=${ORDER_ID}&external_id=${fakeExtId}`;
+    }, 2000);
+    return;
+  }
+
+  // Real bank redirect:
+  // window.location.href = payUrl;
+};
+
+// ── Cancel button ─────────────────────────────────────────────
+window.doCancel = async function () {
+  if (isExpired) return;
+  if (!confirm('Шумо мехоҳед фармоишро бекор кунед?')) return;
+
+  const btn = document.getElementById('btn-cancel');
+  btn.disabled = true;
+  btn.textContent = 'Бекор кардан…';
+
+  clearInterval(timerInterval);
+
+  try {
+    await updateDoc(doc(db, 'orders', ORDER_ID), {
+      status:    'cancelled',
+      updatedAt: serverTimestamp(),
+    });
+    window.location.href = 'home.html';
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Бекор кардани фармоиш';
+    alert('Хато: ' + e.message);
+  }
+};
+
+// ── Auth check then load ──────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  loadOrder(user);
+});
+</script>
+</body>
+</html>
