@@ -191,6 +191,22 @@ a{color:inherit;text-decoration:none}
 
 /* ── SEARCH BOX on home ── */
 .home-search-wrap{margin-bottom:24px;position:relative}
+/* ── ADDRESS BANNER ── */
+.addr-banner{
+  display:flex;align-items:center;gap:10px;
+  background:var(--accd);border:1.5px solid var(--accg);
+  border-radius:13px;padding:10px 12px;
+  margin-top:-10px;margin-bottom:22px;
+  animation:addrBannerIn .35s cubic-bezier(.25,1.3,.5,1) both;
+}
+@keyframes addrBannerIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.addr-banner-ico{width:32px;height:32px;border-radius:8px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.addr-banner-ico svg{color:#fff}
+.addr-banner-text{flex:1;min-width:0;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
+.addr-banner-set{background:var(--acc);color:#fff;border:none;border-radius:8px;font-family:var(--fd);font-weight:800;font-size:.72rem;padding:7px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.addr-banner-set:active{opacity:.82}
+.addr-banner-later{background:none;border:none;color:var(--tx3);font-size:.7rem;cursor:pointer;padding:6px 4px;white-space:nowrap;flex-shrink:0;transition:color .15s}
+.addr-banner-later:active{color:var(--tx)}
 .search-box{display:flex;align-items:center;gap:10px;background:var(--s1);border:2px solid var(--b0);border-radius:16px;padding:13px 18px;box-shadow:var(--shadow-md);transition:border-color .18s,box-shadow .18s}
 .search-box:focus-within{border-color:var(--acc);box-shadow:0 0 0 4px var(--accd)}
 .search-box svg{color:var(--tx3);flex-shrink:0;transition:color .15s}
@@ -898,6 +914,16 @@ select.addr-inp{cursor:pointer}
           <div class="search-dropdown" id="search-dd"></div>
         </div>
       </div>
+      <!-- ADDRESS BANNER -->
+      <div class="addr-banner" id="addr-banner" style="display:none">
+        <div class="addr-banner-ico">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="addr-banner-text">Укажите адрес доставки</div>
+        <button class="addr-banner-set" onclick="openAddrModal('cart');hideAddrBanner(false)">Указать</button>
+        <button class="addr-banner-later" onclick="hideAddrBanner(true)">Потом</button>
+      </div>
+
       <!-- STORES SECTION -->
       <div class="stores-section" id="stores-section">
         <div class="sh" style="margin-bottom:14px">
@@ -1274,6 +1300,77 @@ select.addr-inp{cursor:pointer}
     </div>
   </div>
 </div>
+
+<!-- ══ APP INSTALL BANNER ══ -->
+<style>
+.app-bar{
+  position:fixed;
+  bottom:calc(var(--nb,66px) + var(--safe-b,0px) + 10px);
+  left:12px;right:12px;z-index:500;
+  background:var(--s1,#fff);
+  border:1.5px solid var(--b0,#e5e7eb);
+  border-radius:14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.13);
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;
+  transform:translateY(calc(100% + 20px));opacity:0;
+  transition:transform .38s cubic-bezier(.25,1.3,.5,1),opacity .28s ease;
+}
+.app-bar.show{transform:translateY(0);opacity:1}
+@media(min-width:861px){.app-bar{bottom:20px;left:auto;right:24px;width:340px}}
+.app-bar-ico{width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--accd,#dcfce7)}
+.app-bar-ico img{width:100%;height:100%;object-fit:cover;display:block}
+.app-bar-name{flex:1;min-width:0;font-family:var(--fd,sans-serif);font-weight:800;font-size:.78rem;color:var(--tx,#111);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-bar-btn{background:linear-gradient(135deg,var(--acc,#16a34a),var(--acc2,#22c55e));color:#fff;border:none;border-radius:9px;font-family:var(--fd,sans-serif);font-weight:800;font-size:.68rem;padding:7px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 2px 8px var(--acc-shadow,rgba(22,163,74,.28));transition:opacity .15s}
+.app-bar-btn:active{opacity:.82}
+.app-bar-close{width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--s2,#f3f4f6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3,#888);transition:background .15s}
+.app-bar-close:active{background:var(--b0,#e5e7eb)}
+</style>
+
+<div class="app-bar" id="app-bar">
+  <div class="app-bar-ico"><img src="mini_dastdaroz.png" alt="dastdaroz"/></div>
+  <div class="app-bar-name">В приложении удобнее</div>
+  <a class="app-bar-btn" href="https://dastdaroz.shop/application_client.apk" download>Скачать</a>
+  <button class="app-bar-close" onclick="document.getElementById('app-bar').classList.remove('show')" aria-label="Закрыть">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+</div>
+<script>setTimeout(function(){document.getElementById('app-bar').classList.add('show')},800);</script>
+
+<!-- ══ ADDRESS BANNER LOGIC ══ -->
+<script>
+(function(){
+  const SKIP_KEY = 'addr_banner_skip';
+  const banner   = document.getElementById('addr-banner');
+  const addrVal  = document.getElementById('sb-addr-val');
+
+  function hasAddress(){
+    return addrVal && !addrVal.classList.contains('empty');
+  }
+
+  window.hideAddrBanner = function(permanent){
+    if(permanent) localStorage.setItem(SKIP_KEY,'1');
+    if(!banner) return;
+    banner.style.transition='opacity .2s';
+    banner.style.opacity='0';
+    setTimeout(function(){ banner.style.display='none'; banner.style.opacity=''; banner.style.transition=''; },200);
+  };
+
+  function init(){
+    if(!banner) return;
+    if(localStorage.getItem(SKIP_KEY)==='1') return;
+    if(hasAddress()) return;
+    banner.style.display='flex';
+    if(addrVal){
+      new MutationObserver(function(){
+        if(hasAddress()) hideAddrBanner(true);
+      }).observe(addrVal,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
+    }
+  }
+
+  setTimeout(init, 1400);
+})();
+</script>
 
 </body>
 </html>
