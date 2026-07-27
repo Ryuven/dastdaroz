@@ -497,23 +497,6 @@ select.addr-inp{cursor:pointer}
 @media(min-width:861px){.pg{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:1100px){.pg{grid-template-columns:repeat(4,1fr)}}
 @media(min-width:1400px){.pg{grid-template-columns:repeat(5,1fr)}}
-/* ── PAYMENT STATUS CARDS ── */
-.oc.st-awaiting_payment{border-color:rgba(37,99,235,.28);background:linear-gradient(135deg,rgba(37,99,235,.04),transparent)}
-.oc.st-payment_failed{border-color:rgba(220,38,38,.22);background:rgba(220,38,38,.02)}
-/* Pay / Retry button inside order card */
-.oc-pay-btn{
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  margin-top:10px;width:100%;padding:11px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  border:none;border-radius:10px;color:#fff;
-  font-family:var(--fd);font-weight:800;font-size:.76rem;
-  cursor:pointer;box-shadow:0 3px 10px var(--acc-shadow);
-  transition:opacity .15s;
-}
-.oc-pay-btn:hover{opacity:.88}
-.oc-pay-btn:active{opacity:1;transform:scale(.98)}
-.oc-pay-btn-retry{background:linear-gradient(135deg,var(--amber),#f59e0b);box-shadow:0 3px 10px rgba(217,119,6,.3)}
-
 /* ── ORDER MODAL ── */
 .o-modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .o-modal-bg.open{opacity:1;pointer-events:all}
@@ -1022,7 +1005,7 @@ select.addr-inp{cursor:pointer}
           <label class="addr-lbl">Пардохт</label>
           <select class="addr-inp" id="cart-pay">
             <option value="cash">💵 Нақдӣ ба курьер</option>
-            <option value="card">💳 Пардохти онлайн (корти бонкӣ)</option>
+            <option value="card">💳 Корти бонкӣ</option>
           </select>
           <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -1037,7 +1020,6 @@ select.addr-inp{cursor:pointer}
       <div class="sh"><div><div class="sh-tag">Таърих</div><div class="sh-title">Фармоишҳои <em>ман</em></div></div></div>
       <div class="order-tabs">
         <button class="otab active" onclick="setOTab('all',this)">Ҳама</button>
-        <button class="otab" onclick="setOTab('awaiting_payment',this)">💳 Пардохт</button>
         <button class="otab" onclick="setOTab('active',this)">Фаъол</button>
         <button class="otab" onclick="setOTab('delivered',this)">Расонида шуд</button>
         <button class="otab" onclick="setOTab('cancelled',this)">Бекор</button>

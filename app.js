@@ -42,27 +42,21 @@ const DFEE = 7; // стоимость доставки
 
 // ─── Лейблы и цвета статусов (на таджикском) ─────────────────
 const SL = {
-  pending:          'Интизор',
-  confirmed:        'Тасдиқ шуд',
-  preparing:        'Омода мешавад',
-  delivering:       'Дар роҳ',
-  delivered:        'Расонида шуд',
-  cancelled:        'Бекор шуд',
-  awaiting_payment: 'Интизори пардохт',
-  payment_failed:   'Пардохт нокомёб шуд',
-  paid:             'Пардохт шуд',
+  pending:    'Интизор',
+  confirmed:  'Тасдиқ шуд',
+  preparing:  'Омода мешавад',
+  delivering: 'Дар роҳ',
+  delivered:  'Расонида шуд',
+  cancelled:  'Бекор шуд',
 };
 
 const SC = {
-  pending:          'var(--amber)',
-  confirmed:        'var(--blue)',
-  preparing:        'var(--purple)',
-  delivering:       'var(--acc)',
-  delivered:        'var(--acc)',
-  cancelled:        'var(--red)',
-  awaiting_payment: 'var(--blue)',
-  payment_failed:   'var(--red)',
-  paid:             'var(--acc)',
+  pending:    'var(--amber)',
+  confirmed:  'var(--blue)',
+  preparing:  'var(--purple)',
+  delivering: 'var(--acc)',
+  delivered:  'var(--acc)',
+  cancelled:  'var(--red)',
 };
 
 const STEPS = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered'];
@@ -1169,78 +1163,52 @@ function escHtml(s) {
 window.doCheckout = async function () {
   if (!requireAuth('Барои фармоиш ворид шавед')) return;
   if (!cart.length) return;
-
-  const addr      = document.getElementById('cart-addr').value.trim();
-  const lat       = parseFloat(document.getElementById('cart-lat')?.value) || null;
-  const lng       = parseFloat(document.getElementById('cart-lng')?.value) || null;
-  const payMethod = document.getElementById('cart-pay').value;
-
+  const addr = document.getElementById('cart-addr').value.trim();
+  const lat  = parseFloat(document.getElementById('cart-lat')?.value) || null;
+  const lng  = parseFloat(document.getElementById('cart-lng')?.value) || null;
   if (!addr) {
     toast('Суроғи расониданро нишон диҳед', 'err');
+    document.getElementById('cart-addr').focus();
     return;
   }
-
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Расмикунонӣ…';
-
   try {
-    const sub   = cart.reduce((s, c) => s + c.price * c.quantity, 0);
-    const total = sub + DFEE;
-    const oNum  = nextOrderNum();
+    const sub  = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+    const oNum = nextOrderNum();
     const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-    // reserved_until = now + 10 minutes (only for card payments)
-    const reservedUntil = new Date(Date.now() + 10 * 60 * 1000);
-
-    const ref = await addDoc(collection(db, 'orders'), {
-      clientId:       CU.uid,
-      clientName:     UD?.displayName || '',
-      orderNumber:    oNum,
-      confirmCode:    confirmCode,
-      items:          cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
-      subtotal:       sub,
-      deliveryFee:    DFEE,
-      total:          total,
-      address:        addr,
-      lat:            lat,
-      lng:            lng,
-      comment:        document.getElementById('cart-comment').value.trim(),
-      paymentMethod:  payMethod,
-      // Card payment: awaiting_payment + reservation. Cash: straight to pending.
-      status:         payMethod === 'card' ? 'awaiting_payment' : 'pending',
-      paymentStatus:  payMethod === 'card' ? 'pending' : null,
-      reserved_until: payMethod === 'card' ? reservedUntil : null,
-      externalId:     null,
-      paidAt:         null,
-      courierId:      null,
-      courierName:    null,
-      createdAt:      serverTimestamp(),
-      updatedAt:      serverTimestamp(),
+    const ref  = await addDoc(collection(db, 'orders'), {
+      clientId:      CU.uid,
+      clientName:    UD?.displayName || '',
+      orderNumber:   oNum,
+      confirmCode:   confirmCode,
+      items:         cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
+      subtotal:      sub,
+      deliveryFee:   DFEE,
+      total:         sub + DFEE,
+      address:       addr,
+      lat:           lat,
+      lng:           lng,
+      comment:       document.getElementById('cart-comment').value.trim(),
+      paymentMethod: document.getElementById('cart-pay').value,
+      status:        'pending',
+      courierId:     null,
+      courierName:   null,
+      createdAt:     serverTimestamp(),
+      updatedAt:     serverTimestamp(),
     });
-
-    // Clear cart
     activeOid = ref.id;
     const b = writeBatch(db);
     cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
     await b.commit();
     cart = [];
     renderCart(); updateBadges();
-
-    if (payMethod === 'card') {
-      // ── Online payment: redirect to transaction page ──
-      toast('Фармоиш №' + oNum + ' созда шуд! Ба пардохт гузаред 💳', 'ok');
-      setTimeout(() => {
-        window.location.href = `transaction.html?order_id=${ref.id}&amount=${total}`;
-      }, 700);
-    } else {
-      // ── Cash payment: existing courier flow ──
-      toast('Фармоиш №' + oNum + ' расмикунонӣ шуд! 🎉', 'ok');
-      listenLive(ref.id);
-      await loadOrders();
-      goPage('status');
-    }
-
+    toast('Фармоиш №' + oNum + ' расмикунонӣ шуд! 🎉', 'ok');
+    // Сначала слушаем, потом грузим заказы и переходим
+    listenLive(ref.id);
+    await loadOrders();
+    goPage('status');
   } catch (e) {
     toast('Хато: ' + e.message, 'err');
     btn.disabled = false;
@@ -1267,7 +1235,7 @@ async function loadOrders() {
       });
     } catch { orders = []; }
   }
-  const live = orders.find(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  const live = orders.find(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (live) { activeOid = live.id; if (!unsubLive) listenLive(live.id); }
   renderOrders(); renderOrdersBadge(); renderLiveBanner();
   // Статистика профиля
@@ -1285,11 +1253,10 @@ window.setOTab = function (tab, btn) {
 };
 
 function filterOrders() {
-  if (currentOTab === 'all')             return orders;
-  if (currentOTab === 'awaiting_payment') return orders.filter(o => o.status === 'awaiting_payment');
-  if (currentOTab === 'active')          return orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
-  if (currentOTab === 'delivered')       return orders.filter(o => o.status === 'delivered');
-  if (currentOTab === 'cancelled')       return orders.filter(o => ['cancelled', 'payment_failed'].includes(o.status));
+  if (currentOTab === 'all')       return orders;
+  if (currentOTab === 'active')    return orders.filter(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
+  if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
   return orders;
 }
 
@@ -1302,29 +1269,13 @@ function renderOrders() {
     return;
   }
   el.innerHTML = list.map(o => {
-    const c            = SC[o.status] || '#888';
-    const l            = SL[o.status] || o.status;
-    const num          = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
-    const items        = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
-    const date         = fmtDate(o.createdAt);
-    const isActive     = ['pending','confirmed','preparing','delivering'].includes(o.status);
-    const awaitingPay  = o.status === 'awaiting_payment';
-    const payFailed    = o.status === 'payment_failed';
-
-    // Extra action button for payment-related statuses
-    const extraBtn = awaitingPay
-      ? `<button class="oc-pay-btn" onclick="event.stopPropagation();window.location.href='transaction.html?order_id=${o.id}&amount=${o.total}'">
-           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-           💳 Пардохт кунед — ${o.total} см
-         </button>`
-      : payFailed
-      ? `<button class="oc-pay-btn oc-pay-btn-retry" onclick="event.stopPropagation();window.location.href='transaction.html?order_id=${o.id}&amount=${o.total}&retry=true'">
-           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-           Аз нав кӯшиш кунед
-         </button>`
-      : '';
-
-    return `<div class="oc st-${o.status}" data-id="${o.id}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
+    const c     = SC[o.status] || '#888';
+    const l     = SL[o.status] || o.status;
+    const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+    const items = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
+    const date  = fmtDate(o.createdAt);
+    const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+    return `<div class="oc st-${o.status}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
       <div class="oc-head">
         <div class="oc-num">Фармоиш ${num}</div>
         <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10">${l}</div>
@@ -1333,11 +1284,10 @@ function renderOrders() {
       <div class="oc-footer">
         <div><div class="oc-total">${o.total} см</div><div class="oc-meta">${date} · ${o.address || ''}</div></div>
         <div class="oc-actions" onclick="event.stopPropagation()">
-          ${(isActive || awaitingPay) ? `<div style="width:7px;height:7px;border-radius:50%;background:${c};animation:rpulse 2s infinite;flex-shrink:0"></div>` : ''}
+          ${isActive ? `<div style="width:7px;height:7px;border-radius:50%;background:${c};animation:rpulse 2s infinite;flex-shrink:0"></div>` : ''}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
       </div>
-      ${extraBtn}
     </div>`;
   }).join('');
 }
@@ -2247,59 +2197,3 @@ window.uploadAvUI = async function (inp) {
     toast('Акс навсозӣ шуд', 'ok');
   } catch { toast('Хатои боргузорӣ', 'err'); }
 };
-
-// ─── Хэш-навигация: открыть конкретный заказ после оплаты ────
-// Срабатывает при переходе на home.html#order-{orderId}
-// или home.html#orders (просто открыть вкладку заказов)
-(function initHashNav() {
-  function handleHash() {
-    const hash = location.hash;
-    if (!hash) return;
-
-    if (hash === '#orders') {
-      goPage('orders');
-      history.replaceState(null, '', location.pathname);
-      return;
-    }
-
-    const m = hash.match(/^#order-(.+)$/);
-    if (!m) return;
-    const targetId = m[1];
-
-    // Go to orders page first
-    goPage('orders');
-
-    // Try to find and highlight the order, retrying until data is loaded
-    let attempts = 20;
-    function tryOpen() {
-      attempts--;
-      const order = orders.find(o => o.id === targetId);
-      if (order) {
-        // Open the detail modal
-        openOrderModal(targetId);
-
-        // Highlight the card in the list
-        setTimeout(() => {
-          const card = document.querySelector(`.oc[data-id="${targetId}"]`);
-          if (card) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            card.style.transition = 'outline .2s, box-shadow .2s';
-            card.style.outline    = '2.5px solid var(--acc)';
-            card.style.boxShadow  = '0 0 0 6px rgba(26,158,74,.15)';
-            setTimeout(() => { card.style.outline = ''; card.style.boxShadow = ''; }, 2500);
-          }
-        }, 150);
-
-        history.replaceState(null, '', location.pathname);
-      } else if (attempts > 0) {
-        setTimeout(tryOpen, 300);
-      }
-    }
-
-    // Small delay to let auth + orders load
-    setTimeout(tryOpen, 800);
-  }
-
-  window.addEventListener('load', handleHash);
-  window.addEventListener('hashchange', handleHash);
-})();
