@@ -42,6 +42,7 @@ const DFEE = 7; // стоимость доставки
 
 // ─── Лейблы и цвета статусов (на таджикском) ─────────────────
 const SL = {
+  awaiting_payment: 'Интизори пардохт',
   pending:    'Интизор',
   confirmed:  'Тасдиқ шуд',
   preparing:  'Омода мешавад',
@@ -51,6 +52,7 @@ const SL = {
 };
 
 const SC = {
+  awaiting_payment: 'var(--teal)',
   pending:    'var(--amber)',
   confirmed:  'var(--blue)',
   preparing:  'var(--purple)',
@@ -1159,7 +1161,24 @@ function escHtml(s) {
 }
 
 
-// ─── Оформление заказа ────────────────────────────────────────
+// ─── Оформление заказа + бронирование + переход к оплате ──────
+//
+//  Флоу:
+//  1. Создаём заказ со status = 'awaiting_payment' и reservedUntil = now+10мин
+//  2. Очищаем корзину
+//  3. Переходим на payment.html?oid=ORDER_ID
+//
+//  payment.html обрабатывает ответ эквайринга:
+//    status=success → меняет status на 'pending' (заказ в работу)
+//    status=cancel  → меняет status на 'cancelled'
+//    таймер = 0    → меняет status на 'cancelled' (expired)
+//
+//  Возврат на home.html через якорную ссылку #order-ORDER_ID
+//  — автоматически открывает страницу статуса нужного заказа.
+// ──────────────────────────────────────────────────────────────
+
+const PAYMENT_RESERVE_MS = 10 * 60 * 1000; // 10 минут
+
 window.doCheckout = async function () {
   if (!requireAuth('Барои фармоиш ворид шавед')) return;
   if (!cart.length) return;
@@ -1171,50 +1190,116 @@ window.doCheckout = async function () {
     document.getElementById('cart-addr').focus();
     return;
   }
+
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Расмикунонӣ…';
+  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Бронирование…';
+
   try {
-    const sub  = cart.reduce((s, c) => s + c.price * c.quantity, 0);
-    const oNum = nextOrderNum();
+    const sub         = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+    const oNum        = nextOrderNum();
     const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const ref  = await addDoc(collection(db, 'orders'), {
-      clientId:      CU.uid,
-      clientName:    UD?.displayName || '',
-      orderNumber:   oNum,
-      confirmCode:   confirmCode,
-      items:         cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
-      subtotal:      sub,
-      deliveryFee:   DFEE,
-      total:         sub + DFEE,
-      address:       addr,
-      lat:           lat,
-      lng:           lng,
-      comment:       document.getElementById('cart-comment').value.trim(),
-      paymentMethod: document.getElementById('cart-pay').value,
-      status:        'pending',
-      courierId:     null,
-      courierName:   null,
-      createdAt:     serverTimestamp(),
-      updatedAt:     serverTimestamp(),
+    const payMethod   = document.getElementById('cart-pay')?.value || 'card';
+
+    // Дедлайн оплаты: now + 10 минут
+    const reservedUntil = new Date(Date.now() + PAYMENT_RESERVE_MS);
+
+    const ref = await addDoc(collection(db, 'orders'), {
+      clientId:       CU.uid,
+      clientName:     UD?.displayName || '',
+      orderNumber:    oNum,
+      confirmCode:    confirmCode,
+      items:          cart.map(c => ({
+        productId: c.productId,
+        name:      c.name,
+        price:     c.price,
+        quantity:  c.quantity,
+      })),
+      subtotal:       sub,
+      deliveryFee:    DFEE,
+      total:          sub + DFEE,
+      address:        addr,
+      lat:            lat,
+      lng:            lng,
+      comment:        document.getElementById('cart-comment')?.value.trim() || '',
+      paymentMethod:  payMethod,
+      // ── статус бронирования ────────────────────────────────
+      status:         'awaiting_payment',  // ждём оплату 10 мин
+      paymentStatus:  'pending',           // ещё не оплачен
+      reservedUntil:  reservedUntil,       // Timestamp дедлайна
+      // ───────────────────────────────────────────────────────
+      courierId:      null,
+      courierName:    null,
+      createdAt:      serverTimestamp(),
+      updatedAt:      serverTimestamp(),
     });
-    activeOid = ref.id;
+
+    const oid = ref.id;
+    activeOid = oid;
+
+    // Очищаем корзину сразу после бронирования
     const b = writeBatch(db);
     cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
     await b.commit();
     cart = [];
     renderCart(); updateBadges();
-    toast('Фармоиш №' + oNum + ' расмикунонӣ шуд! 🎉', 'ok');
-    // Сначала слушаем, потом грузим заказы и переходим
-    listenLive(ref.id);
-    await loadOrders();
-    goPage('status');
+
+    toast('Фармоиш №' + oNum + ' забронировано! 💳 Пардохт кунед', 'ok');
+
+    // Переход на страницу оплаты (небольшая задержка для toast)
+    setTimeout(() => {
+      location.href = 'payment.html?oid=' + oid;
+    }, 700);
+
   } catch (e) {
     toast('Хато: ' + e.message, 'err');
     btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Фармоиш расмикунонӣ';
+    btn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<path d="M5 12h14M12 5l7 7-7 7"/></svg> Фармоиш расмикунонӣ';
   }
 };
+
+// ─── Обработка возврата с payment.html (якорные ссылки) ───────
+//
+//  payment.html перенаправляет обратно как:
+//    home.html#order-<oid>          → открыть статус заказа
+//    home.html#order-<oid>&retry=1  → заказ не оплачен, открыть статус
+//
+//  Вызывается один раз при загрузке страницы.
+// ──────────────────────────────────────────────────────────────
+(function handlePaymentReturn() {
+  const hash = location.hash;
+  if (!hash.startsWith('#order-')) return;
+
+  const rawPart = hash.slice('#order-'.length);
+  const oid     = rawPart.split('&')[0];
+  if (!oid) return;
+
+  // Убираем хэш из адресной строки
+  history.replaceState(null, '', location.pathname + location.search);
+
+  // Ждём инициализации приложения, затем открываем статус
+  const tryOpen = () => {
+    if (typeof goPage === 'function') {
+      activeOid = oid;
+      // Принудительно загружаем заказы и переходим на статус
+      if (typeof loadOrders === 'function') {
+        loadOrders().then(() => {
+          goPage('status');
+          if (typeof renderStatusPage === 'function') renderStatusPage();
+        }).catch(() => {
+          goPage('status');
+        });
+      } else {
+        goPage('status');
+      }
+    } else {
+      setTimeout(tryOpen, 250);
+    }
+  };
+  setTimeout(tryOpen, 500);
+})();
 
 // ─── Заказы ──────────────────────────────────────────────────
 async function loadOrders() {
@@ -1235,7 +1320,7 @@ async function loadOrders() {
       });
     } catch { orders = []; }
   }
-  const live = orders.find(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  const live = orders.find(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (live) { activeOid = live.id; if (!unsubLive) listenLive(live.id); }
   renderOrders(); renderOrdersBadge(); renderLiveBanner();
   // Статистика профиля
@@ -1254,7 +1339,7 @@ window.setOTab = function (tab, btn) {
 
 function filterOrders() {
   if (currentOTab === 'all')       return orders;
-  if (currentOTab === 'active')    return orders.filter(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  if (currentOTab === 'active')    return orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
   if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
   return orders;
@@ -1274,7 +1359,7 @@ function renderOrders() {
     const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
     const items = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
     const date  = fmtDate(o.createdAt);
-    const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+    const isActive = ['awaiting_payment','pending','confirmed','preparing','delivering'].includes(o.status);
     return `<div class="oc st-${o.status}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
       <div class="oc-head">
         <div class="oc-num">Фармоиш ${num}</div>
@@ -1302,7 +1387,7 @@ window.openOrderModal = function (oid) {
   const si    = STEPS.indexOf(o.status);
   const pay   = o.paymentMethod === 'cash' ? 'Нақдӣ 💵' : o.paymentMethod === 'card' ? 'Корт 💳' : 'Онлайн 📱';
   const date  = fmtDate(o.createdAt);
-  const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+  const isActive = ['awaiting_payment','pending','confirmed','preparing','delivering'].includes(o.status);
   const sub   = (o.items||[]).reduce((s,i) => s + i.price*i.quantity, 0);
   const delivery = o.total - sub;
 
@@ -1428,7 +1513,17 @@ window.openOrderModal = function (oid) {
       </div>
     </div>
 
-    ${['pending','confirmed'].includes(o.status) ? `
+    ${o.status === 'awaiting_payment' ? `
+    <div style="margin:10px 0 4px">
+      <div style="background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.25);border-radius:14px;padding:14px 18px;margin-bottom:8px">
+        <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Интизори пардохт</div>
+        <div style="font-size:.72rem;color:var(--tx2);line-height:1.6">Фармоиши шумо 10 дақиқа забронировано шудааст. Барои расмикунонӣ пардохт кунед.</div>
+        <button onclick="closeOrderModal(); location.href='payment.html?oid=${o.id}'" style="margin-top:12px;width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3)">
+          💳 Пардохт кунед
+        </button>
+      </div>
+    </div>` : ''}
+  ${['awaiting_payment','pending','confirmed'].includes(o.status) ? `
     <div style="margin-top:4px;margin-bottom:8px">
       <button class="btn-sm danger" style="width:100%;padding:10px;font-size:.64rem" onclick="cancelO('${o.id}');closeOrderModal()">Фармоишро бекор кунед</button>
     </div>` : ''}
@@ -1456,7 +1551,7 @@ window.viewOrderStatus = function (oid) {
 
 
 function renderOrdersBadge() {
-  const act = orders.filter(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
+  const act = orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
   ['orders-nb', 'mob-ord-b'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
@@ -1700,7 +1795,16 @@ function renderStatusPage() {
     ${(o.items || []).map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b0);font-size:.75rem"><span style="color:var(--tx)">${escHtml(i.name)}<span style="color:var(--tx3)"> ×${i.quantity}</span></span><span style="font-weight:600;color:var(--tx2)">${i.price * i.quantity} см</span></div>`).join('')}
     <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Расонидан</span><span>${DFEE} см</span></div>
     <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)"><span style="font-weight:700;font-size:.8rem">Ҷамъ</span><span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span></div>
-    ${['pending', 'confirmed'].includes(o.status) ? `<div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Фармоишро бекор кунед</button></div>` : ''}
+    ${o.status === 'awaiting_payment' ? `
+    <div style="margin-top:16px;background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.28);border-radius:16px;padding:16px 18px">
+      <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Интизори пардохт</div>
+      <div style="font-size:.72rem;color:var(--tx2);line-height:1.6;margin-bottom:12px">Фармоиш забронировано шудааст. Барои расмикунонии фармоиш, лутфан дар муддати 10 дақиқа пардохт кунед.</div>
+      <button onclick="location.href='payment.html?oid=${o.id}'" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.8rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        💳 Пардохт кунед
+      </button>
+    </div>` : ''}
+    ${['awaiting_payment','pending', 'confirmed'].includes(o.status) ? `<div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Фармоишро бекор кунед</button></div>` : ''}
 
     ${o.confirmCode && !['cancelled'].includes(o.status) ? `
     <div style="margin-top:18px;background:${o.status === 'client_arrived' ? 'linear-gradient(135deg,rgba(26,158,74,.1),rgba(34,197,94,.05))' : 'linear-gradient(135deg,rgba(26,158,74,.06),rgba(34,197,94,.02))'};border:2px solid ${o.status === 'client_arrived' ? 'rgba(26,158,74,.35)' : 'rgba(26,158,74,.18)'};border-radius:18px;padding:20px;text-align:center">

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Пардохт — Galelium Delivery</title>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getAuth, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+// ── Подключи свой firebase-config (тот же что в firebase.js) ──
+import { firebaseConfig } from './firebase-config.js';
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ──────────────────────────────────────────────────────────────
+//  URL-параметры
+//  payment.html?oid=ORDER_ID&status=success|cancel|pending
+// ──────────────────────────────────────────────────────────────
+const params   = new URLSearchParams(location.search);
+const ORDER_ID = params.get('oid') || '';
+const CB_STATUS = params.get('status') || '';   // ответ от эквайринга
+
+// ──────────────────────────────────────────────────────────────
+//  Если эквайринг вернул ответ — обрабатываем
+// ──────────────────────────────────────────────────────────────
+if (CB_STATUS && ORDER_ID) {
+  handleAcquiringCallback(CB_STATUS, ORDER_ID);
+}
+
+async function handleAcquiringCallback(status, oid) {
+  try {
+    if (status === 'success' || status === 'paid') {
+      await updateDoc(doc(db, 'orders', oid), {
+        status:      'pending',          // заказ уходит в работу
+        paymentStatus: 'paid',
+        paidAt:      serverTimestamp(),
+        updatedAt:   serverTimestamp(),
+      });
+      showResult('success', oid);
+    } else if (status === 'cancel' || status === 'cancelled') {
+      await updateDoc(doc(db, 'orders', oid), {
+        status:        'cancelled',
+        paymentStatus: 'cancelled',
+        cancelReason:  'Пардохт бекор шуд аз тарафи корбар',
+        updatedAt:     serverTimestamp(),
+      });
+      showResult('cancel', oid);
+    } else if (status === 'fail' || status === 'failed') {
+      await updateDoc(doc(db, 'orders', oid), {
+        paymentStatus: 'failed',
+        updatedAt:     serverTimestamp(),
+      });
+      showResult('fail', oid);
+    }
+  } catch(e) {
+    console.error('Callback error:', e);
+    showResult('error', oid);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Загрузка заказа
+// ──────────────────────────────────────────────────────────────
+let ORDER     = null;
+let TIMER_INT = null;
+let DEADLINE  = null;
+
+window._db       = db;
+window._auth     = auth;
+window._ORDER_ID = ORDER_ID;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'login.html'; return; }
+
+  if (CB_STATUS) return; // уже обрабатываем коллбэк, страница результата
+
+  if (!ORDER_ID) { showNoOrder(); return; }
+
+  try {
+    const snap = await getDoc(doc(db, 'orders', ORDER_ID));
+    if (!snap.exists()) { showNoOrder(); return; }
+
+    ORDER = { id: snap.id, ...snap.data() };
+
+    // Проверяем — только хозяин может платить
+    if (ORDER.clientId !== user.uid) { showNoOrder(); return; }
+
+    // Проверяем, не отменён ли уже
+    if (ORDER.status === 'cancelled') { showResult('cancel', ORDER_ID); return; }
+    if (ORDER.paymentStatus === 'paid') { showResult('success', ORDER_ID); return; }
+
+    // Ищем дедлайн бронирования
+    if (ORDER.reservedUntil) {
+      DEADLINE = ORDER.reservedUntil.toDate ? ORDER.reservedUntil.toDate() : new Date(ORDER.reservedUntil);
+    } else {
+      // Fallback: createdAt + 10 минут
+      const created = ORDER.createdAt?.toDate ? ORDER.createdAt.toDate() : new Date();
+      DEADLINE = new Date(created.getTime() + 10 * 60 * 1000);
+    }
+
+    renderPayPage();
+    startTimer();
+  } catch(e) {
+    showErr('Хато ҳангоми боргузорӣ: ' + e.message);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+//  Таймер обратного отсчёта
+// ──────────────────────────────────────────────────────────────
+function startTimer() {
+  updateTimer();
+  TIMER_INT = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  const now  = Date.now();
+  const left = DEADLINE - now;
+  if (left <= 0) {
+    clearInterval(TIMER_INT);
+    expireOrder();
+    return;
+  }
+  const m = Math.floor(left / 60000);
+  const s = Math.floor((left % 60000) / 1000);
+  const el = document.getElementById('timer-val');
+  if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
+
+  // Прогресс-бар
+  const total = 10 * 60 * 1000;
+  const pct   = Math.max(0, Math.min(100, (left / total) * 100));
+  const bar   = document.getElementById('timer-bar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = pct > 40 ? '#1a9e4a' : pct > 15 ? '#d97706' : '#dc2626';
+  }
+
+  // Цвет цифр
+  if (el) {
+    el.style.color = left < 60000 ? '#dc2626' : left < 3 * 60000 ? '#d97706' : '#1a9e4a';
+  }
+}
+
+async function expireOrder() {
+  try {
+    // Отменяем бронирование в Firestore
+    await updateDoc(doc(db, 'orders', ORDER_ID), {
+      status:      'cancelled',
+      paymentStatus: 'expired',
+      cancelReason: 'Вақти пардохт гузашт',
+      updatedAt:   serverTimestamp(),
+    });
+  } catch(e) { console.error(e); }
+  showResult('expired', ORDER_ID);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  Инициация оплаты (переход к эквайрингу)
+// ──────────────────────────────────────────────────────────────
+window.initPayment = async function(method) {
+  if (!ORDER) return;
+  clearInterval(TIMER_INT);
+
+  const btn = document.getElementById('pay-btn-' + method);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin-sm"></span> Пардохт оғоз мешавад…';
+  }
+
+  // Обновляем метод оплаты в Firestore
+  try {
+    await updateDoc(doc(db, 'orders', ORDER_ID), {
+      paymentMethod:    method,
+      paymentStatus:    'processing',
+      updatedAt:        serverTimestamp(),
+    });
+  } catch(e) { console.error(e); }
+
+  // ─── ИНТЕГРАЦИЯ ЭКВАЙРИНГА ─────────────────────────────────
+  // Параметры возврата: ?oid=ORDER_ID&status=success|cancel|fail
+  const returnUrl  = location.origin + location.pathname
+    + '?oid=' + ORDER_ID + '&status=success';
+  const cancelUrl  = location.origin + location.pathname
+    + '?oid=' + ORDER_ID + '&status=cancel';
+  const failUrl    = location.origin + location.pathname
+    + '?oid=' + ORDER_ID + '&status=fail';
+
+  // ─── Пример для KORTI MILLI (Таджикистан) ─────────────────
+  // Заменить на реальные данные от вашего эквайринга:
+  //
+  // const form = document.createElement('form');
+  // form.method = 'POST';
+  // form.action = 'https://processing.kortimilli.tj/payment/start'; // ← реальный URL
+  // const fields = {
+  //   merchant_id:   'YOUR_MERCHANT_ID',
+  //   order_id:      ORDER_ID,
+  //   amount:        ORDER.total * 100,        // в дирамах (×100)
+  //   currency:      'TJS',
+  //   description:   'Galelium Delivery #' + (ORDER.orderNumber || ORDER_ID.slice(-6)),
+  //   return_url:    returnUrl,
+  //   cancel_url:    cancelUrl,
+  //   fail_url:      failUrl,
+  //   signature:     'HMAC_SIGNATURE_HERE',    // ← генерировать на сервере
+  // };
+  // Object.entries(fields).forEach(([k,v]) => {
+  //   const i = document.createElement('input');
+  //   i.type = 'hidden'; i.name = k; i.value = v;
+  //   form.appendChild(i);
+  // });
+  // document.body.appendChild(form);
+  // form.submit();
+  // return;
+  //
+  // ─── Пример для Alif Pay / Alif Mobi ──────────────────────
+  // Используют redirect через GET:
+  // location.href = `https://alif.tj/checkout?amount=${ORDER.total}&order=${ORDER_ID}&return=${encodeURIComponent(returnUrl)}`;
+  // return;
+  //
+  // ─── ВРЕМЕННАЯ ЗАГЛУШКА (убрать в продакшне) ──────────────
+  showDemoGateway(method, returnUrl, cancelUrl);
+};
+
+// ──────────────────────────────────────────────────────────────
+//  Демо-шлюз (для разработки — имитирует страницу банка)
+// ──────────────────────────────────────────────────────────────
+function showDemoGateway(method, returnUrl, cancelUrl) {
+  const overlay = document.getElementById('demo-gateway');
+  if (!overlay) return;
+  const label = method === 'card' ? '💳 Пардохт бо корт' : '📱 Пардохт онлайн';
+  document.getElementById('dg-title').textContent = label;
+  document.getElementById('dg-amount').textContent = (ORDER?.total || 0) + ' сомонӣ';
+  document.getElementById('dg-order').textContent  = '#' + (ORDER?.orderNumber || ORDER_ID.slice(-6));
+  overlay.classList.add('open');
+
+  // Кнопки в демо-шлюзе
+  document.getElementById('dg-success').onclick = () => { location.href = returnUrl; };
+  document.getElementById('dg-cancel').onclick  = () => { location.href = cancelUrl; };
+}
+
+window.closeDemoGateway = function() {
+  document.getElementById('demo-gateway')?.classList.remove('open');
+  // Восстанавливаем таймер
+  if (DEADLINE && (DEADLINE - Date.now() > 0)) {
+    startTimer();
+    // Разблокируем кнопки
+    document.querySelectorAll('.pay-method-btn').forEach(b => {
+      b.disabled = false;
+      const m = b.dataset.method;
+      b.innerHTML = m === 'card'
+        ? '💳 Бо корти бонкӣ пардохт кунед'
+        : '📱 Alif Pay / онлайн пардохт';
+    });
+  }
+};
+
+// ──────────────────────────────────────────────────────────────
+//  Рендеры
+// ──────────────────────────────────────────────────────────────
+function renderPayPage() {
+  if (!ORDER) return;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('pay-content').style.display = 'block';
+
+  const num   = ORDER.orderNumber ? '#' + ORDER.orderNumber : '#' + ORDER_ID.slice(-6).toUpperCase();
+  const items = (ORDER.items || []);
+  const sub   = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const fee   = ORDER.deliveryFee || 7;
+
+  document.getElementById('order-num').textContent   = 'Фармоиш ' + num;
+  document.getElementById('order-addr').textContent  = ORDER.address || '—';
+  document.getElementById('sum-sub').textContent     = sub + ' см';
+  document.getElementById('sum-fee').textContent     = fee + ' см';
+  document.getElementById('sum-total').textContent   = ORDER.total + ' см';
+
+  document.getElementById('items-list').innerHTML = items.map(i =>
+    `<div class="item-row">
+      <span class="item-name">${escHtml(i.name)}<em> ×${i.quantity}</em></span>
+      <span class="item-price">${i.price * i.quantity} см</span>
+    </div>`
+  ).join('');
+}
+
+function showResult(type, oid) {
+  clearInterval(TIMER_INT);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('pay-content').style.display = 'none';
+
+  const el = document.getElementById('result-screen');
+  if (!el) return;
+
+  const homeUrl   = 'home.html';
+  const anchorUrl = 'home.html#order-' + oid; // якорная ссылка на заказ
+
+  const cfg = {
+    success: {
+      ico: '🎉',
+      title: 'Пардохт гузашт!',
+      sub: 'Фармоиши шумо ба кор шурӯъ шуд. Курьер ба зудӣ таъин мешавад.',
+      btnLabel: 'Ҳолати фармоишро бинед',
+      btnUrl:  anchorUrl,
+      btnClass: 'btn-success',
+      extra: `<a href="${homeUrl}" class="btn-ghost">Ба саҳифаи асосӣ</a>`,
+    },
+    cancel: {
+      ico: '❌',
+      title: 'Пардохт бекор шуд',
+      sub: 'Шумо пардохтро бекор кардед. Агар хоҳед, метавонед бори дигар кӯшиш кунед.',
+      btnLabel: 'Бори дигар кӯшиш кунед',
+      btnUrl:  'home.html#order-' + oid + '&retry=1',
+      btnClass: 'btn-retry',
+      extra: `<a href="${homeUrl}" class="btn-ghost">Ба саҳифаи асосӣ</a>`,
+    },
+    fail: {
+      ico: '⚠️',
+      title: 'Хато ҳангоми пардохт',
+      sub: 'Пардохт нагузашт. Лутфан бори дигар кӯшиш кунед ё усули дигарро интихоб кунед.',
+      btnLabel: 'Бори дигар кӯшиш кунед',
+      btnUrl:  'home.html#order-' + oid + '&retry=1',
+      btnClass: 'btn-retry',
+      extra: `<a href="${homeUrl}" class="btn-ghost">Ба саҳифаи асосӣ</a>`,
+    },
+    expired: {
+      ico: '⏰',
+      title: 'Вақт гузашт',
+      sub: 'Вақти бронирование (10 дақиқа) ба охир расид ва фармоиш бекор шуд. Метавонед фармоиши нав диҳед.',
+      btnLabel: 'Фармоиши нав диҳед',
+      btnUrl:  homeUrl,
+      btnClass: 'btn-retry',
+      extra: '',
+    },
+    error: {
+      ico: '🔧',
+      title: 'Хато рӯй дод',
+      sub: 'Хатои техникӣ. Лутфан баъдтар кӯшиш кунед.',
+      btnLabel: 'Ба саҳифаи асосӣ',
+      btnUrl:  homeUrl,
+      btnClass: 'btn-retry',
+      extra: '',
+    },
+  };
+
+  const c = cfg[type] || cfg.error;
+  el.innerHTML = `
+    <div class="result-card result-${type}">
+      <div class="result-ico">${c.ico}</div>
+      <div class="result-title">${c.title}</div>
+      <div class="result-sub">${c.sub}</div>
+      <a href="${c.btnUrl}" class="${c.btnClass}">${c.btnLabel}</a>
+      ${c.extra}
+    </div>`;
+  el.style.display = 'flex';
+}
+
+function showNoOrder() {
+  document.getElementById('loading').style.display = 'none';
+  showResult('error', '');
+}
+
+function showErr(msg) {
+  document.getElementById('loading').innerHTML =
+    `<div style="text-align:center;color:#dc2626;padding:40px 20px">${msg}</div>`;
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"/>
+
+<style>
+/* ── ROOT ─────────────────────────────────────────────────── */
+:root{
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --acc-shadow:rgba(26,158,74,.25);
+  --amber:#d97706;--red:#dc2626;
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;--s3:#e0ede3;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.11);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --r:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{background:var(--bg);font-family:var(--fs);color:var(--tx);min-height:100svh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── TOPBAR ─────────────────────────────────────────────────── */
+.topbar{
+  background:rgba(243,247,244,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b0);
+  padding:14px 20px;
+  display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-logo{
+  font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx);
+  display:flex;align-items:center;gap:8px;
+}
+.topbar-logo-mark{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px var(--acc-shadow);
+}
+.topbar-logo-mark svg{color:#fff}
+.topbar-logo em{color:var(--acc);font-style:normal}
+.topbar-back{
+  margin-left:auto;
+  display:flex;align-items:center;gap:5px;
+  font-size:.72rem;color:var(--tx3);
+  cursor:pointer;border:none;background:none;
+  padding:6px 10px;border-radius:8px;
+  transition:color .15s,background .15s;
+}
+.topbar-back:hover{color:var(--tx);background:var(--s2)}
+.topbar-back svg{flex-shrink:0}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.page-wrap{
+  flex:1;max-width:500px;width:100%;
+  margin:0 auto;padding:20px 16px 40px;
+}
+
+/* ── LOADING ────────────────────────────────────────────────── */
+#loading{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:80px 20px;gap:14px;color:var(--tx3);
+  font-size:.8rem;
+}
+.spin-lg{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid var(--accg);border-top-color:var(--acc);
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TIMER CARD ─────────────────────────────────────────────── */
+.timer-card{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:var(--r);padding:20px;
+  margin-bottom:14px;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+  text-align:center;
+}
+.timer-label{
+  font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--tx3);font-weight:700;margin-bottom:12px;
+}
+.timer-val{
+  font-family:var(--fd);font-weight:900;
+  font-size:3.2rem;color:var(--acc);
+  letter-spacing:.08em;line-height:1;
+  transition:color .3s;
+}
+.timer-sub{font-size:.66rem;color:var(--tx3);margin-top:6px}
+.timer-bar-wrap{
+  height:5px;background:var(--s2);border-radius:99px;
+  margin-top:16px;overflow:hidden;
+}
+.timer-bar{
+  height:100%;border-radius:99px;
+  background:var(--acc);
+  transition:width 1s linear,background .5s;
+}
+
+/* ── ORDER SUMMARY ──────────────────────────────────────────── */
+.order-card{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:var(--r);padding:18px;
+  margin-bottom:14px;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+}
+.order-card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.order-card-num{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx)}
+.order-card-badge{
+  font-size:.56rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--accd);color:var(--acc);border:1px solid var(--accg);
+  padding:3px 9px;border-radius:99px;
+}
+.order-addr{
+  font-size:.74rem;color:var(--tx3);
+  display:flex;align-items:center;gap:6px;margin-bottom:14px;
+}
+.order-addr svg{flex-shrink:0;color:var(--acc);opacity:.7}
+.items-list{margin-bottom:12px}
+.item-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--b0);
+  font-size:.74rem;
+}
+.item-row:last-child{border-bottom:none}
+.item-name{color:var(--tx)}
+.item-name em{color:var(--tx3);font-style:normal}
+.item-price{font-weight:700;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.divider{height:1px;background:var(--b0);margin:10px 0}
+.sum-row{display:flex;justify-content:space-between;font-size:.73rem;color:var(--tx3);margin-bottom:4px}
+.sum-total{
+  display:flex;justify-content:space-between;
+  font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);
+  padding-top:8px;border-top:1.5px solid var(--b1);
+  margin-top:4px;
+}
+
+/* ── PAYMENT METHODS ────────────────────────────────────────── */
+.methods-title{
+  font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--tx3);font-weight:700;margin-bottom:10px;margin-top:4px;
+}
+.pay-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.pay-method-btn{
+  width:100%;padding:15px 18px;
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:var(--r);
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;text-align:left;
+  transition:border-color .18s,background .18s,transform .18s,box-shadow .18s;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+  font-family:var(--fs);
+}
+.pay-method-btn:hover{
+  border-color:var(--acc);background:var(--accd);
+  transform:translateY(-2px);
+  box-shadow:0 4px 16px var(--acc-shadow);
+}
+.pay-method-btn:active{transform:translateY(0)}
+.pay-method-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.pm-ico{
+  width:44px;height:44px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;flex-shrink:0;
+}
+.pm-ico.card{background:linear-gradient(135deg,#1e40af,#3b82f6)}
+.pm-ico.online{background:linear-gradient(135deg,#065f46,#10b981)}
+.pm-body{flex:1;min-width:0}
+.pm-name{font-weight:700;font-size:.82rem;color:var(--tx)}
+.pm-desc{font-size:.62rem;color:var(--tx3);margin-top:2px}
+.pm-arrow{color:var(--tx3);flex-shrink:0}
+
+/* ── CANCEL ─────────────────────────────────────────────────── */
+.cancel-btn{
+  width:100%;padding:11px;background:none;
+  border:1.5px solid var(--b0);border-radius:10px;
+  color:var(--tx3);font-size:.7rem;font-family:var(--fs);
+  cursor:pointer;transition:border-color .15s,color .15s,background .15s;
+  margin-top:4px;
+}
+.cancel-btn:hover{border-color:#dc2626;color:#dc2626;background:rgba(220,38,38,.05)}
+
+/* ── RESULT SCREEN ──────────────────────────────────────────── */
+#result-screen{
+  display:none;
+  flex:1;align-items:center;justify-content:center;
+  padding:40px 20px;
+}
+.result-card{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:20px;padding:36px 28px;
+  text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.07);
+  width:100%;max-width:420px;
+}
+.result-ico{font-size:3.6rem;margin-bottom:16px;line-height:1}
+.result-title{
+  font-family:var(--fd);font-weight:900;font-size:1.3rem;
+  color:var(--tx);margin-bottom:10px;
+}
+.result-sub{
+  font-size:.76rem;color:var(--tx3);line-height:1.7;margin-bottom:26px;
+}
+.btn-success{
+  display:block;width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  border:none;border-radius:12px;color:#fff;
+  font-family:var(--fd);font-weight:900;font-size:.82rem;
+  cursor:pointer;text-decoration:none;text-align:center;
+  box-shadow:0 4px 16px var(--acc-shadow);
+  transition:opacity .15s,transform .15s;margin-bottom:10px;
+}
+.btn-success:hover{opacity:.9;transform:translateY(-1px)}
+.btn-retry{
+  display:block;width:100%;padding:14px;
+  background:var(--s2);border:1.5px solid var(--b1);
+  border-radius:12px;color:var(--tx);
+  font-family:var(--fd);font-weight:800;font-size:.82rem;
+  cursor:pointer;text-decoration:none;text-align:center;
+  transition:background .15s;margin-bottom:10px;
+}
+.btn-retry:hover{background:var(--s3)}
+.btn-ghost{
+  display:block;font-size:.7rem;color:var(--tx3);
+  padding:8px;text-align:center;
+  transition:color .15s;
+}
+.btn-ghost:hover{color:var(--acc)}
+
+/* ── SPINNER SMALL ─────────────────────────────────────────── */
+.spin-sm{
+  display:inline-block;width:13px;height:13px;
+  border-radius:50%;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;animation:spin .8s linear infinite;
+  vertical-align:-2px;margin-right:4px;
+}
+
+/* ── DEMO GATEWAY OVERLAY ───────────────────────────────────── */
+.demo-gateway{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.demo-gateway.open{display:flex}
+.dg-card{
+  background:#fff;border-radius:20px;
+  padding:32px 28px;width:100%;max-width:380px;
+  box-shadow:0 24px 64px rgba(0,0,0,.22);
+  text-align:center;
+}
+.dg-bank-logo{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:22px;
+}
+.dg-bank-mark{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+}
+.dg-bank-mark svg{color:#fff}
+.dg-bank-name{font-family:var(--fd);font-weight:900;font-size:1rem;color:#1e293b}
+.dg-bank-sub{font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-top:1px}
+.dg-title{font-size:.76rem;color:#64748b;margin-bottom:8px}
+.dg-amount-val{
+  font-family:var(--fd);font-weight:900;font-size:2.4rem;
+  color:#0f172a;letter-spacing:-.02em;margin-bottom:4px;
+}
+.dg-order-tag{
+  font-size:.62rem;color:#94a3b8;margin-bottom:24px;
+}
+
+/* Имитация поля карты */
+.dg-card-field{
+  background:#f8fafc;border:1.5px solid #e2e8f0;
+  border-radius:10px;padding:14px 16px;
+  font-size:.82rem;color:#0f172a;
+  font-family:'Inter',monospace;
+  letter-spacing:.1em;
+  margin-bottom:10px;text-align:left;
+}
+.dg-card-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.dg-note{
+  font-size:.6rem;color:#94a3b8;line-height:1.6;
+  border:1px dashed #e2e8f0;border-radius:8px;
+  padding:8px 12px;margin-bottom:18px;text-align:left;
+}
+.dg-note strong{color:#64748b}
+.dg-actions{display:flex;flex-direction:column;gap:9px}
+.dg-pay-btn{
+  padding:14px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  border:none;border-radius:12px;color:#fff;
+  font-family:var(--fd);font-weight:900;font-size:.82rem;
+  cursor:pointer;
+  box-shadow:0 4px 16px rgba(37,99,235,.35);
+  transition:opacity .15s,transform .15s;
+}
+.dg-pay-btn:hover{opacity:.9;transform:translateY(-1px)}
+.dg-cancel-btn{
+  padding:11px;background:none;border:1.5px solid #e2e8f0;
+  border-radius:10px;color:#94a3b8;font-size:.7rem;
+  font-family:var(--fs);cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.dg-cancel-btn:hover{border-color:#dc2626;color:#dc2626}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:480px){
+  .timer-val{font-size:2.6rem}
+  .page-wrap{padding:16px 12px 36px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-mark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
+    Galelium <em>Pay</em>
+  </div>
+  <button class="topbar-back" onclick="history.back()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Бозгашт
+  </button>
+</div>
+
+<!-- MAIN -->
+<div id="loading">
+  <div class="spin-lg"></div>
+  Боргузорӣ…
+</div>
+
+<div id="result-screen"></div>
+
+<div id="pay-content" style="display:none">
+  <div class="page-wrap">
+
+    <!-- ТАЙМЕР -->
+    <div class="timer-card">
+      <div class="timer-label">Вақти пардохт</div>
+      <div class="timer-val" id="timer-val">10:00</div>
+      <div class="timer-sub">Пас аз ин вақт фармоиш бекор мешавад</div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="timer-bar" style="width:100%"></div>
+      </div>
+    </div>
+
+    <!-- ЗАКАЗ -->
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-num" id="order-num">Фармоиш</div>
+        <div class="order-card-badge">Бронирование</div>
+      </div>
+      <div class="order-addr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="order-addr">—</span>
+      </div>
+      <div class="items-list" id="items-list"></div>
+      <div class="divider"></div>
+      <div class="sum-row"><span>Маҳсулот</span><span id="sum-sub">0 см</span></div>
+      <div class="sum-row"><span>Расонидан</span><span id="sum-fee">7 см</span></div>
+      <div class="sum-total">
+        <span>Ҷамъ</span>
+        <span id="sum-total">0 см</span>
+      </div>
+    </div>
+
+    <!-- МЕТОДЫ ОПЛАТЫ -->
+    <div class="methods-title">Усули пардохт</div>
+    <div class="pay-methods">
+
+      <!-- Карта -->
+      <button class="pay-method-btn" id="pay-btn-card" data-method="card"
+              onclick="initPayment('card')">
+        <div class="pm-ico card">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="pm-body">
+          <div class="pm-name">💳 Корти бонкӣ</div>
+          <div class="pm-desc">Visa, Mastercard, Корти Миллӣ — пардохти бехатар</div>
+        </div>
+        <div class="pm-arrow">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </button>
+
+      <!-- Онлайн (Alif, Click, Payme и т.д.) -->
+      <button class="pay-method-btn" id="pay-btn-online" data-method="online"
+              onclick="initPayment('online')">
+        <div class="pm-ico online">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <div class="pm-body">
+          <div class="pm-name">📱 Онлайн пардохт</div>
+          <div class="pm-desc">Alif Pay, Alif Mobi ва дигар усулҳои онлайн</div>
+        </div>
+        <div class="pm-arrow">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- ОТМЕНА -->
+    <button class="cancel-btn" onclick="cancelAndGoBack()">
+      Фармоишро бекор кунед
+    </button>
+
+  </div>
+</div>
+
+<!-- DEMO GATEWAY (убрать в продакшне) -->
+<div class="demo-gateway" id="demo-gateway">
+  <div class="dg-card">
+    <div class="dg-bank-logo">
+      <div class="dg-bank-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="dg-bank-name">Galelium Bank</div>
+        <div class="dg-bank-sub">Demo Gateway</div>
+      </div>
+    </div>
+
+    <div class="dg-title" id="dg-title">💳 Пардохт бо корт</div>
+    <div class="dg-amount-val" id="dg-amount">0 см</div>
+    <div class="dg-order-tag" id="dg-order">Фармоиш #—</div>
+
+    <!-- Демо-поля карты -->
+    <div class="dg-card-field">4276 •••• •••• 1234</div>
+    <div class="dg-card-row">
+      <div class="dg-card-field">12/28</div>
+      <div class="dg-card-field">•••</div>
+    </div>
+
+    <div class="dg-note">
+      <strong>🔧 Режими демо:</strong> Ин шлюзи воқеӣ нест. Дар сервер пардохти воқеиро
+      пайваст кунед (Korty Milli, Alif Pay ва ғ.) ва ин блокро хориҷ кунед.
+    </div>
+
+    <div class="dg-actions">
+      <button class="dg-pay-btn" id="dg-success">
+        ✅ Пардохт гузашт (тест)
+      </button>
+      <button class="dg-cancel-btn" id="dg-cancel">
+        ❌ Бекор кардан
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Отмена заказа вручную
+window.cancelAndGoBack = async function() {
+  if (!confirm('Фармоишро бекор кунем?')) return;
+  if (window._ORDER_ID && window._db) {
+    const { doc, updateDoc, serverTimestamp } = await import(
+      'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js'
+    );
+    try {
+      await updateDoc(doc(window._db, 'orders', window._ORDER_ID), {
+        status:        'cancelled',
+        paymentStatus: 'cancelled',
+        cancelReason:  'Бекор аз тарафи корбар',
+        updatedAt:     serverTimestamp(),
+      });
+    } catch(e) { console.error(e); }
+  }
+  location.href = 'home.html';
+};
+</script>
+</body>
+</html>
