@@ -937,6 +937,10 @@ window.openAddrModal = function (ctx) {
   document.getElementById('addr-modal-bg').classList.add('open');
   document.body.style.overflow = 'hidden';
 
+  // Показываем кнопку "Тоза кардан" только если адрес уже есть
+  const clearBtn = document.getElementById('addr-clear-btn');
+  if (clearBtn) clearBtn.classList.toggle('visible', !!(UD?.address));
+
   // Предзаполняем текущий адрес
   const curAddr = document.getElementById('cart-addr')?.value || UD?.address || '';
   const curLat  = parseFloat(document.getElementById('cart-lat')?.value) || UD?.lat;
@@ -1130,6 +1134,38 @@ window.confirmAddr = function () {
   }
 
   toast('Суроғ тасдиқ шуд ✓', 'ok');
+  closeAddrModal();
+};
+
+window.clearAddress = function () {
+  if (!CU) return;
+
+  // Очищаем UI
+  updateAddrCard('', null, null);
+  UD = { ...UD, address: '', lat: null, lng: null };
+
+  // Сохраняем в Firestore
+  setDoc(doc(db, 'users', CU.uid), {
+    address: '',
+    lat: null,
+    lng: null,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+
+  // Обновляем сайдбар, профиль и поле профиля
+  renderSB();
+  renderProfile();
+  const pfa = document.getElementById('pf-addr');
+  if (pfa) pfa.value = '';
+
+  // Прячем кнопку удаления
+  const clearBtn = document.getElementById('addr-clear-btn');
+  if (clearBtn) clearBtn.classList.remove('visible');
+
+  // Снова показываем баннер с предложением указать адрес
+  window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: false } }));
+
+  toast('Суроғ тоза шуд', 'ok');
   closeAddrModal();
 };
 
