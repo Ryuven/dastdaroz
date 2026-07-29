@@ -212,9 +212,18 @@ function renderGuestBanner() {
   // Сайдбар: скрываем корзину/заказы/статус (только в сайдбаре через guest-hidden)
   document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = 'none');
 
+  // Профиль-навигация: скрываем гостевые элементы
+  document.querySelectorAll('#prof-nav-section .pn-guest-hidden').forEach(el => el.style.display = 'none');
+
   // Адрес в сайдбаре — блокируем клик
   const addrRow = document.getElementById('sb-addr-row');
   if (addrRow) { addrRow.style.pointerEvents = 'none'; addrRow.style.opacity = '.45'; }
+
+  // Адрес в профиле — показываем приглашение войти
+  const profAddrRow = document.getElementById('prof-addr-row');
+  if (profAddrRow) { profAddrRow.style.pointerEvents = 'none'; profAddrRow.style.opacity = '.45'; }
+  const profAddrDisplay = document.getElementById('prof-addr-display');
+  if (profAddrDisplay) { profAddrDisplay.textContent = 'Барои фармоиш ворид шавед'; profAddrDisplay.style.color = 'var(--tx3)'; }
 }
 
 function removeGuestBanner() {
@@ -226,9 +235,14 @@ function removeGuestBanner() {
   // Восстанавливаем сайдбар
   document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = '');
 
+  // Восстанавливаем профиль-навигацию
+  document.querySelectorAll('#prof-nav-section .pn-guest-hidden').forEach(el => el.style.display = '');
+
   // Адрес — разблокируем
   const addrRow = document.getElementById('sb-addr-row');
   if (addrRow) { addrRow.style.pointerEvents = ''; addrRow.style.opacity = ''; }
+  const profAddrRow = document.getElementById('prof-addr-row');
+  if (profAddrRow) { profAddrRow.style.pointerEvents = ''; profAddrRow.style.opacity = ''; }
 }
 
 // ─── Гостевой профиль ────────────────────────────────────────
@@ -240,11 +254,11 @@ function renderGuestProfile() {
   const adv = document.getElementById('sb-addr-val');
   if (adv) { adv.textContent = 'Барои фармоиш ворид шавед'; adv.classList.add('empty'); }
 
-  // Профиль страница — показываем заглушку
-  const profPage = document.getElementById('page-profile');
-  if (profPage) {
-    profPage.innerHTML = `
-      <div style="max-width:400px;margin:60px auto;text-align:center;padding:0 16px">
+  // Профиль страница — показываем заглушку только в секции пользователя (навигация остаётся)
+  const profUserSection = document.getElementById('prof-user-section');
+  if (profUserSection) {
+    profUserSection.innerHTML = `
+      <div style="max-width:400px;margin:24px auto 60px;text-align:center;padding:0 4px">
         <div style="width:80px;height:80px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--acc)">👤</div>
         <div style="font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);margin-bottom:8px">Гостевой режим</div>
         <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Барои дидани профил, таърихи фармоишҳо ва захира кардани суроғ, лутфан ворид шавед ё ҳисоб кушоед.</div>
@@ -342,6 +356,13 @@ function renderSB() {
   } else {
     adv.textContent = 'Суроғ нишон диҳед →';
     adv.classList.add('empty');
+  }
+  // Синхронизируем адрес в профиле
+  const profAddrDisplay = document.getElementById('prof-addr-display');
+  if (profAddrDisplay) {
+    profAddrDisplay.textContent = UD?.address ? UD.address : 'Суроғ нишон диҳед →';
+    profAddrDisplay.style.color = UD?.address ? 'var(--tx2)' : 'var(--acc)';
+    profAddrDisplay.style.fontWeight = UD?.address ? '500' : '600';
   }
 }
 
@@ -937,7 +958,7 @@ function renderCart() {
 
 function updateBadges() {
   const cnt = cart.reduce((s, c) => s + c.quantity, 0);
-  ['cart-nb', 'mob-cart-b'].forEach(id => {
+  ['cart-nb', 'mob-cart-b', 'prof-cart-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = cnt > 0 ? '' : 'none'; b.textContent = cnt; }
   });
@@ -948,6 +969,13 @@ function updateBadges() {
 function setAddr() {
   if (UD?.address) {
     updateAddrCard(UD.address, UD.lat || null, UD.lng || null);
+  }
+  // Синхронизируем адрес в профиле (на случай первой загрузки)
+  const profAddrDisplay = document.getElementById('prof-addr-display');
+  if (profAddrDisplay) {
+    profAddrDisplay.textContent = UD?.address ? UD.address : 'Суроғ нишон диҳед →';
+    profAddrDisplay.style.color = UD?.address ? 'var(--tx2)' : 'var(--acc)';
+    profAddrDisplay.style.fontWeight = UD?.address ? '500' : '600';
   }
 }
 
@@ -1219,6 +1247,14 @@ function updateAddrCard(address, lat, lng) {
   // Сайдбар
   const adv = document.getElementById('sb-addr-val');
   if (adv) { adv.textContent = address; adv.classList.remove('empty'); }
+
+  // Адрес в навигации профиля
+  const profAddrDisplay = document.getElementById('prof-addr-display');
+  if (profAddrDisplay) {
+    profAddrDisplay.textContent = address || 'Суроғ нишон диҳед →';
+    profAddrDisplay.style.color = address ? 'var(--tx2)' : 'var(--acc)';
+    profAddrDisplay.style.fontWeight = address ? '500' : '600';
+  }
 
   // Поле адреса в профиле
   const pfa = document.getElementById('pf-addr');
@@ -1713,7 +1749,7 @@ window.viewOrderStatus = function (oid) {
 
 function renderOrdersBadge() {
   const act = orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
-  ['orders-nb', 'mob-ord-b'].forEach(id => {
+  ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
   });
@@ -2394,6 +2430,8 @@ function updateSupportBadgeUI(count) {
   if (mobBadge) { mobBadge.style.display = has ? 'flex' : 'none'; mobBadge.textContent = count; }
   const sbBadge = document.getElementById('support-nb');
   if (sbBadge) { sbBadge.style.display = has ? 'flex' : 'none'; sbBadge.textContent = count; }
+  const profSupportBadge = document.getElementById('prof-support-nb');
+  if (profSupportBadge) { profSupportBadge.style.display = has ? 'flex' : 'none'; profSupportBadge.textContent = count; }
 }
 
 // ─── Профиль ─────────────────────────────────────────────────
