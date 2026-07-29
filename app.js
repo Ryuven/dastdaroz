@@ -40,6 +40,13 @@ let storeCatFilter = 'all'; // фильтр категорий внутри ма
 
 const DFEE = 7; // стоимость доставки
 
+// ─── Состояние страницы бронирования ────────────────────────
+let _bookingOid      = null;  // Firestore ID заказа
+let _bookingOrder    = null;  // snapshot данных заказа
+let _bookingDeadline = null;  // Date() — дедлайн оплаты
+let _bookingTimerInt = null;  // handle setInterval
+
+
 // ─── Лейблы и цвета статусов (на таджикском) ─────────────────
 const SL = {
   awaiting_payment: 'Интизори пардохт',
@@ -334,10 +341,12 @@ window.goPage = function (page) {
     orders:  'Фармоишҳоям',
     status:  'Ҳолати фармоиш',
     profile: 'Профил',
+    booking: 'Тасдиқи фармоиш',
   }[page] || 'Galelium Delivery';
-  if (page === 'status') { renderStatusPage(); }
-  if (page === 'orders') { loadOrders(); }
-  if (page === 'store')  { renderStorePage(); }
+  if (page === 'status')  { renderStatusPage(); }
+  if (page === 'orders')  { loadOrders(); }
+  if (page === 'store')   { renderStorePage(); }
+  if (page === 'booking') { renderBookingPage(); startBookingTimer(); }
   closeSB();
   document.getElementById('pages').scrollTop = 0;
 };
@@ -1244,12 +1253,26 @@ window.doCheckout = async function () {
     cart = [];
     renderCart(); updateBadges();
 
-    toast('Фармоиш №' + oNum + ' забронировано! 💳 Пардохт кунед', 'ok');
+    // Сохраняем данные для страницы бронирования
+    _bookingOid      = oid;
+    _bookingDeadline = reservedUntil;
+    _bookingOrder = {
+      id:            oid,
+      orderNumber:   oNum,
+      items:         cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
+      subtotal:      sub,
+      deliveryFee:   DFEE,
+      total:         sub + DFEE,
+      address:       addr,
+      paymentMethod: payMethod,
+    };
 
-    // Переход на страницу оплаты (небольшая задержка для toast)
+    toast('Фармоиш №' + oNum + ' бронирование шуд! ✅', 'ok');
+
+    // Переход на страницу бронирования (небольшая задержка для toast)
     setTimeout(() => {
-      location.href = 'payment.html?oid=' + oid;
-    }, 700);
+      goPage('booking');
+    }, 420);
 
   } catch (e) {
     toast('Хато: ' + e.message, 'err');
@@ -2300,4 +2323,148 @@ window.uploadAvUI = async function (inp) {
     renderSB(); renderProfile();
     toast('Акс навсозӣ шуд', 'ok');
   } catch { toast('Хатои боргузорӣ', 'err'); }
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+//  BOOKING PAGE — логика страницы тасдиқи пардохт
+// ═══════════════════════════════════════════════════════════════
+
+/** Рендерит чек на странице бронирования */
+function renderBookingPage() {
+  if (!_bookingOrder) return;
+  const o   = _bookingOrder;
+  const num = o.orderNumber ? '#' + o.orderNumber : '#' + (o.id || '').slice(-6);
+
+  const receiptEl = document.getElementById('bk-receipt-card');
+  if (!receiptEl) return;
+
+  const itemsHtml = o.items.map(i =>
+    `<div class="bk-receipt-item">
+       <span class="bk-receipt-item-name">${escHtml(i.name)}</span>
+       <span class="bk-receipt-item-qty">×${i.quantity}</span>
+       <span class="bk-receipt-item-price">${i.price * i.quantity} см</span>
+     </div>`
+  ).join('');
+
+  receiptEl.innerHTML = `
+    <div class="bk-receipt-head">
+      <div class="bk-receipt-brand">Dastdaroz</div>
+      <div class="bk-receipt-num">Фармоиш ${num}</div>
+      <div class="bk-receipt-status">
+        <div class="bk-receipt-status-dot"></div>
+        Интизори пардохт
+      </div>
+    </div>
+    <div class="bk-receipt-body">
+      <div class="bk-receipt-items">${itemsHtml}</div>
+      <div class="bk-receipt-divider"></div>
+      <div class="bk-receipt-sum-row"><span>Маҳсулот</span><span>${o.subtotal} см</span></div>
+      <div class="bk-receipt-sum-row"><span>Расонидан</span><span>${o.deliveryFee} см</span></div>
+      <div class="bk-receipt-total-row">
+        <span class="bk-receipt-total-lbl">Ҷамъ</span>
+        <span class="bk-receipt-total-val">${o.total} см</span>
+      </div>
+      ${o.address ? `<div class="bk-receipt-addr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${escHtml(o.address)}
+      </div>` : ''}
+    </div>`;
+
+  // Reset expired state when re-entering booking page
+  const expEl = document.getElementById('bk-expired');
+  if (expEl) expEl.style.display = 'none';
+  document.querySelectorAll('.bk-pay-btn').forEach(b => { b.disabled = false; });
+  const cancelBtn = document.getElementById('bk-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = '';
+}
+
+/** Запускает (или перезапускает) таймер обратного отсчёта */
+function startBookingTimer() {
+  stopBookingTimer();
+  updateBookingTimer();
+  _bookingTimerInt = setInterval(updateBookingTimer, 1000);
+}
+
+function stopBookingTimer() {
+  if (_bookingTimerInt) { clearInterval(_bookingTimerInt); _bookingTimerInt = null; }
+}
+
+function updateBookingTimer() {
+  if (!_bookingDeadline) return;
+  const dl   = _bookingDeadline instanceof Date ? _bookingDeadline.getTime() : Number(_bookingDeadline);
+  const left = dl - Date.now();
+
+  if (left <= 0) {
+    stopBookingTimer();
+    expireBooking();
+    return;
+  }
+
+  const m  = Math.floor(left / 60000);
+  const s  = Math.floor((left % 60000) / 1000);
+  const el = document.getElementById('bk-timer-val');
+  if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
+
+  const total = 10 * 60 * 1000;
+  const pct   = Math.max(0, Math.min(100, (left / total) * 100));
+  const bar   = document.getElementById('bk-timer-bar');
+  if (bar) {
+    bar.style.width      = pct + '%';
+    bar.style.background = pct > 40 ? 'var(--acc)' : pct > 15 ? 'var(--amber)' : 'var(--red)';
+  }
+  if (el) el.style.color = left < 60000 ? 'var(--red)' : left < 180000 ? 'var(--amber)' : 'var(--acc)';
+}
+
+/** Вызывается, когда 10 минут истекли */
+async function expireBooking() {
+  if (_bookingOid) {
+    try {
+      await updateDoc(doc(db, 'orders', _bookingOid), {
+        status:        'cancelled',
+        paymentStatus: 'expired',
+        cancelReason:  'Вақти пардохт гузашт',
+        updatedAt:     serverTimestamp(),
+      });
+      await loadOrders();
+    } catch(e) { console.error('expireBooking:', e); }
+  }
+  const valEl = document.getElementById('bk-timer-val');
+  if (valEl) { valEl.textContent = '0:00'; valEl.style.color = 'var(--red)'; }
+  const barEl = document.getElementById('bk-timer-bar');
+  if (barEl) { barEl.style.width = '0%'; barEl.style.background = 'var(--red)'; }
+  const expEl = document.getElementById('bk-expired');
+  if (expEl) expEl.style.display = 'block';
+  document.querySelectorAll('.bk-pay-btn').forEach(b => { b.disabled = true; });
+  const cancelBtn = document.getElementById('bk-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+/** Нажатие «Оплатить картой» → переход на payment.html */
+window.goToCardPayment = function() {
+  if (!_bookingOid) { toast('Хато: Фармоиш ёфт нашуд', 'err'); return; }
+  stopBookingTimer();
+  location.href = 'payment.html?oid=' + _bookingOid;
+};
+
+/** Нажатие «Отменить» на странице бронирования */
+window.cancelBooking = async function() {
+  if (!confirm('Фармоишро бекор кунем?')) return;
+  stopBookingTimer();
+  if (_bookingOid) {
+    try {
+      await updateDoc(doc(db, 'orders', _bookingOid), {
+        status:        'cancelled',
+        paymentStatus: 'cancelled',
+        cancelReason:  'Бекор аз тарафи корбар',
+        updatedAt:     serverTimestamp(),
+      });
+      await loadOrders();
+    } catch(e) { console.error(e); }
+  }
+  _bookingOid      = null;
+  _bookingOrder    = null;
+  _bookingDeadline = null;
+  toast('Фармоиш бекор шуд');
+  goPage('home');
 };
