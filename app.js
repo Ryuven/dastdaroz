@@ -1286,39 +1286,112 @@ window.doCheckout = async function () {
 // ─── Обработка возврата с payment.html (якорные ссылки) ───────
 //
 //  payment.html перенаправляет обратно как:
-//    home.html#order-<oid>          → открыть статус заказа
-//    home.html#order-<oid>&retry=1  → заказ не оплачен, открыть статус
+//    home.html#order-<oid>   → открыть статус заказа напрямую
+//    home.html#verify-<oid>  → показать страницу бронирования с анимацией
+//                              проверки оплаты, затем перейти на статус
 //
 //  Вызывается один раз при загрузке страницы.
 // ──────────────────────────────────────────────────────────────
 (function handlePaymentReturn() {
   const hash = location.hash;
-  if (!hash.startsWith('#order-')) return;
+  const isVerify = hash.startsWith('#verify-');
+  const isOrder  = hash.startsWith('#order-');
+  if (!isVerify && !isOrder) return;
 
-  const rawPart = hash.slice('#order-'.length);
+  const prefix  = isVerify ? '#verify-' : '#order-';
+  const rawPart = hash.slice(prefix.length);
   const oid     = rawPart.split('&')[0];
   if (!oid) return;
 
-  // Убираем хэш из адресной строки
   history.replaceState(null, '', location.pathname + location.search);
 
-  // Ждём инициализации приложения, затем открываем статус
   const tryOpen = () => {
-    if (typeof goPage === 'function') {
+    if (typeof goPage !== 'function') { setTimeout(tryOpen, 250); return; }
+
+    if (isVerify) {
+      // ── Режим проверки: показываем booking-страницу с анимацией ──
+      _bookingOid = oid;
+      goPage('booking');
+      // Прячем все обычные элементы booking-страницы
+      const hide = ['bk-timer','bk-receipt-card','bk-methods','bk-section-label',
+                    'bk-cancel-btn','bk-expired'];
+      hide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.bk-section-label').forEach(el => el.style.display='none');
+      // Показываем блок проверки
+      const vEl = document.getElementById('bk-verify');
+      if (vEl) vEl.style.display = 'block';
+
+      // Через 1.8с — проверяем Firestore и показываем результат
+      setTimeout(async () => {
+        try {
+          const { doc: fsDoc, getDoc: fsGet } =
+            await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
+          const snap = await fsGet(fsDoc(db, 'orders', oid));
+          const paid = snap.exists() && snap.data().paymentStatus === 'paid';
+
+          if (paid) {
+            // Успех — зелёная галочка
+            const icon = document.getElementById('bk-verify-icon');
+            const spin = document.getElementById('bk-verify-spinner');
+            const title = document.getElementById('bk-verify-title');
+            const sub   = document.getElementById('bk-verify-sub');
+            if (icon)  { icon.classList.add('success'); icon.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'; }
+            if (title) { title.textContent = 'Пардохт тасдиқ шуд!'; title.style.color = 'var(--acc)'; }
+            if (sub)   sub.textContent = 'Фармоиши шумо ба ошхона фиристода шуд. Мо онро зуд омода мекунем 🚀';
+
+            // Через 2с — грузим заказы и открываем статус
+            setTimeout(() => {
+              activeOid = oid;
+              if (typeof loadOrders === 'function') {
+                loadOrders().then(() => {
+                  goPage('status');
+                  if (typeof renderStatusPage === 'function') renderStatusPage();
+                }).catch(() => goPage('status'));
+              } else {
+                goPage('status');
+              }
+            }, 2000);
+
+          } else {
+            // Не оплачен — ошибка
+            const icon  = document.getElementById('bk-verify-icon');
+            const title = document.getElementById('bk-verify-title');
+            const sub   = document.getElementById('bk-verify-sub');
+            if (icon)  { icon.classList.add('fail'); icon.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'; }
+            if (title) { title.textContent = 'Пардохт тасдиқ нашуд'; title.style.color = 'var(--red)'; }
+            if (sub)   sub.textContent = 'Мутаассифона, пардохт тасдиқ нашуд. Лутфан дубора кӯшиш кунед.';
+            // Показываем кнопку «Повторить»
+            const vEl = document.getElementById('bk-verify');
+            if (vEl) {
+              const retryBtn = document.createElement('button');
+              retryBtn.className = 'bk-verify-retry';
+              retryBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Дубора кӯшиш кунед';
+              retryBtn.onclick = () => { location.href = 'payment.html?oid=' + oid; };
+              vEl.appendChild(retryBtn);
+            }
+          }
+        } catch(e) {
+          console.error('verify check error:', e);
+          // При ошибке — просто открываем статус
+          activeOid = oid;
+          goPage('status');
+        }
+      }, 1800);
+
+    } else {
+      // ── Прямой переход на статус (#order-) ──
       activeOid = oid;
-      // Принудительно загружаем заказы и переходим на статус
       if (typeof loadOrders === 'function') {
         loadOrders().then(() => {
           goPage('status');
           if (typeof renderStatusPage === 'function') renderStatusPage();
-        }).catch(() => {
-          goPage('status');
-        });
+        }).catch(() => goPage('status'));
       } else {
         goPage('status');
       }
-    } else {
-      setTimeout(tryOpen, 250);
     }
   };
   setTimeout(tryOpen, 500);

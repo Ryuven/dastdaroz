@@ -899,6 +899,20 @@ select.addr-inp{cursor:pointer}
 .bk-expired-sub{font-size:.74rem;color:var(--tx3);line-height:1.6;max-width:280px;margin:0 auto}
 .bk-new-order-btn{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:12px 26px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s,transform .12s}
 .bk-new-order-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+/* ── Verify state (shown when returning from payment.html) ── */
+.bk-verify{background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;padding:46px 24px 40px;text-align:center;box-shadow:var(--shadow-md);animation:pgIn .3s var(--ease) both}
+.bk-verify-icon{width:84px;height:84px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;transition:background .4s,border-color .4s}
+.bk-verify-icon.success{background:linear-gradient(135deg,var(--acc),var(--acc2));border-color:var(--acc);animation:vSuccPop .5s var(--spring) both}
+.bk-verify-icon.fail{background:rgba(220,38,38,.1);border-color:rgba(220,38,38,.3)}
+@keyframes vSuccPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.bk-verify-spinner{width:38px;height:38px;border-radius:50%;border:4px solid var(--s3);border-top-color:var(--acc);animation:vspin .8s linear infinite}
+@keyframes vspin{to{transform:rotate(360deg)}}
+.bk-verify-title{font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--tx);margin-bottom:8px;transition:color .3s}
+.bk-verify-sub{font-size:.72rem;color:var(--tx3);line-height:1.65;max-width:270px;margin:0 auto}
+.bk-verify-retry{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:11px 24px;background:var(--redd);border:1.5px solid rgba(220,38,38,.25);border-radius:11px;color:var(--red);font-family:var(--fd);font-weight:800;font-size:.76rem;cursor:pointer;transition:background .14s}
+.bk-verify-retry:hover{background:rgba(220,38,38,.15)}
+
 </style>
 </head>
 <body>
@@ -1130,6 +1144,16 @@ select.addr-inp{cursor:pointer}
           Ба саҳифаи асосӣ
         </button>
       </div>
+
+      <!-- Verify state (shown when returning from payment.html) -->
+      <div class="bk-verify" id="bk-verify" style="display:none">
+        <div class="bk-verify-icon" id="bk-verify-icon">
+          <div class="bk-verify-spinner" id="bk-verify-spinner"></div>
+        </div>
+        <div class="bk-verify-title" id="bk-verify-title">Тасдиқи пардохт…</div>
+        <div class="bk-verify-sub" id="bk-verify-sub">Маълумоти пардохт тафтиш карда мешавад. Лутфан сабр кунед.</div>
+      </div>
+
     </div>
 
     <!-- ORDERS -->

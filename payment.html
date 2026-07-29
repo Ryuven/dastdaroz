@@ -3,61 +3,64 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>Пардохт — Dastdaroz</title>
+<link rel="icon" type="image/png" href="favicon.png" sizes="48x48"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"/>
 <style>
 :root{
-  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--acc-shadow:rgba(26,158,74,.28);
-  --red:#dc2626;--redd:rgba(220,38,38,.1);
+  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;--s3:#e0ede3;--s4:#c8dccb;
+  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.11);--b2:rgba(0,0,0,.18);
+  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
+  --acc-shadow:rgba(26,158,74,.25);
   --amber:#d97706;--amber-d:rgba(217,119,6,.1);
-  --s0:#fff;--s1:#fff;--s2:#f8faf8;--s3:#f1f5f1;
-  --b0:#e8ede8;--b1:#d5ddd5;
-  --tx:#111811;--tx2:#374037;--tx3:#6b7b6b;
-  --fs:'Inter',sans-serif;--fd:'Plus Jakarta Sans',sans-serif;
-  --t:.18s ease;--tf:.14s ease;--spring:cubic-bezier(.34,1.56,.64,1);
-  --shadow:0 2px 8px rgba(0,0,0,.07);--shadow-md:0 4px 16px rgba(0,0,0,.09);
-  --r-page:env(safe-area-inset-right);--b-page:env(safe-area-inset-bottom);
+  --red:#dc2626;--redd:rgba(220,38,38,.1);
+  --blue:#2563eb;--blue-d:rgba(37,99,235,.1);
+  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;
+  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.32,0,.18,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --t:.22s;--tf:.13s;
+  --shadow:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
+  --shadow-md:0 4px 20px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
 }
-@media(prefers-color-scheme:dark){
-  :root{
-    --s0:#0d1a0f;--s1:#121f14;--s2:#172219;--s3:#1d2b1f;
-    --b0:#243326;--b1:#2e4030;
-    --tx:#e8f0e9;--tx2:#b8ccbb;--tx3:#7a9c7e;
-    --shadow:0 2px 8px rgba(0,0,0,.28);--shadow-md:0 4px 16px rgba(0,0,0,.36);
-  }
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--s0);font-family:var(--fs);color:var(--tx);overflow-x:hidden}
-body{display:flex;flex-direction:column;align-items:center;min-height:100%}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--tx);font-family:var(--fs);min-height:100svh;-webkit-font-smoothing:antialiased}
+::selection{background:var(--acc);color:#fff}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--s4);border-radius:99px}
 
-/* ── Topbar ── */
-.topbar{width:100%;max-width:480px;display:flex;align-items:center;gap:10px;padding:16px 18px 12px;position:sticky;top:0;background:var(--s0);z-index:10;border-bottom:1px solid var(--b0)}
-.tb-back{width:36px;height:36px;border-radius:10px;background:var(--s2);border:1.5px solid var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--tx2);transition:background var(--tf),border-color var(--tf)}
-.tb-back:hover{background:var(--s3);border-color:var(--b1)}
-.tb-logo{display:flex;align-items:center;gap:8px;flex:1}
-.tb-logo-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px var(--acc-shadow)}
-.tb-logo-name{font-family:var(--fd);font-weight:900;font-size:.88rem;color:var(--tx)}
-.tb-logo-name em{color:var(--acc);font-style:normal}
-.tb-secure{display:flex;align-items:center;gap:5px;font-size:.6rem;color:var(--tx3);font-weight:600}
-.tb-secure svg{color:var(--acc)}
+/* ── Topbar (same as home.html) ── */
+.topbar{height:58px;background:rgba(243,247,244,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--b0);display:flex;align-items:center;padding:0 18px;gap:12px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
+.tb-back{width:36px;height:36px;border-radius:10px;background:var(--s1);border:1.5px solid var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--tx2);transition:background var(--tf),border-color var(--tf);box-shadow:var(--shadow)}
+.tb-back:hover{background:var(--s2);border-color:var(--b1);color:var(--tx)}
+.tb-logo{display:flex;align-items:center;flex:1}
+.tb-secure{display:flex;align-items:center;gap:5px;background:var(--accd);border:1px solid var(--accg);border-radius:8px;padding:5px 10px;font-size:.6rem;font-weight:700;color:var(--acc);white-space:nowrap}
+.tb-secure svg{flex-shrink:0}
 
-/* ── Page shell ── */
-.page-wrap{width:100%;max-width:480px;padding:16px 18px calc(env(safe-area-inset-bottom)+32px);display:flex;flex-direction:column;gap:14px;flex:1}
+/* ── Page wrap ── */
+.page-wrap{max-width:520px;margin:0 auto;padding:20px 18px calc(env(safe-area-inset-bottom)+40px);display:flex;flex-direction:column;gap:14px}
+
+/* ── Shared heading ── */
+.sh{margin-bottom:4px}
+.sh-tag{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:var(--tx3);margin-bottom:3px}
+.sh-title{font-family:var(--fd);font-weight:900;font-size:1.18rem;color:var(--tx);letter-spacing:-.02em;line-height:1}
+.sh-title em{color:var(--acc);font-style:normal}
 
 /* ── Timer bar ── */
 .pay-timer{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow)}
-.pay-timer-ico{width:40px;height:40px;border-radius:11px;background:var(--accd);border:1.5px solid rgba(26,158,74,.2);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
+.pay-timer-ico{width:40px;height:40px;border-radius:11px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
 .pay-timer-body{flex:1;min-width:0}
-.pay-timer-label{font-size:.58rem;font-weight:600;color:var(--tx3);margin-bottom:4px}
+.pay-timer-label{font-size:.56rem;font-weight:600;color:var(--tx3);margin-bottom:5px;letter-spacing:.02em}
 .pay-timer-val{font-family:var(--fd);font-weight:900;font-size:1.5rem;color:var(--acc);line-height:1;transition:color .4s}
-.pay-timer-bar-wrap{height:4px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:6px}
+.pay-timer-bar-wrap{height:5px;background:var(--s3);border-radius:99px;overflow:hidden;margin-top:7px}
 .pay-timer-bar{height:100%;border-radius:99px;background:var(--acc);width:100%;transition:width 1s linear,background .5s}
 
 /* ── Receipt ── */
-.pay-receipt{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-md)}
+.pay-receipt{background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-md)}
 .pay-receipt-head{background:linear-gradient(135deg,var(--acc) 0%,#0fa352 60%,#15803d 100%);padding:18px 20px 16px;color:#fff;position:relative;overflow:hidden}
 .pay-receipt-head::before{content:'';position:absolute;top:-28px;right:-28px;width:90px;height:90px;background:rgba(255,255,255,.1);border-radius:50%}
 .pay-receipt-head::after{content:'';position:absolute;bottom:-18px;right:38px;width:60px;height:60px;background:rgba(255,255,255,.07);border-radius:50%}
@@ -75,129 +78,140 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
 .pay-item-price{font-weight:700;color:var(--tx);flex-shrink:0;margin-left:6px}
 .pay-dashed{height:1px;background:repeating-linear-gradient(90deg,var(--b1) 0,var(--b1) 6px,transparent 6px,transparent 12px);margin:10px 0}
 .pay-sum-row{display:flex;justify-content:space-between;font-size:.72rem;color:var(--tx3);padding:3px 0}
-.pay-total-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0 4px;border-top:2px solid var(--b0);margin-top:5px}
+.pay-total-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0 4px;border-top:2px solid var(--b1);margin-top:5px}
 .pay-total-lbl{font-family:var(--fd);font-weight:800;font-size:.84rem;color:var(--tx)}
 .pay-total-val{font-family:var(--fd);font-weight:900;font-size:1.35rem;color:var(--acc)}
 .pay-addr{display:flex;align-items:flex-start;gap:7px;margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:10px;font-size:.7rem;color:var(--tx2);line-height:1.5}
 .pay-addr svg{color:var(--acc);flex-shrink:0;margin-top:1px}
 
-/* ── Card form ── */
+/* ── Card form container ── */
 .pay-card-form{background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-md)}
-.pay-card-form-head{padding:16px 20px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;gap:10px}
-.pay-card-form-ico{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3)}
-.pay-card-form-title{font-family:var(--fd);font-weight:800;font-size:.88rem;color:var(--tx)}
-.pay-card-form-sub{font-size:.62rem;color:var(--tx3);margin-top:1px}
-.pay-card-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.pay-form-head{padding:16px 20px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;gap:12px}
+.pay-form-ico{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.28);flex-shrink:0}
+.pay-form-title{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx)}
+.pay-form-sub{font-size:.6rem;color:var(--tx3);margin-top:2px}
+.pay-form-body{padding:18px 20px 22px;display:flex;flex-direction:column;gap:14px}
 
-/* Visual card preview */
-.card-preview{border-radius:16px;padding:22px 22px 20px;background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 40%,#2563eb 100%);color:#fff;position:relative;overflow:hidden;min-height:170px;box-shadow:0 10px 30px rgba(30,64,175,.4)}
+/* ── Visual card preview ── */
+.card-preview{border-radius:16px;padding:22px 22px 20px;background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 40%,#2563eb 100%);color:#fff;position:relative;overflow:hidden;min-height:168px;box-shadow:0 10px 30px rgba(30,64,175,.35)}
 .card-preview::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;background:rgba(255,255,255,.08);border-radius:50%}
 .card-preview::after{content:'';position:absolute;bottom:-20px;left:-20px;width:90px;height:90px;background:rgba(255,255,255,.05);border-radius:50%}
-.cp-chip{width:38px;height:28px;border-radius:5px;background:linear-gradient(135deg,#fcd34d,#f59e0b);margin-bottom:18px;position:relative;z-index:1;box-shadow:0 2px 6px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center}
+.cp-brand{position:absolute;top:18px;right:20px;z-index:1;display:flex;align-items:center;height:24px}
+.cp-chip{width:36px;height:26px;border-radius:5px;background:linear-gradient(135deg,#fcd34d,#f59e0b);margin-bottom:16px;position:relative;z-index:1;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .cp-chip::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:rgba(0,0,0,.15);transform:translateX(-50%)}
 .cp-chip::after{content:'';position:absolute;top:50%;left:0;right:0;height:1.5px;background:rgba(0,0,0,.15);transform:translateY(-50%)}
-.cp-number{font-size:1.08rem;letter-spacing:.18em;font-weight:600;margin-bottom:16px;position:relative;z-index:1;font-family:monospace;min-height:1.4em}
+.cp-number{font-size:1.06rem;letter-spacing:.18em;font-weight:600;margin-bottom:16px;position:relative;z-index:1;font-family:monospace;min-height:1.4em;text-shadow:0 1px 4px rgba(0,0,0,.18)}
 .cp-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:1}
-.cp-label{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin-bottom:3px}
-.cp-holder{font-size:.74rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-height:1.1em;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cp-expiry{font-size:.82rem;font-weight:600;font-family:monospace;min-height:1.1em}
-.cp-brand{position:absolute;top:20px;right:20px;z-index:1;display:flex;align-items:center}
-.cp-brand svg,.cp-brand img{height:22px;width:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.2))}
+.cp-label{font-size:.46rem;letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-bottom:3px}
+.cp-holder{font-size:.76rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;min-height:1.1em;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-expiry{font-size:.84rem;font-weight:700;font-family:monospace;min-height:1.1em}
 
-/* Inputs */
+/* ── Inputs ── */
 .cf-field{display:flex;flex-direction:column;gap:6px}
-.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cf-label{font-size:.64rem;font-weight:600;color:var(--tx3);letter-spacing:.02em}
-.cf-input{width:100%;padding:12px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:11px;font-size:.88rem;font-family:var(--fs);color:var(--tx);outline:none;transition:border-color var(--tf),box-shadow var(--tf),background var(--tf)}
-.cf-input::placeholder{color:var(--b1)}
-.cf-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd);background:var(--s1)}
-.cf-input.error{border-color:var(--red);box-shadow:0 0 0 3px var(--redd)}
 .cf-input-wrap{position:relative}
-.cf-card-brand-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:4px;pointer-events:none}
-.cf-error-msg{font-size:.64rem;color:var(--red);font-weight:500;margin-top:-4px;display:none}
-.cf-error-msg.show{display:block;animation:errShake .25s ease}
-@keyframes errShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.cf-input{width:100%;padding:12px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;font-size:.88rem;font-family:var(--fs);color:var(--tx);outline:none;transition:border-color var(--tf),box-shadow var(--tf),background var(--tf)}
+.cf-input::placeholder{color:var(--tx3)}
+.cf-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd);background:var(--s1)}
+.cf-input.error{border-color:var(--red)!important;box-shadow:0 0 0 3px var(--redd)!important}
+.cf-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;pointer-events:none}
+.cf-err{font-size:.62rem;color:var(--red);font-weight:600;margin-top:-2px;display:none}
+.cf-err.show{display:block;animation:errShake .22s ease}
+@keyframes errShake{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
 
-/* Pay button */
-.cf-pay-btn{width:100%;padding:16px 20px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.92rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 20px var(--acc-shadow);transition:opacity .15s,transform .12s,box-shadow .15s;margin-top:4px}
-.cf-pay-btn:hover{opacity:.93;transform:translateY(-2px);box-shadow:0 10px 28px var(--acc-shadow)}
-.cf-pay-btn:active{transform:translateY(0)}
-.cf-pay-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.cf-secure-hint{display:flex;align-items:center;justify-content:center;gap:5px;font-size:.6rem;color:var(--tx3);padding-top:2px}
-.cf-secure-hint svg{color:var(--acc)}
+/* ── Pay button ── */
+.cf-pay-btn{width:100%;padding:16px 20px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.94rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 20px var(--acc-shadow);transition:opacity .15s,transform .12s,box-shadow .15s;margin-top:4px}
+.cf-pay-btn:hover:not(:disabled){opacity:.92;transform:translateY(-2px);box-shadow:0 10px 28px var(--acc-shadow)}
+.cf-pay-btn:active:not(:disabled){transform:translateY(0)}
+.cf-pay-btn:disabled{opacity:.55;cursor:not-allowed}
+.cf-secure{display:flex;align-items:center;justify-content:center;gap:5px;font-size:.59rem;color:var(--tx3);margin-top:-2px}
+.cf-secure svg{color:var(--acc)}
+
+/* ── Global error ── */
+.cf-global-err{font-size:.7rem;color:var(--red);font-weight:600;padding:10px 14px;background:var(--redd);border-radius:10px;border:1px solid rgba(220,38,38,.2);text-align:center;display:none}
+.cf-global-err.show{display:block;animation:errShake .22s ease}
 
 /* ── Processing overlay ── */
-.proc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;animation:procIn .25s ease}
+.proc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:none;align-items:center;justify-content:center;animation:fadeIn .2s ease}
 .proc-overlay.show{display:flex}
-@keyframes procIn{from{opacity:0}to{opacity:1}}
-.proc-card{background:var(--s1);border-radius:24px;padding:36px 32px;text-align:center;width:min(320px,88vw);box-shadow:0 24px 64px rgba(0,0,0,.28)}
-.proc-spinner{width:56px;height:56px;border-radius:50%;border:4px solid var(--b0);border-top-color:var(--acc);animation:spin .8s linear infinite;margin:0 auto 20px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.proc-title{font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:6px}
-.proc-sub{font-size:.72rem;color:var(--tx3);line-height:1.6}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.proc-card{background:var(--s1);border-radius:22px;padding:38px 32px;text-align:center;width:min(310px,86vw);box-shadow:0 24px 64px rgba(0,0,0,.22);border:1.5px solid var(--b0)}
+.proc-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;text-align:left}
+.proc-step{display:flex;align-items:center;gap:12px;font-size:.76rem;color:var(--tx3);transition:color .3s}
+.proc-step.active{color:var(--tx);font-weight:600}
+.proc-step.done{color:var(--acc);font-weight:600}
+.proc-step-ico{width:28px;height:28px;border-radius:50%;background:var(--s2);border:1.5px solid var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .3s,border-color .3s}
+.proc-step.active .proc-step-ico{background:var(--accd);border-color:var(--accg)}
+.proc-step.done .proc-step-ico{background:var(--acc);border-color:var(--acc)}
+.proc-step-spinner{width:14px;height:14px;border-radius:50%;border:2px solid var(--s3);border-top-color:var(--acc);animation:pspin .7s linear infinite}
+@keyframes pspin{to{transform:rotate(360deg)}}
+.proc-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);margin-bottom:6px}
+.proc-sub{font-size:.7rem;color:var(--tx3);line-height:1.6}
 
-/* ── Success overlay ── */
-.success-overlay{position:fixed;inset:0;background:var(--s0);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;animation:procIn .3s ease}
-.success-overlay.show{display:flex}
-.success-circle{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;box-shadow:0 12px 36px var(--acc-shadow);margin:0 auto 24px;animation:successPop .5s var(--spring) both .1s}
-@keyframes successPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-.success-check{animation:checkDraw .4s ease both .4s}
-@keyframes checkDraw{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
-.success-title{font-family:var(--fd);font-weight:900;font-size:1.6rem;color:var(--tx);margin-bottom:10px}
-.success-sub{font-size:.78rem;color:var(--tx3);line-height:1.7;max-width:280px}
-.success-redirect{font-size:.64rem;color:var(--tx3);margin-top:20px;display:flex;align-items:center;gap:6px}
-.redirect-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:rpulse 1.2s infinite}
+/* ── Success screen ── */
+.success-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;animation:fadeIn .35s ease}
+.success-screen.show{display:flex}
+.success-ring{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;box-shadow:0 12px 36px var(--acc-shadow);margin:0 auto 28px;animation:sRing .55s var(--spring) both .1s}
+@keyframes sRing{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.success-check{animation:sCheck .35s ease both .45s;opacity:0}
+@keyframes sCheck{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.success-title{font-family:var(--fd);font-weight:900;font-size:1.65rem;color:var(--tx);margin-bottom:10px;letter-spacing:-.02em}
+.success-sub{font-size:.78rem;color:var(--tx3);line-height:1.75;max-width:290px}
+.success-redirect{display:flex;align-items:center;gap:7px;font-size:.62rem;color:var(--tx3);margin-top:24px}
+.success-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:rpulse 1.2s infinite}
 
-/* ── Expired state ── */
-.expired-screen{background:var(--s1);border:1.5px solid rgba(220,38,38,.25);border-radius:16px;padding:28px 22px;text-align:center}
-.expired-ico{font-size:2.8rem;margin-bottom:12px}
+/* ── Expired / Error ── */
+.expired-wrap{background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;padding:34px 24px;text-align:center;box-shadow:var(--shadow-md)}
+.expired-ico{font-size:3rem;margin-bottom:14px}
 .expired-title{font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px}
-.expired-sub{font-size:.72rem;color:var(--tx3);line-height:1.6;max-width:280px;margin:0 auto 18px}
-.expired-back-btn{padding:12px 28px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.78rem;cursor:pointer;box-shadow:0 4px 14px var(--acc-shadow)}
+.expired-sub{font-size:.72rem;color:var(--tx3);line-height:1.65;max-width:280px;margin:0 auto 20px}
+.expired-btn{padding:12px 30px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.8rem;cursor:pointer;box-shadow:0 4px 14px var(--acc-shadow)}
 
-/* Loading skeleton */
-.skel{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skelAnim 1.4s ease infinite;border-radius:8px}
-@keyframes skelAnim{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.loading-wrap{display:flex;flex-direction:column;gap:14px;width:100%}
+/* ── Loading skeleton ── */
+.skel{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skel 1.5s ease infinite;border-radius:10px}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* Utilities */
+.spin-sm{width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:pspin .7s linear infinite;flex-shrink:0}
 .hide{display:none!important}
-.spin-sm{width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;flex-shrink:0}
 </style>
 </head>
 <body>
 
-<!-- ── Topbar ── -->
+<!-- ── Topbar (matches home.html exactly) ── -->
 <header class="topbar">
-  <button class="tb-back" onclick="goBack()" aria-label="Назад">
+  <button class="tb-back" onclick="goBack()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
   </button>
   <div class="tb-logo">
-    <div class="tb-logo-mark">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
-    </div>
-    <div class="tb-logo-name">Dastdaroz <em>Pay</em></div>
+    <img src="dastdaroz.png" alt="Dastdaroz" style="height:28px;width:auto;object-fit:contain"/>
   </div>
   <div class="tb-secure">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    SSL
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    SSL-256
   </div>
 </header>
 
-<!-- ── Page content ── -->
-<main class="page-wrap" id="main-wrap">
+<!-- ── Main content ── -->
+<div class="page-wrap" id="page-wrap">
 
-  <!-- Loading skeleton -->
-  <div class="loading-wrap" id="loading-wrap">
-    <div class="skel" style="height:72px;border-radius:14px"></div>
-    <div class="skel" style="height:200px;border-radius:16px"></div>
-    <div class="skel" style="height:440px;border-radius:18px"></div>
+  <!-- Loading skeletons -->
+  <div id="skeletons">
+    <div class="skel" style="height:70px;border-radius:14px;margin-bottom:14px"></div>
+    <div class="skel" style="height:220px;border-radius:18px;margin-bottom:14px"></div>
+    <div class="skel" style="height:460px;border-radius:18px"></div>
   </div>
 
-  <!-- Timer (shown after load) -->
+  <!-- Heading -->
+  <div class="sh hide" id="pay-head">
+    <div class="sh-tag">Корти бонкӣ</div>
+    <div class="sh-title">Пардохти <em>бехатар</em></div>
+  </div>
+
+  <!-- Timer -->
   <div class="pay-timer hide" id="pay-timer">
     <div class="pay-timer-ico">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </div>
     <div class="pay-timer-body">
       <div class="pay-timer-label">Вақти боқимонда барои пардохт</div>
@@ -208,7 +222,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
     </div>
   </div>
 
-  <!-- Receipt (shown after load) -->
+  <!-- Receipt -->
   <div class="pay-receipt hide" id="pay-receipt">
     <div class="pay-receipt-head">
       <div class="pay-receipt-tag">Dastdaroz — Чек</div>
@@ -234,24 +248,22 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
     </div>
   </div>
 
-  <!-- Card form (shown after load) -->
+  <!-- Card form -->
   <div class="pay-card-form hide" id="pay-card-form">
-    <div class="pay-card-form-head">
-      <div class="pay-card-form-ico">
+    <div class="pay-form-head">
+      <div class="pay-form-ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
       </div>
       <div>
-        <div class="pay-card-form-title">Пардохт бо корт</div>
-        <div class="pay-card-form-sub">Маълумоти корти бонкии худро ворид кунед</div>
+        <div class="pay-form-title">Маълумоти корт</div>
+        <div class="pay-form-sub">Рақам, ном, муддат ва CVV-и корти худро ворид кунед</div>
       </div>
     </div>
-    <div class="pay-card-body">
+    <div class="pay-form-body">
 
       <!-- Visual card -->
       <div class="card-preview" id="card-preview">
-        <div class="cp-brand" id="cp-brand">
-          <!-- brand injected by JS -->
-        </div>
+        <div class="cp-brand" id="cp-brand"></div>
         <div class="cp-chip"></div>
         <div class="cp-number" id="cp-number">•••• •••• •••• ••••</div>
         <div class="cp-bottom">
@@ -273,9 +285,9 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
           <input class="cf-input" id="inp-num" type="text" inputmode="numeric"
             placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number"
             oninput="onCardNum(this)" onblur="validateNum()"/>
-          <div class="cf-card-brand-badge" id="badge-brand"></div>
+          <div class="cf-badge" id="badge-brand"></div>
         </div>
-        <div class="cf-error-msg" id="err-num">Рақами корт нодуруст</div>
+        <div class="cf-err" id="err-num">Рақами корт нодуруст аст</div>
       </div>
 
       <!-- Holder -->
@@ -285,7 +297,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
           placeholder="IVAN IVANOV" autocomplete="cc-name"
           style="text-transform:uppercase"
           oninput="onHolder(this)" onblur="validateHolder()"/>
-        <div class="cf-error-msg" id="err-holder">Номро бо ҳарфи лотинӣ ворид кунед</div>
+        <div class="cf-err" id="err-holder">Номро бо ҳарфи лотинӣ ворид кунед</div>
       </div>
 
       <!-- Expiry + CVV -->
@@ -295,19 +307,19 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
           <input class="cf-input" id="inp-expiry" type="text" inputmode="numeric"
             placeholder="MM/YY" maxlength="5" autocomplete="cc-exp"
             oninput="onExpiry(this)" onblur="validateExpiry()"/>
-          <div class="cf-error-msg" id="err-expiry">Муддат нодуруст</div>
+          <div class="cf-err" id="err-expiry">Муддат нодуруст аст</div>
         </div>
         <div class="cf-field">
           <label class="cf-label" for="inp-cvv">CVV / CVC</label>
           <input class="cf-input" id="inp-cvv" type="password" inputmode="numeric"
             placeholder="•••" maxlength="4" autocomplete="cc-csc"
             oninput="onCvv(this)" onblur="validateCvv()"/>
-          <div class="cf-error-msg" id="err-cvv">CVV нодуруст</div>
+          <div class="cf-err" id="err-cvv">CVV нодуруст аст</div>
         </div>
       </div>
 
-      <!-- Error -->
-      <div class="cf-error-msg" id="err-global" style="font-size:.7rem;padding:8px 12px;background:var(--redd);border-radius:8px;text-align:center"></div>
+      <!-- Global error -->
+      <div class="cf-global-err" id="err-global"></div>
 
       <!-- Pay button -->
       <button class="cf-pay-btn" id="pay-btn" onclick="submitPayment()">
@@ -315,7 +327,7 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
         <span id="pay-btn-txt">Пардохт кунед</span>
       </button>
 
-      <div class="cf-secure-hint">
+      <div class="cf-secure">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Пардохт бо шифргузории 256-bit SSL иҳота шудааст
       </div>
@@ -323,370 +335,300 @@ body{display:flex;flex-direction:column;align-items:center;min-height:100%}
   </div>
 
   <!-- Expired screen -->
-  <div class="expired-screen hide" id="expired-screen">
+  <div class="expired-wrap hide" id="expired-wrap">
     <div class="expired-ico">⏰</div>
     <div class="expired-title">Вақти пардохт гузашт</div>
     <div class="expired-sub">Вақти бронирование ба охир расид ва фармоиш бекор шуд.</div>
-    <button class="expired-back-btn" onclick="location.href='home.html'">
-      Ба саҳифаи асосӣ
-    </button>
+    <button class="expired-btn" onclick="location.href='home.html'">Ба саҳифаи асосӣ</button>
   </div>
 
-</main>
+</div><!-- /page-wrap -->
 
 <!-- ── Processing overlay ── -->
 <div class="proc-overlay" id="proc-overlay">
   <div class="proc-card">
-    <div class="proc-spinner"></div>
-    <div class="proc-title">Дархост коркард мешавад…</div>
+    <div class="proc-steps" id="proc-steps">
+      <div class="proc-step active" id="pstep-1">
+        <div class="proc-step-ico"><div class="proc-step-spinner"></div></div>
+        <span>Алоқа бо бонк…</span>
+      </div>
+      <div class="proc-step" id="pstep-2">
+        <div class="proc-step-ico">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <span>Тасдиқи пардохт…</span>
+      </div>
+      <div class="proc-step" id="pstep-3">
+        <div class="proc-step-ico">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        </div>
+        <span>Тайёр кардани фармоиш…</span>
+      </div>
+    </div>
+    <div class="proc-title">Коркард мешавад…</div>
     <div class="proc-sub">Лутфан сабр кунед.<br/>Саҳифаро набандед.</div>
   </div>
 </div>
 
-<!-- ── Success overlay ── -->
-<div class="success-overlay" id="success-overlay">
-  <div class="success-circle">
-    <svg class="success-check" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+<!-- ── Success screen ── -->
+<div class="success-screen" id="success-screen">
+  <div class="success-ring">
+    <svg class="success-check" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
   </div>
-  <div class="success-title">Пардохт қабул шуд!</div>
-  <div class="success-sub">Фармоиши шумо тасдиқ шуд ва ба ошхона фиристода шуд. Зуд расонида мешавад 🚀</div>
+  <div class="success-title">Пардохт қабул шуд! 🎉</div>
+  <div class="success-sub">Фармоиши шумо тасдиқ шуд ва ба ошхона фиристода шуд.<br/>Зуд расонида мешавад 🚀</div>
   <div class="success-redirect">
-    <div class="redirect-dot"></div>
-    Ба саҳифаи фармоиш гузарондан…
+    <div class="success-dot"></div>
+    Ба саҳифаи бронирование бармегардем…
   </div>
 </div>
 
 <!-- ── Firebase + Logic ── -->
 <script type="module">
 import { auth, db } from './firebase.js';
-import {
-  onAuthStateChanged,
-} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-import {
-  doc, getDoc, updateDoc, serverTimestamp,
-} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
 
-// ── Helpers ──────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// ── State ────────────────────────────────────────────────────
 const params = new URLSearchParams(location.search);
 const OID    = params.get('oid') || '';
 let ORDER    = null;
-let timerInt = null;
 let TOTAL    = 0;
+let timerInt = null;
 
-window.goBack = function() {
-  if (history.length > 1) history.back();
-  else location.href = 'home.html';
-};
+window.goBack = () => { if (history.length > 1) history.back(); else location.href = 'home.html'; };
 
-// ── Auth gate ────────────────────────────────────────────────
+// ── Auth gate ──────────────────────────────────────────────────
 onAuthStateChanged(auth, async user => {
-  if (!user) {
-    location.href = 'home.html';
-    return;
-  }
-  if (!OID) {
-    showError('Идентификатори фармоиш ёфт нашуд.');
-    return;
-  }
+  if (!user) { location.href = 'home.html'; return; }
+  if (!OID)  { showGenericError('Идентификатори фармоиш ёфт нашуд.'); return; }
   await loadOrder();
 });
 
-// ── Load order from Firestore ─────────────────────────────────
+// ── Load order ─────────────────────────────────────────────────
 async function loadOrder() {
   try {
     const snap = await getDoc(doc(db, 'orders', OID));
-    if (!snap.exists()) { showError('Фармоиш ёфт нашуд.'); return; }
+    if (!snap.exists()) { showGenericError('Фармоиш ёфт нашуд.'); return; }
     ORDER = { id: OID, ...snap.data() };
+    if (ORDER.paymentStatus === 'paid') { location.href = 'home.html#verify-' + OID; return; }
+    if (['cancelled','rejected'].includes(ORDER.status)) { showExpired(); return; }
 
-    // Check if already paid
-    if (ORDER.paymentStatus === 'paid') {
-      location.href = 'home.html#order-' + OID;
-      return;
-    }
-    // Check if cancelled/expired
-    if (ORDER.status === 'cancelled' || ORDER.status === 'rejected') {
-      showExpired();
-      return;
-    }
-    // Check deadline
     let deadline = null;
     if (ORDER.reservedUntil?.toDate) deadline = ORDER.reservedUntil.toDate();
-    else if (ORDER.reservedUntil) deadline = new Date(ORDER.reservedUntil);
+    else if (ORDER.reservedUntil)    deadline = new Date(ORDER.reservedUntil);
     if (deadline && deadline < new Date()) {
-      await markExpired();
+      await updateDoc(doc(db, 'orders', OID), { status:'cancelled', paymentStatus:'expired', cancelReason:'Вақти пардохт гузашт', updatedAt:serverTimestamp() });
       showExpired();
       return;
     }
-
     renderUI(deadline);
-  } catch(e) {
-    showError('Хато ҳангоми боргирии фармоиш: ' + e.message);
-  }
+  } catch(e) { showGenericError('Хато: ' + e.message); }
 }
 
-// ── Render main UI ────────────────────────────────────────────
+// ── Render UI ──────────────────────────────────────────────────
 function renderUI(deadline) {
-  // Hide skeleton
-  $('loading-wrap').classList.add('hide');
+  $('skeletons').classList.add('hide');
+  $('pay-head').classList.remove('hide');
+  if (deadline) { $('pay-timer').classList.remove('hide'); startTimer(deadline); }
 
-  // Timer
-  if (deadline) {
-    $('pay-timer').classList.remove('hide');
-    startTimer(deadline);
-  }
-
-  // Receipt
   const o = ORDER;
-  const num = o.orderNumber ? '#' + o.orderNumber : '#' + OID.slice(-6);
-  $('pr-num').textContent = 'Фармоиш ' + num;
-
-  const items = o.items || [];
-  TOTAL = o.total || (o.subtotal + o.deliveryFee) || 0;
-
-  $('pr-items').innerHTML = items.map(i =>
+  $('pr-num').textContent = 'Фармоиш ' + (o.orderNumber ? '#'+o.orderNumber : '#'+OID.slice(-6));
+  TOTAL = o.total || ((o.subtotal||0) + (o.deliveryFee||0));
+  $('pr-items').innerHTML = (o.items||[]).map(i =>
     `<div class="pay-item">
        <span class="pay-item-name">${escHtml(i.name)}</span>
        <span class="pay-item-qty">×${i.quantity}</span>
-       <span class="pay-item-price">${i.price * i.quantity} см</span>
-     </div>`
-  ).join('');
-  $('pr-sub').textContent  = (o.subtotal || 0) + ' см';
-  $('pr-dfee').textContent = (o.deliveryFee || 0) + ' см';
-  $('pr-total').textContent = TOTAL + ' см';
-
-  if (o.address) {
-    $('pr-addr').classList.remove('hide');
-    $('pr-addr-txt').textContent = o.address;
-  }
+       <span class="pay-item-price">${i.price*i.quantity} см</span>
+     </div>`).join('');
+  $('pr-sub').textContent  = (o.subtotal||0)+' см';
+  $('pr-dfee').textContent = (o.deliveryFee||0)+' см';
+  $('pr-total').textContent = TOTAL+' см';
+  if (o.address) { $('pr-addr').classList.remove('hide'); $('pr-addr-txt').textContent = o.address; }
   $('pay-receipt').classList.remove('hide');
-
-  // Pay button label
   $('pay-btn-txt').textContent = 'Пардохт кунед — ' + TOTAL + ' см';
-
-  // Card form
   $('pay-card-form').classList.remove('hide');
 }
 
-// ── Timer logic ───────────────────────────────────────────────
-function startTimer(deadline) {
-  updateTimer(deadline);
-  timerInt = setInterval(() => updateTimer(deadline), 1000);
+// ── Timer ──────────────────────────────────────────────────────
+function startTimer(dl) {
+  tick(dl);
+  timerInt = setInterval(() => tick(dl), 1000);
 }
-
-function updateTimer(deadline) {
-  const left = deadline.getTime() - Date.now();
+function tick(dl) {
+  const left = dl.getTime() - Date.now();
   if (left <= 0) {
     clearInterval(timerInt);
-    markExpired().then(showExpired);
-    return;
+    updateDoc(doc(db,'orders',OID),{status:'cancelled',paymentStatus:'expired',cancelReason:'Вақти пардохт гузашт',updatedAt:serverTimestamp()}).catch(()=>{});
+    showExpired(); return;
   }
-  const m  = Math.floor(left / 60000);
-  const s  = Math.floor((left % 60000) / 1000);
-  $('pay-timer-val').textContent = m + ':' + String(s).padStart(2, '0');
-  const total = 10 * 60 * 1000;
-  const pct   = Math.max(0, Math.min(100, (left / total) * 100));
-  const bar   = $('pay-timer-bar');
-  bar.style.width      = pct + '%';
-  bar.style.background = pct > 40 ? 'var(--acc)' : pct > 15 ? 'var(--amber)' : 'var(--red)';
-  $('pay-timer-val').style.color = left < 60000 ? 'var(--red)' : left < 180000 ? 'var(--amber)' : 'var(--acc)';
+  const m = Math.floor(left/60000), s = Math.floor((left%60000)/1000);
+  $('pay-timer-val').textContent = m+':'+String(s).padStart(2,'0');
+  const pct = Math.max(0,Math.min(100,(left/(10*60*1000))*100));
+  const bar = $('pay-timer-bar');
+  bar.style.width = pct+'%';
+  bar.style.background = pct>40?'var(--acc)':pct>15?'var(--amber)':'var(--red)';
+  $('pay-timer-val').style.color = left<60000?'var(--red)':left<180000?'var(--amber)':'var(--acc)';
 }
 
-async function markExpired() {
-  try {
-    await updateDoc(doc(db, 'orders', OID), {
-      status:        'cancelled',
-      paymentStatus: 'expired',
-      cancelReason:  'Вақти пардохт гузашт',
-      updatedAt:     serverTimestamp(),
-    });
-  } catch(e) { console.error(e); }
-}
-
-// ── Card form handlers ────────────────────────────────────────
-window.onCardNum = function(el) {
+// ── Card form handlers ─────────────────────────────────────────
+window.onCardNum = el => {
   let raw = el.value.replace(/\D/g,'').slice(0,16);
   el.value = raw.replace(/(.{4})/g,'$1 ').trim();
   detectCardType(raw);
-  $('cp-number').textContent = raw ? raw.replace(/(.{4})/g,'$1 ').trim() : '•••• •••• •••• ••••';
-  $('err-num').classList.remove('show');
-  el.classList.remove('error');
+  $('cp-number').textContent = raw ? raw.replace(/(.{4})/g,'$1 ').trim().padEnd(19,'•').replace(/\d/g,(c,i)=>i<raw.length?c:'•') : '•••• •••• •••• ••••';
+  // Actually show entered digits + dots for remaining
+  const disp = raw.padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim();
+  $('cp-number').textContent = disp;
+  clearErr('inp-num','err-num');
 };
-
-window.onHolder = function(el) {
+window.onHolder = el => {
   el.value = el.value.toUpperCase().replace(/[^A-Z\s]/g,'');
   $('cp-holder').textContent = el.value || 'ИМ НАСАБ';
-  $('err-holder').classList.remove('show');
-  el.classList.remove('error');
+  clearErr('inp-holder','err-holder');
 };
-
-window.onExpiry = function(el) {
+window.onExpiry = el => {
   let raw = el.value.replace(/\D/g,'').slice(0,4);
-  if (raw.length >= 3) raw = raw.slice(0,2) + '/' + raw.slice(2);
+  if (raw.length>=3) raw = raw.slice(0,2)+'/'+raw.slice(2);
   el.value = raw;
   $('cp-expiry').textContent = el.value || 'MM/YY';
-  $('err-expiry').classList.remove('show');
-  el.classList.remove('error');
+  clearErr('inp-expiry','err-expiry');
 };
+window.onCvv = el => { el.value = el.value.replace(/\D/g,'').slice(0,4); clearErr('inp-cvv','err-cvv'); };
 
-window.onCvv = function(el) {
-  el.value = el.value.replace(/\D/g,'').slice(0,4);
-  $('err-cvv').classList.remove('show');
-  el.classList.remove('error');
-};
+function clearErr(inpId, errId) {
+  $(inpId).classList.remove('error');
+  $(errId).classList.remove('show');
+}
 
 // Card type detection
 function detectCardType(num) {
-  let type = '';
-  let color1 = '#1e3a8a', color2 = '#2563eb';
-  if (/^4/.test(num)) { type = 'visa'; color1='#1a1f71'; color2='#1565C0'; }
-  else if (/^5[1-5]/.test(num) || /^2[2-7]/.test(num)) { type = 'mc'; color1='#eb001b'; color2='#f79e1b'; }
-  else if (/^2/.test(num)) { type = 'mir'; color1='#1a5276'; color2='#2ecc71'; }
-  // Update card gradient
   const preview = $('card-preview');
-  if (type === 'mc') {
-    preview.style.background = 'linear-gradient(135deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%)';
-  } else if (type === 'mir') {
-    preview.style.background = 'linear-gradient(135deg,#1a5276 0%,#117a65 60%,#27ae60 100%)';
+  const brandEl = $('cp-brand'), badgeEl = $('badge-brand');
+  let type = '';
+  if (/^4/.test(num)) type='visa';
+  else if (/^5[1-5]/.test(num)||/^2[2-7]/.test(num)) type='mc';
+  else if (/^2/.test(num)) type='mir';
+  if (type==='visa') {
+    preview.style.background='linear-gradient(135deg,#1a1f71 0%,#1565C0 60%,#1e40af 100%)';
+    brandEl.innerHTML='<svg height="20" viewBox="0 0 78 25" fill="none"><text y="22" font-family="Arial" font-weight="900" font-size="26" fill="white" letter-spacing="-1">VISA</text></svg>';
+    badgeEl.innerHTML='<span style="font-weight:900;color:var(--tx);font-size:.68rem;letter-spacing:.04em">VISA</span>';
+  } else if (type==='mc') {
+    preview.style.background='linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)';
+    const mcSvg=`<svg height="26" viewBox="0 0 50 30"><circle cx="19" cy="15" r="13" fill="#eb001b" opacity=".95"/><circle cx="31" cy="15" r="13" fill="#f79e1b" opacity=".85"/></svg>`;
+    brandEl.innerHTML=mcSvg; badgeEl.innerHTML=mcSvg;
+  } else if (type==='mir') {
+    preview.style.background='linear-gradient(135deg,#1a5276 0%,#117a65 60%,#27ae60 100%)';
+    const m='<span style="font-weight:900;color:#fff;font-size:.72rem;background:linear-gradient(90deg,#2ecc71,#27ae60);padding:2px 8px;border-radius:5px">МИР</span>';
+    brandEl.innerHTML=m; badgeEl.innerHTML=m;
   } else {
-    preview.style.background = 'linear-gradient(135deg,#1e3a8a 0%,#1e40af 40%,#2563eb 100%)';
-  }
-  // Brand badge
-  const brandEl = $('cp-brand');
-  const badgeEl = $('badge-brand');
-  if (type === 'visa') {
-    const svg = `<svg height="22" viewBox="0 0 78 24" fill="white"><text y="20" font-family="Arial" font-weight="900" font-size="24" letter-spacing="-1">VISA</text></svg>`;
-    brandEl.innerHTML = svg;
-    badgeEl.innerHTML = `<span style="font-weight:900;color:var(--tx);font-size:.7rem;letter-spacing:.04em">VISA</span>`;
-  } else if (type === 'mc') {
-    const svg = `<svg height="28" viewBox="0 0 50 30"><circle cx="19" cy="15" r="13" fill="#eb001b" opacity=".95"/><circle cx="31" cy="15" r="13" fill="#f79e1b" opacity=".85"/></svg>`;
-    brandEl.innerHTML = svg;
-    badgeEl.innerHTML = svg;
-  } else if (type === 'mir') {
-    brandEl.innerHTML = `<span style="font-weight:900;color:#fff;font-size:.75rem;letter-spacing:.04em;background:linear-gradient(90deg,#2ecc71,#27ae60);padding:2px 8px;border-radius:4px">МИР</span>`;
-    badgeEl.innerHTML = `<span style="font-weight:900;color:#fff;font-size:.65rem;background:linear-gradient(90deg,#2ecc71,#27ae60);padding:1px 6px;border-radius:4px">МИР</span>`;
-  } else {
-    brandEl.innerHTML = '';
-    badgeEl.innerHTML = '';
+    preview.style.background='linear-gradient(135deg,#1e3a8a 0%,#1e40af 40%,#2563eb 100%)';
+    brandEl.innerHTML=''; badgeEl.innerHTML='';
   }
 }
 
-// ── Validation ────────────────────────────────────────────────
-window.validateNum = function() {
+// ── Validation ─────────────────────────────────────────────────
+window.validateNum = () => {
   const v = ($('inp-num').value||'').replace(/\s/g,'');
-  if (v.length < 13 || v.length > 19) {
-    $('inp-num').classList.add('error');
-    $('err-num').classList.add('show');
-    return false;
-  }
+  if (v.length<13||v.length>19) { $('inp-num').classList.add('error'); $('err-num').classList.add('show'); return false; }
   return true;
 };
-window.validateHolder = function() {
+window.validateHolder = () => {
   const v = ($('inp-holder').value||'').trim();
-  if (v.length < 2 || !/^[A-Z\s]+$/.test(v)) {
-    $('inp-holder').classList.add('error');
-    $('err-holder').classList.add('show');
-    return false;
-  }
+  if (v.length<2||!/^[A-Z\s]+$/.test(v)) { $('inp-holder').classList.add('error'); $('err-holder').classList.add('show'); return false; }
   return true;
 };
-window.validateExpiry = function() {
-  const v = $('inp-expiry').value || '';
-  const [mm,yy] = v.split('/');
-  const m = parseInt(mm,10), y = parseInt('20'+yy,10);
+window.validateExpiry = () => {
+  const v = $('inp-expiry').value||'';
+  const [mm,yy] = v.split('/'); const m=parseInt(mm,10), y=parseInt('20'+yy,10);
   const now = new Date();
-  const valid = m>=1 && m<=12 && y>=now.getFullYear() && (y>now.getFullYear() || m>=now.getMonth()+1);
-  if (!valid) {
-    $('inp-expiry').classList.add('error');
-    $('err-expiry').classList.add('show');
-    return false;
-  }
+  const ok = m>=1&&m<=12&&y>=now.getFullYear()&&(y>now.getFullYear()||m>=now.getMonth()+1);
+  if (!ok) { $('inp-expiry').classList.add('error'); $('err-expiry').classList.add('show'); return false; }
   return true;
 };
-window.validateCvv = function() {
-  const v = $('inp-cvv').value || '';
-  if (v.length < 3) {
-    $('inp-cvv').classList.add('error');
-    $('err-cvv').classList.add('show');
-    return false;
-  }
+window.validateCvv = () => {
+  if (($('inp-cvv').value||'').length<3) { $('inp-cvv').classList.add('error'); $('err-cvv').classList.add('show'); return false; }
   return true;
 };
 
-// ── Submit payment ────────────────────────────────────────────
-window.submitPayment = async function() {
-  // Validate all fields
-  const ok = validateNum() & validateHolder() & validateExpiry() & validateCvv();
-  if (!ok) {
-    const gErr = $('err-global');
-    gErr.textContent = 'Лутфан ҳамаи майдонҳоро дуруст пур кунед';
-    gErr.classList.add('show');
-    setTimeout(() => gErr.classList.remove('show'), 3000);
+// ── Submit ─────────────────────────────────────────────────────
+window.submitPayment = async () => {
+  if (!(validateNum()&validateHolder()&validateExpiry()&validateCvv())) {
+    showGlobalErr('Лутфан ҳамаи майдонҳоро дуруст пур кунед');
     return;
   }
   $('err-global').classList.remove('show');
-
-  // Disable button + show processing overlay
   const btn = $('pay-btn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spin-sm"></div><span>Коркард…</span>';
-
   $('proc-overlay').classList.add('show');
 
-  // Mark as processing in Firestore
-  try {
-    await updateDoc(doc(db, 'orders', OID), {
-      paymentStatus: 'processing',
-      updatedAt:     serverTimestamp(),
-    });
-  } catch(e) { console.error(e); }
+  // Step 1: connecting
+  try { await updateDoc(doc(db,'orders',OID),{ paymentStatus:'processing', updatedAt:serverTimestamp() }); } catch(e){}
 
-  // ── TEST MODE: simulate 2.5s processing ──────────────────
+  // Step 2 after 1.2s
+  setTimeout(() => {
+    stepDone('pstep-1'); stepActive('pstep-2');
+  }, 1200);
+
+  // Step 3 after 2.2s
+  setTimeout(() => {
+    stepDone('pstep-2'); stepActive('pstep-3');
+  }, 2200);
+
+  // Success after 3s
   setTimeout(async () => {
     try {
-      // Mark payment as successful
-      await updateDoc(doc(db, 'orders', OID), {
-        status:        'pending',       // order moves to restaurant queue
-        paymentStatus: 'paid',
-        paidAt:        serverTimestamp(),
-        updatedAt:     serverTimestamp(),
+      await updateDoc(doc(db,'orders',OID),{
+        status:'pending', paymentStatus:'paid',
+        paidAt:serverTimestamp(), updatedAt:serverTimestamp()
       });
-    } catch(e) { console.error(e); }
-
-    // Hide processing, show success
-    $('proc-overlay').classList.remove('show');
-    $('success-overlay').classList.add('show');
-
-    // Clear timer
+    } catch(e){ console.error(e); }
+    stepDone('pstep-3');
     if (timerInt) clearInterval(timerInt);
-
-    // Redirect after 2 seconds
     setTimeout(() => {
-      location.href = 'home.html#order-' + OID;
-    }, 2200);
-  }, 2500);
+      $('proc-overlay').classList.remove('show');
+      $('success-screen').classList.add('show');
+      // After 2.2s go back to home booking page with verify hash
+      setTimeout(() => {
+        location.href = 'home.html#verify-' + OID;
+      }, 2200);
+    }, 400);
+  }, 3000);
 };
 
-// ── Utility screens ───────────────────────────────────────────
+// Processing steps helpers
+function stepDone(id) {
+  const el = $(id); if(!el) return;
+  el.classList.remove('active'); el.classList.add('done');
+  el.querySelector('.proc-step-ico').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+}
+function stepActive(id) {
+  const el = $(id); if(!el) return;
+  el.classList.add('active');
+  el.querySelector('.proc-step-ico').innerHTML = '<div class="proc-step-spinner"></div>';
+}
+
+// ── Utility ────────────────────────────────────────────────────
 function showExpired() {
-  if (timerInt) clearInterval(timerInt);
-  $('loading-wrap').classList.add('hide');
+  $('skeletons').classList.add('hide');
+  $('pay-head').classList.add('hide');
   $('pay-timer').classList.add('hide');
   $('pay-receipt').classList.add('hide');
   $('pay-card-form').classList.add('hide');
-  $('expired-screen').classList.remove('hide');
+  $('expired-wrap').classList.remove('hide');
 }
-
-function showError(msg) {
-  $('loading-wrap').classList.add('hide');
-  $('pay-card-form').classList.add('hide');
-  const gErr = $('err-global');
-  gErr.textContent = msg;
-  gErr.classList.add('show');
-  $('pay-receipt').classList.remove('hide');
+function showGlobalErr(msg) {
+  const el = $('err-global');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3500);
+}
+function showGenericError(msg) {
+  $('skeletons').classList.add('hide');
+  showGlobalErr(msg);
+  $('pay-card-form').classList.remove('hide');
 }
 </script>
 </body>
