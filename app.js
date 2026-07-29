@@ -183,7 +183,8 @@ function renderGuestBanner() {
   if (guestTopbar) guestTopbar.classList.add('visible');
 
   // Сайдбар: скрываем корзину/заказы/статус (только в сайдбаре через guest-hidden)
-  document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.sb-nav .guest-hidden, .prof-nav .guest-hidden').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.prof-nav .guest-only').forEach(el => el.style.display = '');
 
   // Адрес в сайдбаре — блокируем клик
   const addrRow = document.getElementById('sb-addr-row');
@@ -197,7 +198,8 @@ function removeGuestBanner() {
   if (guestTopbar) guestTopbar.classList.remove('visible');
 
   // Восстанавливаем сайдбар
-  document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = '');
+  document.querySelectorAll('.sb-nav .guest-hidden, .prof-nav .guest-hidden').forEach(el => el.style.display = '');
+  document.querySelectorAll('.prof-nav .guest-only').forEach(el => el.style.display = 'none');
 
   // Адрес — разблокируем
   const addrRow = document.getElementById('sb-addr-row');
@@ -910,7 +912,7 @@ function renderCart() {
 
 function updateBadges() {
   const cnt = cart.reduce((s, c) => s + c.quantity, 0);
-  ['cart-nb', 'mob-cart-b'].forEach(id => {
+  ['cart-nb', 'mob-cart-b', 'prof-cart-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = cnt > 0 ? '' : 'none'; b.textContent = cnt; }
   });
@@ -1686,7 +1688,7 @@ window.viewOrderStatus = function (oid) {
 
 function renderOrdersBadge() {
   const act = orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
-  ['orders-nb', 'mob-ord-b'].forEach(id => {
+  ['orders-nb', 'mob-ord-b', 'prof-ord-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
   });
