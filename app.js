@@ -158,6 +158,8 @@ onAuthStateChanged(auth, async u => {
   renderCart();
   removeGuestBanner();
   listenSupportBadge();
+  // Сигнал для баннера адреса — все данные Firestore загружены
+  window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: !!(UD && UD.address) } }));
 });
 
 // ─── Выход из аккаунта ────────────────────────────────────────

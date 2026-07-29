@@ -1048,8 +1048,8 @@ select.addr-inp{cursor:pointer}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <div class="addr-banner-text">Укажите адрес доставки</div>
-        <button class="addr-banner-set" onclick="openAddrModal('cart');hideAddrBanner(false)">Указать</button>
-        <button class="addr-banner-later" onclick="hideAddrBanner(true)">Потом</button>
+        <button class="addr-banner-set" onclick="openAddrModal('cart');hideAddrBanner()">Указать</button>
+        <button class="addr-banner-later" onclick="hideAddrBanner()">Потом</button>
       </div>
 
       <!-- STORES SECTION -->
@@ -1609,35 +1609,49 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
 <script>
 (function(){
-  const SKIP_KEY = 'addr_banner_skip';
-  const banner   = document.getElementById('addr-banner');
-  const addrVal  = document.getElementById('sb-addr-val');
+  const banner  = document.getElementById('addr-banner');
+  const addrVal = document.getElementById('sb-addr-val');
+  let observerSet = false;
 
   function hasAddress(){
     return addrVal && !addrVal.classList.contains('empty');
   }
 
-  window.hideAddrBanner = function(permanent){
-    if(permanent) localStorage.setItem(SKIP_KEY,'1');
+  function showBanner(){
     if(!banner) return;
-    banner.style.transition='opacity .2s';
-    banner.style.opacity='0';
-    setTimeout(function(){ banner.style.display='none'; banner.style.opacity=''; banner.style.transition=''; },200);
-  };
-
-  function init(){
-    if(!banner) return;
-    if(localStorage.getItem(SKIP_KEY)==='1') return;
-    if(hasAddress()) return;
-    banner.style.display='flex';
-    if(addrVal){
+    banner.style.display = 'flex';
+    banner.style.opacity = '1';
+    banner.style.transition = '';
+    // Следим за появлением адреса чтобы скрыть баннер
+    if(!observerSet && addrVal){
+      observerSet = true;
       new MutationObserver(function(){
-        if(hasAddress()) hideAddrBanner(true);
-      }).observe(addrVal,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
+        if(hasAddress()) hideAddrBanner();
+      }).observe(addrVal, {childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:['class']});
     }
   }
 
-  setTimeout(init, 1400);
+  window.hideAddrBanner = function(){
+    if(!banner) return;
+    banner.style.transition = 'opacity .2s';
+    banner.style.opacity = '0';
+    setTimeout(function(){
+      banner.style.display = 'none';
+      banner.style.opacity = '';
+      banner.style.transition = '';
+    }, 200);
+  };
+
+  // Слушаем сигнал от app.js — данные Firestore загружены
+  window.addEventListener('appDataLoaded', function(e){
+    if(!banner) return;
+    if(e.detail && e.detail.hasAddress) {
+      hideAddrBanner();
+      return;
+    }
+    if(hasAddress()) return;
+    showBanner();
+  });
 })();
 </script>
 
