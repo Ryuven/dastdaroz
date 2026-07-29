@@ -824,6 +824,13 @@ select.addr-inp{cursor:pointer}
 .addr-confirm-btn:hover{opacity:.92;transform:translateY(-1px)}
 .addr-confirm-btn:active{transform:scale(.98)}
 .addr-confirm-btn:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
+.addr-clear-btn{display:none;align-items:center;gap:5px;background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:700;color:#dc2626;cursor:pointer;font-family:var(--fs);transition:background .14s;white-space:nowrap}
+.addr-clear-btn:hover{background:rgba(220,38,38,.13)}
+.addr-clear-btn:active{opacity:.75}
+.addr-clear-btn.visible{display:flex}
+.addr-confirm-btn:hover{opacity:.92;transform:translateY(-1px)}
+.addr-confirm-btn:active{transform:scale(.98)}
+.addr-confirm-btn:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
 
 /* Cart address display card */
 .addr-card{display:flex;align-items:center;gap:10px;padding:12px 13px;background:var(--s2);border:1.5px solid var(--b0);border-radius:14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;margin-bottom:8px;box-sizing:border-box;width:100%;overflow:hidden;min-width:0}
@@ -1504,7 +1511,13 @@ select.addr-inp{cursor:pointer}
     <div class="addr-modal-head">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="addr-modal-title">Нуқтаи расонидан</div>
-        <button style="background:var(--s2);border:1px solid var(--b0);border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:600;color:var(--tx2);cursor:pointer;font-family:var(--fs)" onclick="closeAddrModal()">Бастан</button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button id="addr-clear-btn" class="addr-clear-btn" onclick="clearAddress()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+            Тоза кардан
+          </button>
+          <button style="background:var(--s2);border:1px solid var(--b0);border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:600;color:var(--tx2);cursor:pointer;font-family:var(--fs)" onclick="closeAddrModal()">Бастан</button>
+        </div>
       </div>
       <div class="addr-search-wrap" style="position:relative">
         <div class="addr-search-ico">
@@ -1564,9 +1577,10 @@ select.addr-inp{cursor:pointer}
   display:flex;align-items:center;gap:10px;
   padding:9px 10px;
   transform:translateY(calc(100% + 20px));opacity:0;
+  pointer-events:none;
   transition:transform .38s cubic-bezier(.25,1.3,.5,1),opacity .28s ease;
 }
-.app-bar.show{transform:translateY(0);opacity:1}
+.app-bar.show{transform:translateY(0);opacity:1;pointer-events:auto}
 @media(min-width:861px){.app-bar{bottom:20px;left:auto;right:24px;width:340px}}
 .app-bar-ico{width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--accd,#dcfce7)}
 .app-bar-ico img{width:100%;height:100%;object-fit:cover;display:block}
