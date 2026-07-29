@@ -835,6 +835,52 @@ select.addr-inp{cursor:pointer}
 .addr-card-val.empty{color:var(--tx3);font-weight:400;font-style:italic}
 .addr-card-arrow{color:var(--tx3);flex-shrink:0}
 .addr-card-coords{font-size:.56rem;color:var(--acc);margin-top:2px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══ PROFILE PAGE — SETTINGS STYLE ═════════════════════════════ */
+.prof-settings-body{display:flex;flex-direction:column;gap:0;max-width:540px}
+/* Profile card */
+.prof-card-new{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:18px 18px 0;box-shadow:var(--shadow);overflow:hidden;margin-bottom:2px}
+.prof-card-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.prof-card-name{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx);margin-bottom:2px}
+.prof-card-phone{font-size:.68rem;color:var(--tx3)}
+/* Section label */
+.prof-section-lbl{font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:var(--tx3);padding:16px 4px 6px;font-weight:600}
+/* Row */
+.prof-row{display:flex;align-items:center;gap:13px;background:var(--s1);border:1.5px solid var(--b0);padding:13px 16px;cursor:pointer;transition:background .15s;width:100%;text-align:left;font-family:var(--fs);border-radius:0;border-top:none}
+.prof-row.prof-group-start{border-radius:13px 13px 0 0;border-top:1.5px solid var(--b0)}
+.prof-row.prof-group-end{border-radius:0 0 13px 13px}
+.prof-row.prof-group-single{border-radius:13px!important;border-top:1.5px solid var(--b0)!important}
+.prof-row:hover{background:var(--s2)}
+.prof-row-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.prof-row-body{flex:1;min-width:0}
+.prof-row-title{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
+.prof-row-sub{font-size:.62rem;color:var(--tx3)}
+.prof-row-arrow{color:var(--tx3);flex-shrink:0;opacity:.4}
+/* Wallet card */
+.prof-wallet-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;overflow:hidden}
+.prof-wallet-inner{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;transition:background .15s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
+.prof-wallet-inner:hover{background:var(--s2)}
+.prof-wallet-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center}
+.prof-wallet-body{flex:1;min-width:0}
+.prof-wallet-title{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
+.prof-wallet-sub{font-size:.62rem;color:var(--tx3)}
+.prof-wallet-bal{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-right:6px}
+/* Edit panel (personal info inline) */
+.prof-edit-panel{display:none;flex-direction:column;border-top:1.5px solid var(--b0);background:var(--s2);padding:16px;gap:0}
+.prof-edit-panel.open{display:flex}
+/* Logout */
+.prof-logout{display:flex;align-items:center;gap:13px;background:var(--redd);border:1.5px solid rgba(220,38,38,.18);border-radius:13px;padding:13px 16px;cursor:pointer;width:100%;text-align:left;font-family:var(--fs);transition:background .15s,border-color .15s}
+.prof-logout:hover{background:rgba(220,38,38,.18);border-color:rgba(220,38,38,.35)}
+.prof-logout-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.18);display:flex;align-items:center;justify-content:center}
+.prof-logout-title{font-size:.8rem;font-weight:600;color:var(--red)}
+.prof-logout-sub{font-size:.62rem;color:rgba(220,38,38,.5);margin-top:1px}
+/* Toggle */
+.tog{position:relative;width:42px;height:24px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;position:absolute;width:0;height:0}
+.tog-track{position:absolute;inset:0;border-radius:99px;background:var(--s4);border:1px solid var(--b1);transition:background .3s,border-color .3s}
+.tog input:checked ~ .tog-track{background:var(--acc);border-color:var(--acc)}
+.tog-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .25s var(--spring)}
+.tog input:checked ~ .tog-thumb{transform:translateX(18px)}
 </style>
 <!-- Leaflet (бесплатно, без API ключа) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -1213,65 +1259,128 @@ select.addr-inp{cursor:pointer}
 
     <!-- PROFILE -->
     <div class="page" id="page-profile">
-      <div class="sh"><div><div class="sh-tag">Танзимот</div><div class="sh-title">Профил</div></div></div>
-      <div class="pg2">
-        <div>
-          <div class="pcard">
-            <div class="p-av" id="p-av">?</div>
-            <div class="p-name"  id="p-name">—</div>
-            <div class="p-phone" id="p-phone">—</div>
-            <div class="p-stats">
-              <div class="p-stat"><div class="p-stat-val" id="ps-orders">0</div><div class="p-stat-lbl">Фармоишҳо</div></div>
-              <div class="p-stat"><div class="p-stat-val" id="ps-spent">0</div><div class="p-stat-lbl">Сомонӣ</div></div>
+      <div class="sh"><div><div class="sh-tag">Аккаунт</div><div class="sh-title">Профил</div></div></div>
+
+      <div class="prof-settings-body">
+
+        <!-- ── Profile card ─────────────────────────────── -->
+        <div class="prof-card-new">
+          <div class="prof-card-top">
+            <div class="p-av" id="p-av" style="margin:0;width:58px;height:58px;font-size:1.25rem;flex-shrink:0">?</div>
+            <div style="flex:1;min-width:0">
+              <div class="prof-card-name" id="p-name">—</div>
+              <div class="prof-card-phone" id="p-phone">—</div>
             </div>
           </div>
-          <button class="sup-entry-btn" onclick="openSupport()">
-            <div class="sup-entry-ico">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11a9 9 0 0118 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 11v3a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3"/></svg>
-            </div>
-            <div class="sup-entry-body">
-              <div class="sup-entry-title">Дастгирии техникӣ</div>
-              <div class="sup-entry-sub" id="support-entry-sub">Савол доред? Бо мо тамос гиред</div>
-            </div>
-            <span class="sup-entry-badge" id="support-entry-badge" style="display:none">0</span>
-            <svg class="sup-entry-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-          <div style="margin-top:10px">
-            <button class="btn-outline danger" style="width:100%;padding:11px" onclick="doLogout()">Баромадан аз аккаунт</button>
+          <div class="p-stats" style="margin:0 -18px;border-radius:0;border-top:1.5px solid var(--b0)">
+            <div class="p-stat"><div class="p-stat-val" id="ps-orders">0</div><div class="p-stat-lbl">Фармоишҳо</div></div>
+            <div class="p-stat" style="border-left:1px solid var(--b0)"><div class="p-stat-val" id="ps-spent">0</div><div class="p-stat-lbl">Сомонӣ харҷ шуд</div></div>
           </div>
         </div>
-        <div>
-          <div class="pform">
-            <div class="pform-t">Маълумоти шахсӣ</div>
-            <div class="fr2">
+
+        <!-- ── Кошелек ────────────────────────────────────── -->
+        <div class="prof-section-lbl">Кошелек</div>
+        <div class="prof-wallet-card">
+          <button class="prof-wallet-inner" onclick="/* TODO: wallet page */" title="Кошелек — зуд омада истода аст">
+            <div class="prof-wallet-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
+            </div>
+            <div class="prof-wallet-body">
+              <div class="prof-wallet-title">Кошелек</div>
+              <div class="prof-wallet-sub">Ҳисоби шахсии шумо</div>
+            </div>
+            <span class="prof-wallet-bal">0 см</span>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- ── Маълумот ──────────────────────────────────── -->
+        <div class="prof-section-lbl">Маълумот</div>
+        <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
+
+          <!-- Personal info row -->
+          <button class="prof-row prof-group-start" onclick="toggleProfEdit('pf-personal',this)">
+            <div class="prof-row-icon" style="background:var(--accd)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Маълумоти шахсӣ</div>
+              <div class="prof-row-sub">Ном, суроға ва GPS</div>
+            </div>
+            <svg class="prof-row-arrow" id="pf-personal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <!-- Personal info edit panel (inline) -->
+          <div class="prof-edit-panel" id="pf-personal">
+            <div class="fr2" style="margin-bottom:10px">
               <div class="ff"><label class="fl">Ном</label><input class="fi" type="text" id="pf-name" placeholder="Аҳмад Ваҳидов"/></div>
               <div class="ff">
                 <label class="fl">Телефон (dastdaroz ID)</label>
-                <input class="fi" type="tel" id="pf-phone" readonly style="opacity:.7;cursor:not-allowed"/>
+                <input class="fi" type="tel" id="pf-phone" readonly style="opacity:.65;cursor:not-allowed"/>
               </div>
             </div>
-            <div style="font-size:.62rem;color:var(--tx3);margin:-8px 0 14px;line-height:1.5">Рақами телефон — идентификатори ҳисоби шумо ва тағйирнопазир аст</div>
-            <div class="ff">
+            <div style="font-size:.6rem;color:var(--tx3);margin:-6px 0 12px;line-height:1.55">Рақами телефон — идентификатори ҳисоби шумо ва тағйирнопазир аст</div>
+            <div class="ff" style="margin-bottom:12px">
               <label class="fl">Суроғаи пешфарзи расонидан</label>
               <div style="display:flex;gap:8px;align-items:center">
                 <input class="fi" type="text" id="pf-addr" placeholder="кӯчаи Рӯдакӣ, д. 1, хв. 1" style="flex:1"/>
                 <button onclick="openAddrModal('profile')" title="Дар харита нишон диҳед" style="height:38px;padding:0 12px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;white-space:nowrap;font-family:var(--fs);flex-shrink:0">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  GPS
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>GPS
                 </button>
               </div>
               <div id="pf-addr-coords" style="font-size:.58rem;color:var(--acc);margin-top:4px;display:none"></div>
             </div>
-            <button class="btn-primary" onclick="saveProfile()">Тағйиротро сақл кунед</button>
+            <button class="btn-primary" onclick="saveProfile()" style="margin-top:2px">Тағйиротро сақл кунед</button>
           </div>
-          <div class="pform">
-            <div class="pform-t">Акси профил</div>
-            <input type="file" id="av-inp" accept="image/*" style="display:none" onchange="uploadAvUI(this)"/>
-            <button class="btn-outline" onclick="document.getElementById('av-inp').click()">Аксро бор кунед</button>
-            <div style="font-size:.64rem;color:var(--tx3);margin-top:8px">JPG, PNG то 2 МБ</div>
-          </div>
+
+          <!-- Photo row -->
+          <button class="prof-row" onclick="document.getElementById('av-inp').click()" style="border-top:1.5px solid var(--b0)">
+            <div class="prof-row-icon" style="background:var(--amber-d)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Акси профил</div>
+              <div class="prof-row-sub">JPG, PNG то 2 МБ</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <input type="file" id="av-inp" accept="image/*" style="display:none" onchange="uploadAvUI(this)"/>
+
+          <!-- Support row -->
+          <button class="prof-row prof-group-end" onclick="openSupport()" style="border-top:1.5px solid var(--b0)">
+            <div class="prof-row-icon" style="background:var(--blue-d)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8"><path d="M3 11a9 9 0 0118 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 11v3a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Дастгирии техникӣ</div>
+              <div class="prof-row-sub" id="support-entry-sub">Савол доред? Бо мо тамос гиред</div>
+            </div>
+            <span class="sup-entry-badge" id="support-entry-badge" style="display:none">0</span>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
         </div>
-      </div>
+
+        <!-- ── Аккаунт ────────────────────────────────────── -->
+        <div class="prof-section-lbl">Аккаунт</div>
+        <button class="prof-logout" onclick="doLogout()">
+          <div class="prof-logout-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </div>
+          <div>
+            <div class="prof-logout-title">Аз аккаунт баромадан</div>
+            <div class="prof-logout-sub">Ба саҳифаи воридшавӣ баргаштан</div>
+          </div>
+        </button>
+
+      </div><!-- /prof-settings-body -->
+
+      <script>
+      window.toggleProfEdit = function(id, btn) {
+        const panel = document.getElementById(id);
+        const chevron = document.getElementById(id + '-chevron');
+        const isOpen = panel.classList.toggle('open');
+        if (chevron) chevron.style.transform = isOpen ? 'rotate(90deg)' : '';
+      };
+      </script>
     </div>
 
   </div><!-- /pages -->
