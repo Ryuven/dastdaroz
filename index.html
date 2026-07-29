@@ -1,598 +1,66 @@
 <!DOCTYPE html>
-<html lang="tg">
+<html lang="ru">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<title>Dastdaroz — Wallet</title>
-<link rel="icon" type="image/png" href="../favicon.png" sizes="48x48"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"/>
-<style>
-/* ══ TOKENS — identical to home.html ══ */
-:root{
-  --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;--s3:#e0ede3;--s4:#c8dccb;
-  --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.11);--b2:rgba(0,0,0,.18);
-  --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
-  --acc-shadow:rgba(26,158,74,.25);
-  --red:#dc2626;--redd:rgba(220,38,38,.1);
-  --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;
-  --fd:'Nunito',sans-serif;--fs:'Inter',system-ui,sans-serif;
-  --ease:cubic-bezier(.32,0,.18,1);--spring:cubic-bezier(.34,1.56,.64,1);
-  --t:.22s;--tf:.13s;
-  --th:58px;
-  --safe-b:env(safe-area-inset-bottom,0px);
-  --shadow:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
-  --shadow-md:0 4px 20px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
-  --card-w:min(360px,calc(100vw - 40px));
-  --card-h:calc(var(--card-w) * .628);
-  --card-r:calc(var(--card-w) * .046);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--tx);font-family:var(--fs);font-weight:400;min-height:100svh;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
-a{color:inherit;text-decoration:none}
-::selection{background:var(--acc);color:#fff}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--s4);border-radius:99px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-/* ══ TOPBAR — exact copy from home.html ══ */
-.topbar{
-  height:var(--th);flex-shrink:0;
-  background:rgba(243,247,244,.95);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--b0);
-  display:flex;align-items:center;
-  padding:0 20px;gap:12px;
-  position:sticky;top:0;z-index:50;
-}
-.tb-logo{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
-.tb-logo-sub{font-size:.4rem;letter-spacing:.28em;text-transform:uppercase;color:var(--tx3);align-self:flex-end;padding-bottom:2px}
-.tb-user{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:10px;transition:background var(--tf)}
-.tb-user:hover{background:var(--s2)}
-.tb-av{
-  width:30px;height:30px;border-radius:50%;
-  background:var(--accd);border:2px solid var(--accg);
-  display:flex;align-items:center;justify-content:center;
-  font-size:.6rem;font-weight:700;color:var(--acc);
-  flex-shrink:0;overflow:hidden;
-}
-.tb-av img{width:100%;height:100%;object-fit:cover}
-.tb-uname{font-size:.74rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
-.tb-back{
-  background:var(--s1);border:1px solid var(--b0);
-  border-radius:9px;cursor:pointer;color:var(--tx3);
-  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-  transition:all var(--tf);flex-shrink:0;
-}
-.tb-back:hover{background:var(--s2);color:var(--tx)}
+    <!-- === ОСНОВНОЙ ЗАГОЛОВОК === -->
+    <title>Доставка продуктов и лекарств в Душанбе | dastdaroz.shop</title>
+    
+    <!-- === ОПИСАНИЕ (русский + таджикский) === -->
+    <meta name="description" content="Объединяем местные магазины в одном сайте. Заказывайте продукты, лекарства и товары из Пайкар, Ёвар, bi1 с доставкой на дом в Душанбе за 30–60 минут. Расонидани маҳсулот ва доруҳо дар Душанбе.">
 
-/* ══ MAIN SCROLL AREA ══ */
-.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:28px 20px calc(40px + var(--safe-b));display:flex;flex-direction:column;align-items:center;gap:24px}
+    <!-- === КЛЮЧЕВЫЕ СЛОВА === -->
+    <meta name="keywords" content="доставка продуктов Душанбе, заказать продукты на дом, доставка лекарств Душанбе, заказ лекарств, Пайкар доставка, Ёвар доставка, bi1 доставка, объединение магазинов, доставка из магазинов, курьер Душанбе, доставка еды, расонидани маҳсулот, доруҳо, dastdaroz">
 
-/* ══ SECTION LABEL ══ */
-.sec-lbl{font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;color:var(--tx3);width:var(--card-w);text-align:left}
+    <!-- === ГЕО-ТЭГИ === -->
+    <meta name="geo.region" content="TJ-DU">
+    <meta name="geo.placename" content="Душанбе">
+    <meta name="geo.position" content="38.5598;68.7870">
+    <meta name="ICBM" content="38.5598, 68.7870">
 
-/* ══ CARD SCENE ══ */
-.card-scene{
-  width:var(--card-w);height:var(--card-h);
-  perspective:1100px;cursor:pointer;
-  user-select:none;-webkit-user-select:none;
-  border-radius:var(--card-r);
-  outline:none;
-}
-.card-scene:focus-visible{box-shadow:0 0 0 3px var(--acc)}
+    <!-- === ДЛЯ ПОИСКОВИКОВ === -->
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://dastdaroz.shop/">
 
-.card-flipper{
-  width:100%;height:100%;position:relative;
-  transform-style:preserve-3d;
-  transition:transform .6s cubic-bezier(.45,.05,.55,.95);
-  will-change:transform;
-}
-.card-scene.flipped .card-flipper{transform:rotateY(180deg)}
-.card-scene:not(.flipped):active .card-flipper{transform:scale(.97)}
-.card-scene.flipped:active .card-flipper{transform:scale(.97) rotateY(180deg)}
+    <!-- === OPEN GRAPH (для соцсетей) === -->
+    <meta property="og:title" content="dastdaroz — Доставка продуктов и лекарств в Душанбе">
+    <meta property="og:description" content="Все магазины города в одном месте. Продукты, лекарства, товары — с доставкой на дом за 30–60 минут.">
+    <meta property="og:url" content="https://dastdaroz.shop/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://dastdaroz.shop/logo.png">
 
-.card-face{
-  position:absolute;inset:0;
-  border-radius:var(--card-r);
-  backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  overflow:hidden;
-}
+    <!-- === ТАДЖИКСКАЯ ВЕРСИЯ === -->
+    <meta name="description" content="Ҳамаи мағозаҳои Душанбе дар як сайт. Маҳсулот, доруҳо, молҳо — бо расонидани хонагӣ дар 30–60 дақиқа. dastdaroz.shop" lang="tg">
 
-/* ── FRONT ── */
-.card-front{
-  background:#181e1b;
-  box-shadow:0 20px 60px rgba(0,0,0,.28),0 4px 12px rgba(0,0,0,.2),0 1px 0 rgba(255,255,255,.06) inset;
-}
-/* grain */
-.card-front::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.5;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
-  background-size:200px;
-}
-.card-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
-.card-shine{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:var(--card-r);background:linear-gradient(130deg,transparent 35%,rgba(255,255,255,.045) 50%,transparent 65%);opacity:0;transition:opacity .3s}
-.card-scene:hover .card-shine{opacity:1}
+    <!-- === СТРУКТУРИРОВАННЫЕ ДАННЫЕ === -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "dastdaroz",
+        "description": "Объединяем местные магазины в одном сайте. Доставка продуктов и лекарств по Душанбе.",
+        "url": "https://dastdaroz.shop/",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Душанбе",
+            "addressCountry": "TJ"
+        },
+        "priceRange": "$$",
+        "telephone": "+992-97-717-88-00",
+        "openingHours": "Mo-Su 10:00-21:00"
+    }
+    </script>
 
-.cf-content{
-  position:absolute;inset:0;z-index:2;
-  padding:calc(var(--card-w)*.072) calc(var(--card-w)*.076);
-  display:flex;flex-direction:column;justify-content:space-between;
-}
-/* logo */
-.cf-logo{display:flex;align-items:center;gap:calc(var(--card-w)*.022)}
-.cf-logo-icon{width:calc(var(--card-w)*.07);height:calc(var(--card-w)*.07);flex-shrink:0}
-.cf-logo-name{font-family:var(--fd);font-weight:900;font-size:calc(var(--card-w)*.05);color:#22c55e;letter-spacing:-.01em;line-height:1}
-.cf-logo-name span{color:rgba(255,255,255,.55)}
-/* nfc */
-.cf-nfc{position:absolute;top:calc(var(--card-w)*.065);right:calc(var(--card-w)*.072);z-index:2;color:rgba(255,255,255,.5)}
-/* bottom */
-.cf-bottom{display:flex;flex-direction:column;gap:calc(var(--card-w)*.022)}
-/* chip */
-.cf-chip{width:calc(var(--card-w)*.092);height:calc(var(--card-w)*.071);flex-shrink:0}
-/* number */
-.cf-num{font-family:var(--fd);font-weight:700;font-size:calc(var(--card-w)*.046);letter-spacing:.18em;color:rgba(255,255,255,.8);line-height:1}
-/* meta */
-.cf-meta{display:flex;align-items:flex-end;justify-content:space-between}
-.cf-meta-g{display:flex;flex-direction:column;gap:2px}
-.cf-meta-lbl{font-size:calc(var(--card-w)*.026);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.28);line-height:1}
-.cf-meta-val{font-family:var(--fd);font-weight:700;font-size:calc(var(--card-w)*.036);color:rgba(255,255,255,.72);letter-spacing:.03em;line-height:1}
-/* sparkle */
-.cf-sparkle{position:absolute;bottom:calc(var(--card-w)*.05);right:calc(var(--card-w)*.064);z-index:2;opacity:.4;pointer-events:none}
-
-/* ── BACK ── */
-.card-back{
-  background:#141918;
-  transform:rotateY(180deg);
-  box-shadow:0 20px 60px rgba(0,0,0,.28),0 4px 12px rgba(0,0,0,.2);
-}
-.card-back::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.4;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
-  background-size:200px;
-}
-.cb-mag{
-  position:absolute;top:calc(var(--card-h)*.22);left:0;right:0;
-  height:calc(var(--card-h)*.21);z-index:2;
-  background:linear-gradient(180deg,#090b0a 0%,#060807 45%,#111412 65%,#080a09 100%);
-}
-.cb-sig-row{
-  position:absolute;top:calc(var(--card-h)*.52);
-  left:calc(var(--card-w)*.07);right:calc(var(--card-w)*.07);
-  display:flex;align-items:center;gap:calc(var(--card-w)*.028);z-index:2;
-}
-.cb-sig{
-  flex:1;height:calc(var(--card-h)*.148);border-radius:3px;overflow:hidden;position:relative;
-  background:repeating-linear-gradient(180deg,#c8c8c8 0px,#e2e2e2 2px,#c0c0c0 4px,#d8d8d8 6px,#bababa 8px);
-}
-.cb-sig::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0,rgba(255,255,255,.07) 1px,transparent 1px,transparent 5px)}
-.cb-cvv{
-  width:calc(var(--card-w)*.135);height:calc(var(--card-h)*.148);
-  background:linear-gradient(135deg,#b0b0b0,#d4d4d4);
-  border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.cb-cvv-val{font-family:var(--fd);font-size:calc(var(--card-w)*.042);font-weight:900;color:#1a1a1a;letter-spacing:.1em}
-.cb-bottom{
-  position:absolute;bottom:calc(var(--card-h)*.1);
-  left:calc(var(--card-w)*.07);right:calc(var(--card-w)*.07);
-  display:flex;align-items:center;justify-content:space-between;z-index:2;
-}
-.cb-info{font-size:calc(var(--card-w)*.026);color:rgba(255,255,255,.22);letter-spacing:.03em;line-height:1.6}
-
-/* ══ HINT ══ */
-.card-hint{
-  display:flex;align-items:center;gap:6px;
-  font-size:.6rem;color:var(--tx3);
-  transition:opacity .3s;width:var(--card-w);
-}
-.card-hint svg{animation:hb 2.6s ease-in-out infinite;flex-shrink:0}
-@keyframes hb{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
-
-/* ══ CARDS SECTION (balance etc.) ══ */
-.info-card{
-  width:var(--card-w);
-  background:var(--s1);border:1.5px solid var(--b0);
-  border-radius:18px;padding:20px 22px;
-  box-shadow:var(--shadow-md);
-  display:flex;flex-direction:column;gap:16px;
-}
-.ic-head{display:flex;align-items:flex-end;justify-content:space-between}
-.ic-label{font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;color:var(--tx3);margin-bottom:5px}
-.ic-amount{font-family:var(--fd);font-weight:900;font-size:2rem;color:var(--tx);letter-spacing:-.02em;line-height:1}
-.ic-amount span{font-size:.95rem;color:var(--tx2);font-weight:700;margin-left:3px}
-.ic-badge{
-  background:var(--accd);border:1.5px solid var(--accg);
-  color:var(--acc);font-size:.52rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  padding:4px 11px;border-radius:99px;
-}
-.ic-divider{height:1px;background:var(--b0)}
-.ic-stats{display:flex}
-.ic-stat{flex:1;display:flex;flex-direction:column;gap:3px}
-.ic-stat+.ic-stat{border-left:1px solid var(--b0);padding-left:16px}
-.ic-stat-lbl{font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3)}
-.ic-stat-val{font-family:var(--fd);font-weight:800;font-size:.86rem;color:var(--tx2)}
-.ic-stat-val.pos{color:var(--acc)}
-
-/* ══ ACTION BUTTONS ══ */
-.actions{width:var(--card-w);display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.act-btn{
-  background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;
-  padding:15px 16px;display:flex;align-items:center;gap:11px;
-  cursor:pointer;font-family:var(--fs);color:var(--tx);
-  font-size:.74rem;font-weight:600;text-align:left;
-  transition:background var(--tf),border-color var(--tf),transform .12s;
-  box-shadow:var(--shadow);
-}
-.act-btn:hover{background:var(--s2);border-color:var(--b1);transform:translateY(-1px)}
-.act-btn:active{transform:scale(.97)}
-.act-btn.primary{
-  grid-column:1/-1;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  border-color:transparent;color:#fff;
-  justify-content:center;font-family:var(--fd);font-weight:800;font-size:.82rem;
-  box-shadow:0 4px 18px var(--acc-shadow);
-}
-.act-btn.primary:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 6px 24px var(--acc-shadow)}
-.act-ico{
-  width:34px;height:34px;border-radius:10px;
-  background:var(--accd);border:1px solid var(--accg);
-  display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0;
-}
-.act-btn.primary .act-ico{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.2);color:#fff}
-.act-lbl{display:flex;flex-direction:column;gap:1px}
-.act-sub{font-size:.52rem;color:var(--tx3);font-weight:400}
-.act-btn.primary .act-sub{color:rgba(255,255,255,.62)}
-
-/* ══ LOADING SKELETON ══ */
-.skel{display:inline-block;border-radius:6px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:sk 1.4s ease infinite}
-@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* ══ AUTH GATE ══ */
-.auth-gate{
-  width:var(--card-w);background:var(--s1);border:1.5px solid var(--b0);
-  border-radius:18px;padding:32px 24px;text-align:center;
-  box-shadow:var(--shadow-md);display:none;flex-direction:column;align-items:center;gap:14px;
-}
-.auth-gate.show{display:flex}
-.auth-ico{width:56px;height:56px;border-radius:50%;background:var(--accd);border:2px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc)}
-.auth-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
-.auth-sub{font-size:.72rem;color:var(--tx3);line-height:1.6}
-.auth-btn{
-  background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:11px;
-  color:#fff;font-family:var(--fd);font-weight:800;font-size:.78rem;
-  padding:12px 26px;cursor:pointer;box-shadow:0 3px 14px var(--acc-shadow);transition:opacity .15s;
-}
-.auth-btn:hover{opacity:.9}
-
-/* hide sections until loaded */
-.wallet-content{display:flex;flex-direction:column;align-items:center;gap:24px;width:100%}
-</style>
+    <!-- === РЕДИРЕКТ НА ОСНОВНУЮ СТРАНИЦУ === -->
+    <meta http-equiv="refresh" content="0; url=home.html">
+    
+    <title>Перенаправление...</title>
+    <script>
+        window.location.href = "home.html";
+    </script>
 </head>
 <body>
-
-<!-- ══ TOPBAR ══ -->
-<div class="topbar">
-  <a href="../" class="tb-back" title="Бозгашт">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-  </a>
-  <div class="tb-logo">
-    <img src="../dastdaroz.png" alt="dastdaroz" style="height:28px;width:auto;object-fit:contain;display:block"/>
-    <div class="tb-logo-sub" style="margin-left:2px">Wallet</div>
-  </div>
-  <!-- User avatar + name (filled from Firestore) -->
-  <div class="tb-user" id="tb-user" style="display:none">
-    <div class="tb-av" id="tb-av">?</div>
-    <div class="tb-uname" id="tb-uname"><span class="skel" style="width:70px;height:11px;display:inline-block"></span></div>
-  </div>
-</div>
-
-<!-- ══ MAIN ══ -->
-<main class="main" id="main">
-
-  <!-- Auth gate (shown when not logged in) -->
-  <div class="auth-gate" id="auth-gate">
-    <div class="auth-ico">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-    </div>
-    <div class="auth-title">Ворид шавед</div>
-    <div class="auth-sub">Барои истифодаи Wallet ба аккаунти худ ворид шавед.</div>
-    <button class="auth-btn" onclick="location.href='../login.html'">Ворид шавед →</button>
-  </div>
-
-  <!-- Wallet content (shown when logged in) -->
-  <div class="wallet-content" id="wallet-content" style="display:none">
-
-    <p class="sec-lbl">Картаи шумо</p>
-
-    <!-- ══ CARD FLIP ══ -->
-    <div class="card-scene" id="cardScene" tabindex="0" role="button"
-         aria-label="Нишон додани пушти кард"
-         onclick="flipCard()"
-         onkeydown="if(event.key==='Enter'||event.key===' ')flipCard()">
-      <div class="card-flipper" id="cardFlipper">
-
-        <!-- FRONT -->
-        <div class="card-face card-front">
-          <!-- Constellation BG -->
-          <svg class="card-bg" viewBox="0 0 360 226" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="cglow" cx="28%" cy="38%" r="58%">
-                <stop offset="0%" stop-color="#1a9e4a" stop-opacity=".09"/>
-                <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-              </radialGradient>
-            </defs>
-            <rect width="360" height="226" fill="url(#cglow)"/>
-            <g stroke="#263830" stroke-width=".85" opacity=".75">
-              <line x1="38" y1="57" x2="105" y2="28"/>
-              <line x1="105" y1="28" x2="180" y2="76"/>
-              <line x1="180" y1="76" x2="238" y2="38"/>
-              <line x1="238" y1="38" x2="322" y2="66"/>
-              <line x1="322" y1="66" x2="352" y2="28"/>
-              <line x1="38" y1="57" x2="76" y2="124"/>
-              <line x1="76" y1="124" x2="143" y2="152"/>
-              <line x1="143" y1="152" x2="180" y2="76"/>
-              <line x1="180" y1="76" x2="218" y2="143"/>
-              <line x1="218" y1="143" x2="285" y2="114"/>
-              <line x1="285" y1="114" x2="322" y2="66"/>
-              <line x1="285" y1="114" x2="342" y2="171"/>
-              <line x1="76" y1="124" x2="57" y2="200"/>
-              <line x1="143" y1="152" x2="114" y2="218"/>
-              <line x1="218" y1="143" x2="190" y2="210"/>
-              <line x1="105" y1="28" x2="124" y2="95"/>
-              <line x1="124" y1="95" x2="76" y2="124"/>
-              <line x1="124" y1="95" x2="143" y2="152"/>
-              <line x1="238" y1="38" x2="257" y2="105"/>
-              <line x1="257" y1="105" x2="218" y2="143"/>
-              <line x1="257" y1="105" x2="285" y2="114"/>
-              <line x1="342" y1="171" x2="323" y2="218"/>
-              <line x1="190" y1="210" x2="257" y2="190"/>
-              <line x1="257" y1="190" x2="342" y2="171"/>
-            </g>
-            <g fill="#2a5c38">
-              <circle cx="38" cy="57" r="2.8"/><circle cx="105" cy="28" r="2.2"/>
-              <circle cx="180" cy="76" r="3.2"/><circle cx="238" cy="38" r="1.9"/>
-              <circle cx="322" cy="66" r="2.3"/><circle cx="352" cy="28" r="1.4"/>
-              <circle cx="76" cy="124" r="2.8"/><circle cx="143" cy="152" r="2.3"/>
-              <circle cx="218" cy="143" r="2.8"/><circle cx="285" cy="114" r="1.9"/>
-              <circle cx="124" cy="95" r="1.8"/><circle cx="257" cy="105" r="1.8"/>
-              <circle cx="57" cy="200" r="1.4"/><circle cx="114" cy="218" r="1.4"/>
-              <circle cx="190" cy="210" r="1.9"/><circle cx="257" cy="190" r="1.9"/>
-              <circle cx="342" cy="171" r="2.3"/><circle cx="323" cy="218" r="1.4"/>
-            </g>
-            <circle cx="180" cy="76" r="4.5" fill="#1a9e4a" opacity=".55"/>
-            <circle cx="180" cy="76" r="9" fill="#1a9e4a" opacity=".1"/>
-          </svg>
-          <div class="card-shine"></div>
-          <div class="cf-content">
-            <!-- Logo -->
-            <div class="cf-logo">
-              <svg class="cf-logo-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="28" height="28" rx="7" fill="#1a9e4a" opacity=".18"/>
-                <path d="M6 14h16M14 8l7 6-7 6" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <div class="cf-logo-name"><span style="color:#22c55e">dast</span><span>daroz</span></div>
-            </div>
-            <!-- NFC -->
-            <div class="cf-nfc">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M8.5 12a4 4 0 017 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M5.5 12a7 7 0 0113 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <circle cx="12" cy="12" r="1" fill="currentColor"/>
-              </svg>
-            </div>
-            <!-- Bottom -->
-            <div class="cf-bottom">
-              <!-- EMV chip -->
-              <svg class="cf-chip" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x=".5" y=".5" width="33" height="23" rx="4.5" fill="#b8963e" stroke="#c9a84c"/>
-                <rect x="1" y="1" width="32" height="22" rx="4" fill="url(#cg)"/>
-                <line x1="12" y1="1" x2="12" y2="23" stroke="#9a7a28" stroke-width=".55" opacity=".4"/>
-                <line x1="22" y1="1" x2="22" y2="23" stroke="#9a7a28" stroke-width=".55" opacity=".4"/>
-                <line x1="1" y1="8"  x2="33" y2="8"  stroke="#9a7a28" stroke-width=".55" opacity=".4"/>
-                <line x1="1" y1="16" x2="33" y2="16" stroke="#9a7a28" stroke-width=".55" opacity=".4"/>
-                <rect x="12" y="8" width="10" height="8" rx="1" fill="#c9a84c" opacity=".45"/>
-                <defs><linearGradient id="cg" x1="0" y1="0" x2="34" y2="24" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#d4a843"/><stop offset="50%" stop-color="#b8963e"/><stop offset="100%" stop-color="#9a7a28"/></linearGradient></defs>
-              </svg>
-              <div class="cf-num" id="cf-num">4279 •••• •••• 8841</div>
-              <div class="cf-meta">
-                <div class="cf-meta-g">
-                  <div class="cf-meta-lbl">Card Holder</div>
-                  <div class="cf-meta-val" id="cf-name">DASTDAROZ USER</div>
-                </div>
-                <div class="cf-meta-g" style="text-align:right">
-                  <div class="cf-meta-lbl">Expires</div>
-                  <div class="cf-meta-val">12 / 28</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Sparkle -->
-          <svg class="cf-sparkle" width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M8 0v16M0 8h16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M2.34 2.34l11.32 11.32M13.66 2.34L2.34 13.66" stroke="white" stroke-width=".65" stroke-linecap="round" opacity=".5"/>
-          </svg>
-        </div><!-- /front -->
-
-        <!-- BACK -->
-        <div class="card-face card-back">
-          <div class="card-shine"></div>
-          <div class="cb-mag"></div>
-          <div class="cb-sig-row">
-            <div class="cb-sig"></div>
-            <div class="cb-cvv"><div class="cb-cvv-val">•••</div></div>
-          </div>
-          <div class="cb-bottom">
-            <div class="cb-info">wallet.dastdaroz.shop<br/><span style="opacity:.55">Dushanbe, TJ</span></div>
-            <svg width="56" height="16" viewBox="0 0 112 32" fill="none" opacity=".3">
-              <path d="M6 16h18M14 8l9 8-9 8" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <text x="30" y="22" fill="#a8bfaf" font-family="'Nunito',sans-serif" font-weight="900" font-size="15">dastdaroz</text>
-            </svg>
-          </div>
-          <svg style="position:absolute;bottom:10px;right:12px;opacity:.28;pointer-events:none;z-index:2" width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M8 0v16M0 8h16" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M2.34 2.34l11.32 11.32M13.66 2.34L2.34 13.66" stroke="white" stroke-width=".6" stroke-linecap="round" opacity=".5"/>
-          </svg>
-        </div><!-- /back -->
-
-      </div><!-- /flipper -->
-    </div><!-- /scene -->
-
-    <!-- Hint -->
-    <div class="card-hint" id="cardHint">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      Зер кунед барои пушти кард
-    </div>
-
-    <!-- Balance -->
-    <p class="sec-lbl">Ҳисоб</p>
-    <div class="info-card">
-      <div class="ic-head">
-        <div>
-          <div class="ic-label">Баланси кард</div>
-          <div class="ic-amount">250 <span>TJS</span></div>
-        </div>
-        <div class="ic-badge">Фаъол</div>
-      </div>
-      <div class="ic-divider"></div>
-      <div class="ic-stats">
-        <div class="ic-stat">
-          <div class="ic-stat-lbl">Харидҳо</div>
-          <div class="ic-stat-val">12</div>
-        </div>
-        <div class="ic-stat">
-          <div class="ic-stat-lbl">Кешбек</div>
-          <div class="ic-stat-val pos">+18 TJS</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="actions">
-      <button class="act-btn primary">
-        <div class="act-ico">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-        </div>
-        <div class="act-lbl">
-          Пур кардани баланс
-          <span class="act-sub">Alif · Корти банк</span>
-        </div>
-      </button>
-      <button class="act-btn">
-        <div class="act-ico">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        </div>
-        <div class="act-lbl">Картаҳо<span class="act-sub">Идора кунед</span></div>
-      </button>
-      <button class="act-btn">
-        <div class="act-ico">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-        </div>
-        <div class="act-lbl">Таърих<span class="act-sub">Амалиётҳо</span></div>
-      </button>
-    </div>
-
-  </div><!-- /wallet-content -->
-</main>
-
-<!-- ══ FIREBASE ══ -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
-
-// ── Replace with your real config ──
-const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_AUTH_DOMAIN",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID",
-};
-
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-
-onAuthStateChanged(auth, async (user) => {
-  const gate    = document.getElementById('auth-gate');
-  const content = document.getElementById('wallet-content');
-  const tbUser  = document.getElementById('tb-user');
-
-  if (!user) {
-    gate.classList.add('show');
-    return;
-  }
-
-  // Show content skeleton
-  content.style.display = 'flex';
-  tbUser.style.display  = 'flex';
-
-  // Fetch Firestore user doc
-  try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    const data = snap.exists() ? snap.data() : {};
-
-    const firstName = data.firstName || data.first_name || data.name || '';
-    const lastName  = data.lastName  || data.last_name  || '';
-    const fullName  = (firstName + ' ' + lastName).trim() || user.displayName || user.email || 'Корбар';
-
-    // Topbar
-    const initials = (firstName[0] || '') + (lastName[0] || '');
-    document.getElementById('tb-av').textContent    = initials.toUpperCase() || '?';
-    document.getElementById('tb-uname').textContent = firstName || fullName;
-
-    // Card holder name — uppercase, max 22 chars
-    const cardName = fullName.toUpperCase().slice(0, 22);
-    document.getElementById('cf-name').textContent = cardName;
-
-  } catch (e) {
-    console.warn('Firestore fetch failed:', e);
-    const fallback = user.displayName || user.email || 'Корбар';
-    document.getElementById('tb-uname').textContent = fallback;
-    document.getElementById('cf-name').textContent  = fallback.toUpperCase().slice(0, 22);
-    document.getElementById('tb-av').textContent    = (fallback[0] || '?').toUpperCase();
-  }
-});
-</script>
-
-<!-- ══ CARD FLIP + TILT ══ -->
-<script>
-const scene   = document.getElementById('cardScene');
-const flipper = document.getElementById('cardFlipper');
-const hint    = document.getElementById('cardHint');
-let flipped   = false;
-
-function flipCard() {
-  flipped = !flipped;
-  scene.classList.toggle('flipped', flipped);
-  hint.style.opacity      = flipped ? '0' : '1';
-  hint.style.pointerEvents = flipped ? 'none' : 'auto';
-  scene.setAttribute('aria-label', flipped ? 'Нишон додани пеши кард' : 'Нишон додани пушти кард');
-}
-
-// Tilt on mousemove
-scene.addEventListener('mousemove', e => {
-  const r   = scene.getBoundingClientRect();
-  const x   = (e.clientX - r.left) / r.width  - 0.5;
-  const y   = (e.clientY - r.top)  / r.height - 0.5;
-  const ry  = flipped ? 180 : 0;
-  flipper.style.transition = 'none';
-  flipper.style.transform  = `rotateY(${ry + x * 7}deg) rotateX(${-y * 4}deg)`;
-});
-
-scene.addEventListener('mouseleave', () => {
-  flipper.style.transition = 'transform .6s cubic-bezier(.45,.05,.55,.95)';
-  flipper.style.transform  = `rotateY(${flipped ? 180 : 0}deg)`;
-});
-
-// Reset tilt on click before flip
-scene.addEventListener('mousedown', () => {
-  flipper.style.transition = 'transform .6s cubic-bezier(.45,.05,.55,.95)';
-});
-</script>
+    <p>Если перенаправление не произошло, <a href="home.html">нажмите сюда</a>.</p>
 </body>
 </html>
