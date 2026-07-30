@@ -450,6 +450,24 @@ select.addr-inp{cursor:pointer}
 .store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+/* ── GENERAL CATALOG (single-row horizontal scroll) ── */
+.gen-cats-section{margin-bottom:28px}
+.gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:4px 22px 10px}
+.gen-cats-scroll::-webkit-scrollbar{display:none}
+.gen-cats-row{display:flex;flex-direction:row;gap:10px;width:max-content;align-items:flex-start}
+.gen-cat-btn{width:80px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:2px;font-family:var(--fs);transition:transform .18s var(--spring)}
+.gen-cat-btn:hover{transform:translateY(-3px)}
+.gen-cat-btn:active{transform:scale(.94)}
+.gen-cat-img-wrap{width:72px;height:72px;border-radius:16px;overflow:hidden;background:var(--s1);border:1.5px solid var(--b0);box-shadow:var(--shadow);transition:box-shadow .18s,border-color .18s}
+.gen-cat-btn:hover .gen-cat-img-wrap{box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--accg)}
+.gen-cat-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .22s var(--ease)}
+.gen-cat-btn:hover .gen-cat-img{transform:scale(1.07)}
+.gen-cat-name{font-size:.58rem;font-weight:700;color:var(--tx2);text-align:center;line-height:1.25;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gen-cat-skl-wrap{width:80px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px}
+.gen-cat-skl-ico{width:72px;height:72px;border-radius:16px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;border:1.5px solid var(--b0)}
+.gen-cat-skl-lbl{width:50px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+@media(max-width:860px){.gen-cats-scroll{margin:0 -14px;padding:4px 14px 10px}}
+
 /* ── PRODUCT SKELETON ── */
 .pc-skeleton{pointer-events:none;cursor:default}
 .pc-skeleton:hover{transform:none!important;border-color:var(--b0)!important;box-shadow:var(--shadow)!important}
@@ -1088,6 +1106,25 @@ select.addr-inp{cursor:pointer}
         </div>
       </div>
 
+      <!-- GENERAL CATALOG SECTION -->
+      <div class="gen-cats-section" id="gen-cats-section">
+        <div class="sh" style="margin-bottom:12px">
+          <div><div class="sh-tag">Умумӣ</div><div class="sh-title">Ҳамаи <em>каталог</em></div></div>
+        </div>
+        <div class="gen-cats-scroll">
+          <div class="gen-cats-row" id="gen-cats-row">
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- PROMO SECTION — управляется из админ-панели (config/homePromo) -->
       <div class="promo-section" id="promo-section" style="display:none">
         <div class="sh" style="margin-bottom:12px">
@@ -1529,6 +1566,87 @@ select.addr-inp{cursor:pointer}
 
 <!-- Вся логика в app.js -->
 <script type="module" src="./app.js"></script>
+
+<!-- ══ GENERAL CATALOG LOADER ══ -->
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
+import { getFirestore, collection, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+const _cfg={apiKey:'AIzaSyCjIAMFuwLKwmjChCuiz-MHLv5WZOczAAE',authDomain:'delivery-galelium.firebaseapp.com',projectId:'delivery-galelium',storageBucket:'delivery-galelium.firebasestorage.app',messagingSenderId:'982466555080',appId:'1:982466555080:web:c77ccbff0e71e540ddc9fd'};
+const _fbApp = getApps().length ? getApps()[0] : initializeApp(_cfg);
+const _db = getFirestore(_fbApp);
+
+const GC_DEFAULTS=[
+  {slug:'american',name:'Американская'},{slug:'asian',name:'Азиатская'},
+  {slug:'baby',name:'Детское'},{slug:'bakery',name:'Выпечка'},
+  {slug:'bbq',name:'BBQ'},{slug:'beauty',name:'Красота'},
+  {slug:'box-catering',name:'Кейтеринг'},{slug:'breakfast',name:'Завтраки'},
+  {slug:'bubble-tea',name:'Чай с пузырьками'},{slug:'burgers',name:'Бургеры'},
+  {slug:'caribbean',name:'Карибская'},{slug:'chinese',name:'Китайская'},
+  {slug:'coffee',name:'Кофе'},{slug:'comfort-food',name:'Домашняя'},
+  {slug:'desserts',name:'Десерты'},{slug:'electronics',name:'Электроника'},
+  {slug:'fast-food',name:'Фастфуд'},{slug:'flowers',name:'Цветы'},
+  {slug:'gifts',name:'Подарки'},{slug:'greek',name:'Греческая'},
+  {slug:'halal',name:'Халяль'},{slug:'hawaiin',name:'Гавайская'},
+  {slug:'healthy',name:'Здоровое'},{slug:'ice-cream',name:'Мороженое'},
+  {slug:'indian',name:'Индийская'},{slug:'italian',name:'Итальянская'},
+  {slug:'japanese',name:'Японская'},{slug:'korean',name:'Корейская'},
+  {slug:'kosher',name:'Кошерное'},{slug:'mexican',name:'Мексиканская'},
+  {slug:'personal-care',name:'Уход'},{slug:'pet-supplies',name:'Зоотовары'},
+  {slug:'pharmacy',name:'Аптека'},{slug:'pizza',name:'Пицца'},
+  {slug:'poke',name:'Поке'},{slug:'retail',name:'Ритейл'},
+  {slug:'salads',name:'Салаты'},{slug:'sandwiches',name:'Сэндвичи'},
+  {slug:'seafood',name:'Морепродукты'},{slug:'smoothies',name:'Смузи'},
+  {slug:'soul-food',name:'Соул-фуд'},{slug:'soup',name:'Супы'},
+  {slug:'specialty',name:'Особое'},{slug:'street-food',name:'Уличная еда'},
+  {slug:'sushi',name:'Суши'},{slug:'sweets',name:'Сладости'},
+  {slug:'taiwanese',name:'Тайваньская'},{slug:'thai',name:'Тайская'},
+  {slug:'vegan',name:'Веган'},{slug:'vietnamese',name:'Вьетнамская'},
+  {slug:'wings',name:'Крылья'},
+];
+
+function escG(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function renderGenCats(cats){
+  const row=document.getElementById('gen-cats-row');
+  if(!row)return;
+  const active=cats.filter(c=>c.active!==false);
+  if(!active.length){row.innerHTML='';return;}
+  row.innerHTML=active.map(c=>`
+    <button class="gen-cat-btn" onclick="window.__openGenCat&&window.__openGenCat(${JSON.stringify(c.slug)})">
+      <div class="gen-cat-img-wrap">
+        <img class="gen-cat-img"
+          src="storage/general-catalogs/${escG(c.slug)}.png"
+          alt="${escG(c.name||c.slug)}"
+          loading="lazy"
+          onerror="this.style.display='none';this.parentElement.style.background='var(--s2)'"/>
+      </div>
+      <span class="gen-cat-name">${escG(c.name||c.slug)}</span>
+    </button>
+  `).join('');
+}
+
+// Placeholder — home app.js can override this
+window.__openGenCat=function(slug){
+  console.log('openGenCat:',slug);
+  // TODO: в будущем откроет магазины по категории
+};
+
+(async()=>{
+  try{
+    const q=query(collection(_db,'generalCatalogs'),orderBy('order','asc'));
+    const snap=await getDocs(q);
+    if(snap.empty){
+      renderGenCats(GC_DEFAULTS.map((c,i)=>({...c,order:i,active:true})));
+    }else{
+      renderGenCats(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }
+  }catch(e){
+    console.error('GenCats:',e);
+    renderGenCats(GC_DEFAULTS.map((c,i)=>({...c,order:i,active:true})));
+  }
+})();
+</script>
 <!-- ORDER DETAIL MODAL -->
 <div class="o-modal-bg" id="order-modal-bg" onclick="closeOrderModal(event)">
   <div class="o-modal" id="order-modal">
