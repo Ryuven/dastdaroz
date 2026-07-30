@@ -782,14 +782,12 @@ function renderCatPills() {
 }
 
 function renderHomeCats() {
-  const el    = document.getElementById('home-cats');
+  const el = document.getElementById('home-cats');
   if (!el) return;
-  const shown = cats.slice(0, 4);
-  if (!shown.length) { el.innerHTML = ''; return; }
-  el.innerHTML = shown.map(c => {
-    const count = prods.filter(p => p.categoryId === c.id && p.available !== false).length;
-    const ic    = catIcon(c.id, c.name);
-    return `<div class="cat-panel" style="--cat-c:${ic.color};--cat-bg:${ic.bg}" onclick="filterCat('${c.id}');goPage('catalog')"><div class="cat-panel-ico">${ic.svg}</div><div class="cat-panel-name">${c.name}</div><div class="cat-panel-count">${count} маҳсулот</div></div>`;
+  if (!cats.length) { el.innerHTML = ''; return; }
+  el.innerHTML = cats.map(c => {
+    const ic = catIcon(c.id, c.name);
+    return `<button class="cat-chip" style="--cat-bg:${ic.bg}" onclick="filterCat('${c.id}');goPage('catalog')"><div class="cat-chip-ico">${ic.svg}</div><div class="cat-chip-name">${c.name}</div></button>`;
   }).join('');
 }
 
