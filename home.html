@@ -231,38 +231,15 @@ a{color:inherit;text-decoration:none}
 
 /* ── CATEGORY PANELS ── */
 .home-cats-wrap{margin-bottom:20px}
-/* ── Chip-row (Uber Eats style) ── */
-.cat-chips-scroll{
-  overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  margin:0 -22px;padding:2px 22px 6px;
-}
-.cat-chips-scroll::-webkit-scrollbar{display:none}
-@media(max-width:860px){.cat-chips-scroll{margin:0 -14px;padding:2px 14px 6px}}
-.cat-chips{display:flex;gap:2px;width:max-content}
-.cat-chip{
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  padding:6px 8px 4px;cursor:pointer;border:none;background:none;
-  min-width:68px;flex-shrink:0;border-radius:12px;
-  transition:transform .15s;-webkit-tap-highlight-color:transparent;
-}
-.cat-chip:hover{background:var(--s2)}
-.cat-chip:active{transform:scale(.92)}
-.cat-chip-ico{
-  width:56px;height:56px;border-radius:50%;
-  background:var(--cat-bg,var(--accd));
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .2s var(--spring,cubic-bezier(.34,1.56,.64,1));
-  flex-shrink:0;
-}
-.cat-chip:hover .cat-chip-ico{transform:scale(1.09)}
-.cat-chip-name{
-  font-size:.62rem;font-weight:700;color:var(--tx2);
-  font-family:var(--fs);text-align:center;line-height:1.25;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  max-width:68px;
-}
+.cat-panels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.cat-panel{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:16px 12px 14px;cursor:pointer;transition:all .18s var(--ease);text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.cat-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--cat-c,var(--acc)),transparent 70%);opacity:0;transition:opacity .2s}
+.cat-panel:hover{border-color:var(--cat-c,var(--acc));transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.cat-panel:hover::before{opacity:.07}
+.cat-panel-ico{width:46px;height:46px;border-radius:13px;background:var(--cat-bg,var(--accd));display:flex;align-items:center;justify-content:center;margin:0 auto 9px;transition:transform .22s var(--spring);position:relative;z-index:1}
+.cat-panel:hover .cat-panel-ico{transform:scale(1.12) rotate(-4deg)}
+.cat-panel-name{font-size:.74rem;font-weight:800;color:var(--tx);font-family:var(--fd);position:relative;z-index:1;line-height:1.2}
+.cat-panel-count{font-size:.56rem;color:var(--tx3);margin-top:3px;position:relative;z-index:1}
 .all-cats-btn{width:100%;padding:10px;border:1.5px dashed var(--accg);border-radius:12px;background:var(--accd);color:var(--acc);font-size:.72rem;font-weight:700;font-family:var(--fd);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px}
 .all-cats-btn:hover{background:var(--accg);border-style:solid}
 
@@ -412,10 +389,10 @@ select.addr-inp{cursor:pointer}
 .toast.ok .tdot{background:var(--acc)}.toast.err .tdot{background:var(--red)}.toast.info .tdot{background:var(--blue)}
 
 /* ── STORES ── */
-.stores-section{margin-bottom:28px}
+.stores-section{margin-bottom:20px}
 
 /* ── PROMO BANNER ── */
-.promo-section{margin-bottom:28px}
+.promo-section{margin-bottom:20px}
 .promo-card{
   display:block;border-radius:16px;overflow:hidden;
   aspect-ratio:984/312;background:var(--s2);
@@ -474,22 +451,21 @@ select.addr-inp{cursor:pointer}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
-.gen-cats-section{margin-bottom:28px}
-.gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:4px 22px 10px}
+.gen-cats-section{margin-bottom:20px}
+.gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:2px 22px 8px}
 .gen-cats-scroll::-webkit-scrollbar{display:none}
-.gen-cats-row{display:flex;flex-direction:row;gap:10px;width:max-content;align-items:flex-start}
-.gen-cat-btn{width:80px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:2px;font-family:var(--fs);transition:transform .18s var(--spring)}
+.gen-cats-row{display:flex;flex-direction:row;gap:4px;width:max-content;align-items:flex-start}
+.gen-cat-btn{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:4px;font-family:var(--fs);transition:transform .18s var(--spring)}
 .gen-cat-btn:hover{transform:translateY(-3px)}
-.gen-cat-btn:active{transform:scale(.94)}
-.gen-cat-img-wrap{width:72px;height:72px;border-radius:16px;overflow:hidden;background:var(--s1);border:1.5px solid var(--b0);box-shadow:var(--shadow);transition:box-shadow .18s,border-color .18s}
-.gen-cat-btn:hover .gen-cat-img-wrap{box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--accg)}
-.gen-cat-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .22s var(--ease)}
-.gen-cat-btn:hover .gen-cat-img{transform:scale(1.07)}
-.gen-cat-name{font-size:.58rem;font-weight:700;color:var(--tx2);text-align:center;line-height:1.25;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gen-cat-skl-wrap{width:80px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px}
-.gen-cat-skl-ico{width:72px;height:72px;border-radius:16px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;border:1.5px solid var(--b0)}
-.gen-cat-skl-lbl{width:50px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-@media(max-width:860px){.gen-cats-scroll{margin:0 -14px;padding:4px 14px 10px}}
+.gen-cat-btn:active{transform:scale(.92)}
+.gen-cat-img-wrap{width:60px;height:60px;background:none;border:none;box-shadow:none;overflow:hidden}
+.gen-cat-img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .22s var(--ease)}
+.gen-cat-btn:hover .gen-cat-img{transform:scale(1.1)}
+.gen-cat-name{font-size:.58rem;font-weight:700;color:var(--tx2);text-align:center;line-height:1.25;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gen-cat-skl-wrap{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px}
+.gen-cat-skl-ico{width:60px;height:60px;border-radius:12px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.gen-cat-skl-lbl{width:44px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+@media(max-width:860px){.gen-cats-scroll{margin:0 -14px;padding:2px 14px 8px}}
 
 /* ── PRODUCT SKELETON ── */
 .pc-skeleton{pointer-events:none;cursor:default}
@@ -554,7 +530,7 @@ select.addr-inp{cursor:pointer}
   .guest-topbar-line2{font-size:.56rem}
   .guest-topbar-btn{font-size:.62rem;padding:6px 11px}
 }
-@media(max-width:480px){.pg{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.cat-panels{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:360px){.pg{grid-template-columns:repeat(2,1fr)}}
 @media(min-width:861px){.pg{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:1100px){.pg{grid-template-columns:repeat(4,1fr)}}
@@ -1131,9 +1107,6 @@ select.addr-inp{cursor:pointer}
 
       <!-- GENERAL CATALOG SECTION -->
       <div class="gen-cats-section" id="gen-cats-section">
-        <div class="sh" style="margin-bottom:12px">
-          <div><div class="sh-tag">Умумӣ</div><div class="sh-title">Ҳамаи <em>каталог</em></div></div>
-        </div>
         <div class="gen-cats-scroll">
           <div class="gen-cats-row" id="gen-cats-row">
             <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
@@ -1161,9 +1134,8 @@ select.addr-inp{cursor:pointer}
       </div>
 
       <div class="home-cats-wrap">
-        <div class="cat-chips-scroll">
-          <div class="cat-chips" id="home-cats"></div>
-        </div>
+        <div class="sh" style="margin-bottom:12px"><div><div class="sh-tag">Категорияҳо</div><div class="sh-title">Аз куҷо <em>фармоиш</em> диҳем?</div></div></div>
+        <div class="cat-panels" id="home-cats"></div>
         <button class="all-cats-btn" onclick="goPage('catalog')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Ҳамаи категорияҳо →
