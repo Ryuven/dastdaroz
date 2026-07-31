@@ -247,6 +247,7 @@ function removeGuestBanner() {
 
 // ─── Гостевой профиль ────────────────────────────────────────
 function renderGuestProfile() {
+  document.getElementById('prof-card-loading')?.remove();
   const av = document.getElementById('sb-av');
   if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   const nm = document.getElementById('sb-uname');
@@ -366,6 +367,34 @@ function renderSB() {
   }
 }
 
+// ─── Скелетон для страницы заказов ───────────────────────────
+function showOrdersSkeleton() {
+  const el = document.getElementById('orders-list');
+  if (!el) return;
+  const card = (w1, w2, w3, w4, w5, w6) =>
+    `<div class="oc oc-skl">
+      <div class="oc-head">
+        <div class="skl-block" style="height:11px;width:${w1}%;border-radius:6px"></div>
+        <div class="skl-block" style="height:20px;width:${w2}px;border-radius:99px"></div>
+      </div>
+      <div class="skl-block" style="height:8px;width:${w3}%;margin-bottom:6px"></div>
+      <div class="skl-block" style="height:8px;width:${w4}%;margin-bottom:13px"></div>
+      <div class="oc-footer">
+        <div>
+          <div class="skl-block" style="height:13px;width:${w5}px;margin-bottom:5px"></div>
+          <div class="skl-block" style="height:7px;width:${w6}px"></div>
+        </div>
+        <div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div>
+      </div>
+    </div>`;
+  el.innerHTML = [
+    card(50, 82, 82, 58, 54, 120),
+    card(44, 76, 76, 64, 48, 110),
+    card(54, 90, 70, 52, 60, 130),
+    card(46, 72, 88, 60, 50, 100),
+  ].join('');
+}
+
 // ─── Навигация ────────────────────────────────────────────────
 window.goPage = function (page) {
   // Гость может смотреть только публичные страницы
@@ -394,7 +423,7 @@ window.goPage = function (page) {
     booking: 'Тасдиқи фармоиш',
   }[page] || 'Galelium Delivery';
   if (page === 'status')  { renderStatusPage(); }
-  if (page === 'orders')  { loadOrders(); }
+  if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
   if (page === 'store')   { renderStorePage(); }
   if (page === 'booking') { renderBookingPage(); startBookingTimer(); }
   closeSB();
@@ -2434,6 +2463,7 @@ function updateSupportBadgeUI(count) {
 
 // ─── Профиль ─────────────────────────────────────────────────
 function renderProfile() {
+  document.getElementById('prof-card-loading')?.remove();
   const name = UD?.displayName || CU.displayName || '';
   const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   const phone = UD?.phone || phoneFromPseudoEmail(CU.email);

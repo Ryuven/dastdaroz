@@ -474,6 +474,12 @@ select.addr-inp{cursor:pointer}
 .pc-skeleton .pc-img{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
 .pc-skeleton .pc-body{gap:8px}
 .pc-skeleton .pc-footer{border-top:1px solid var(--b0);padding-top:9px;margin-top:auto}
+/* ─── Skeleton: order card (orders page) ─────────────────────── */
+.oc-skl{pointer-events:none;cursor:default}
+.oc-skl:hover{border-color:var(--b0)!important;box-shadow:var(--shadow)!important;transform:none!important}
+/* ─── Skeleton: profile card loading overlay ─────────────────── */
+.prof-card-new{position:relative}
+#prof-card-loading{position:absolute;inset:0;background:var(--s1);border-radius:16px;display:flex;align-items:center;gap:14px;padding:18px 18px 16px;z-index:2;box-sizing:border-box}
 
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
@@ -1280,7 +1286,12 @@ select.addr-inp{cursor:pointer}
         <button class="otab" onclick="setOTab('delivered',this)">Расонида шуд</button>
         <button class="otab" onclick="setOTab('cancelled',this)">Бекор</button>
       </div>
-      <div id="orders-list"><div class="pload"><div class="spin"></div> Боргузорӣ…</div></div>
+      <div id="orders-list">
+        <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:50%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:82px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:82%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:58%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:54px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:120px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
+        <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:44%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:76px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:76%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:64%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:48px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:110px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
+        <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:54%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:90px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:70%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:52%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:60px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:130px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
+        <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:46%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:72px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:88%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:60%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:50px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:100px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
+      </div>
     </div>
 
     <!-- STORE CATALOG -->
@@ -1322,7 +1333,28 @@ select.addr-inp{cursor:pointer}
       </div>
 
       <div id="status-content">
-        <div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Фармоишҳои фаъол нест</div><div class="empty-s">Пас аз расмикунонӣ ин ҷо намоён мешавад</div></div>
+        <div class="oc oc-skl" style="padding:18px 20px">
+          <div class="oc-head"><div class="skl-block" style="height:11px;width:52%"></div><div class="skl-block" style="height:20px;width:90px;border-radius:99px"></div></div>
+          <div class="track" style="margin:22px 0 18px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skl-block" style="width:26px;height:26px;border-radius:50%"></div><div class="skl-block" style="height:7px;width:38px"></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skl-block" style="width:26px;height:26px;border-radius:50%"></div><div class="skl-block" style="height:7px;width:44px"></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skl-block" style="width:26px;height:26px;border-radius:50%"></div><div class="skl-block" style="height:7px;width:40px"></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skl-block" style="width:26px;height:26px;border-radius:50%"></div><div class="skl-block" style="height:7px;width:36px"></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div class="skl-block" style="width:26px;height:26px;border-radius:50%"></div><div class="skl-block" style="height:7px;width:42px"></div></div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">
+            <div><div class="skl-block" style="height:7px;width:34px;margin-bottom:6px"></div><div class="skl-block" style="height:9px;width:75%"></div></div>
+            <div><div class="skl-block" style="height:7px;width:42px;margin-bottom:6px"></div><div class="skl-block" style="height:9px;width:55%"></div></div>
+            <div><div class="skl-block" style="height:7px;width:38px;margin-bottom:6px"></div><div class="skl-block" style="height:9px;width:68%"></div></div>
+            <div><div class="skl-block" style="height:7px;width:30px;margin-bottom:6px"></div><div class="skl-block" style="height:9px;width:80%"></div></div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b0)"><div class="skl-block" style="height:8px;width:52%"></div><div class="skl-block" style="height:8px;width:18%"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b0)"><div class="skl-block" style="height:8px;width:42%"></div><div class="skl-block" style="height:8px;width:20%"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b0)"><div class="skl-block" style="height:8px;width:60%"></div><div class="skl-block" style="height:8px;width:16%"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px"><div class="skl-block" style="height:9px;width:22%"></div><div class="skl-block" style="height:16px;width:18%"></div></div>
+        </div>
       </div>
     </div>
 
@@ -1343,6 +1375,14 @@ select.addr-inp{cursor:pointer}
             <div style="flex:1;min-width:0">
               <div class="prof-card-name" id="p-name">—</div>
               <div class="prof-card-phone" id="p-phone">—</div>
+            </div>
+          </div>
+          <!-- Skeleton overlay — убирается в renderProfile() и renderGuestProfile() -->
+          <div id="prof-card-loading">
+            <div class="skl-block" style="width:58px;height:58px;border-radius:50%;flex-shrink:0"></div>
+            <div style="flex:1;min-width:0">
+              <div class="skl-block" style="height:13px;width:62%;border-radius:6px;margin-bottom:9px"></div>
+              <div class="skl-block" style="height:9px;width:40%"></div>
             </div>
           </div>
           <div class="p-stats" style="margin:0 -18px;border-radius:0;border-top:1.5px solid var(--b0)">
