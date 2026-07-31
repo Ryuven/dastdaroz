@@ -1506,6 +1506,16 @@ select.addr-inp{cursor:pointer}
             <span class="ni-badge" id="prof-support-nb" style="display:none">0</span>
             <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
+          <button class="prof-row" onclick="openPartnerSheet()" style="border-top:1.5px solid var(--b0)">
+            <div class="prof-row-icon" style="background:var(--teal-d)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Стать партнером</div>
+              <div class="prof-row-sub">Сотрудничество с dastdaroz</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
           <a href="help.html" class="prof-row" style="border-top:1.5px solid var(--b0);text-decoration:none">
             <div class="prof-row-icon" style="background:var(--s3)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tx2)" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
@@ -1843,6 +1853,115 @@ window.__openGenCat=function(slug){
 if (!/DastdarozApp/i.test(navigator.userAgent)) {
   setTimeout(function(){document.getElementById('app-bar').classList.add('show')}, 800);
 }
+</script>
+
+<!-- ══ PARTNER SHEET ══ -->
+<style>
+.ptn-bg{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.ptn-bg.open{opacity:1;pointer-events:all}
+.ptn-sheet{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:94svh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
+.ptn-bg.open .ptn-sheet{transform:translateY(0)}
+.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0}
+.ptn-head{display:flex;align-items:center;padding:4px 16px 14px;flex-shrink:0;border-bottom:1px solid var(--b0);gap:10px}
+.ptn-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);flex:1;letter-spacing:-.02em}
+.ptn-close{width:32px;height:32px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;transition:background .15s}
+.ptn-close:hover{background:var(--s3)}
+.ptn-body{flex:1;overflow-y:auto;padding:20px 16px 32px;-webkit-overflow-scrolling:touch}
+.pf-lbl{font-size:.74rem;color:var(--tx2);margin-bottom:7px;display:block;font-weight:500}
+.pf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
+.pf-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-inp::placeholder{color:var(--tx3)}
+.pf-phone-row{display:flex;align-items:stretch;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;margin-bottom:15px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.pf-phone-row:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-pfx{padding:13px 10px 13px 16px;color:var(--acc);font-weight:700;font-size:.92rem;flex-shrink:0;border-right:1.5px solid var(--b0)}
+.pf-tel{flex:1;background:none;border:none;outline:none;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px 13px 10px}
+.pf-tel::placeholder{color:var(--tx3)}
+.pf-ta{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;resize:none;min-height:96px;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
+.pf-ta:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-ta::placeholder{color:var(--tx3)}
+.pf-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s;margin-top:4px}
+.pf-btn:disabled{opacity:.5;cursor:default}
+.pf-btn:active:not(:disabled){opacity:.86}
+</style>
+
+<div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
+  <div class="ptn-sheet">
+    <div class="ptn-drag"></div>
+    <div class="ptn-head">
+      <div class="ptn-title">Партнерство</div>
+      <button class="ptn-close" onclick="closePartnerSheet()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="ptn-body">
+      <label class="pf-lbl">Название компании</label>
+      <input class="pf-inp" id="pf-company" type="text" placeholder="ООО …" autocomplete="organization"/>
+      <label class="pf-lbl">Название ресторана</label>
+      <input class="pf-inp" id="pf-restaurant" type="text" placeholder="…"/>
+      <label class="pf-lbl">Адрес</label>
+      <input class="pf-inp" id="pf-address" type="text" placeholder="г. Душанбе, ул…" autocomplete="street-address"/>
+      <label class="pf-lbl">Телефон менеджера</label>
+      <div class="pf-phone-row" id="pf-phone-wrap">
+        <span class="pf-pfx">+992</span>
+        <input class="pf-tel" id="pf-phone" type="tel" placeholder="977178800" inputmode="numeric" maxlength="9"/>
+      </div>
+      <label class="pf-lbl">Доп. телефон (необязательно)</label>
+      <div class="pf-phone-row">
+        <span class="pf-pfx">+992</span>
+        <input class="pf-tel" id="pf-phone2" type="tel" placeholder="XX XXX XX XX" inputmode="numeric" maxlength="9"/>
+      </div>
+      <label class="pf-lbl">Комментарий (необязательно)</label>
+      <textarea class="pf-ta" id="pf-comment" placeholder="Напишите комментарий…"></textarea>
+      <button class="pf-btn" id="pf-submit-btn" onclick="submitPartnerForm()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Отправить
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.openPartnerSheet = function() {
+  document.getElementById('ptn-bg').classList.add('open');
+};
+window.closePartnerSheet = function() {
+  document.getElementById('ptn-bg').classList.remove('open');
+};
+window.submitPartnerForm = async function() {
+  const company  = (document.getElementById('pf-company').value   || '').trim();
+  const restaurant=(document.getElementById('pf-restaurant').value|| '').trim();
+  const address  = (document.getElementById('pf-address').value   || '').trim();
+  const phoneRaw = (document.getElementById('pf-phone').value     || '').trim();
+  const phone2Raw= (document.getElementById('pf-phone2').value    || '').trim();
+  const comment  = (document.getElementById('pf-comment').value   || '').trim();
+  const T = window.toast || function(m){alert(m);};
+  if (!company)    { T('Укажите название компании','err'); return; }
+  if (!restaurant) { T('Укажите название ресторана','err'); return; }
+  if (!address)    { T('Укажите адрес','err'); return; }
+  if (!phoneRaw)   { T('Укажите телефон менеджера','err'); return; }
+  const btn = document.getElementById('pf-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .7s linear infinite;flex-shrink:0"></div> Отправка…';
+  try {
+    if (typeof window._submitPartnerApp === 'function') {
+      await window._submitPartnerApp({
+        company, restaurant, address,
+        phone:  '+992' + phoneRaw,
+        phone2: phone2Raw ? '+992' + phone2Raw : '',
+        comment,
+      });
+    }
+    ['pf-company','pf-restaurant','pf-address','pf-phone','pf-phone2','pf-comment']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    closePartnerSheet();
+    T('Заявка отправлена! Мы свяжемся с вами ✓', 'ok');
+  } catch(e) {
+    T('Ошибка отправки. Попробуйте снова.', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Отправить';
+  }
+};
 </script>
 
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
