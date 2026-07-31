@@ -182,7 +182,7 @@ a{color:inherit;text-decoration:none}
 @keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ── SHARED ── */
-.sh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.sh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
 .sh-tag{display:none}
 .sh-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);letter-spacing:-.03em;line-height:1}
 .sh-title em{color:var(--acc);font-style:normal}
@@ -190,13 +190,13 @@ a{color:inherit;text-decoration:none}
 .sh-link:hover{color:var(--acc)}
 
 /* ── SEARCH BOX on home ── */
-.home-search-wrap{margin-bottom:24px;position:relative}
+.home-search-wrap{margin-bottom:10px;position:relative}
 /* ── ADDRESS BANNER ── */
 .addr-banner{
   display:flex;align-items:center;gap:10px;
   background:var(--accd);border:1.5px solid var(--accg);
   border-radius:13px;padding:10px 12px;
-  margin-top:-10px;margin-bottom:22px;
+  margin-top:-6px;margin-bottom:10px;
   animation:addrBannerIn .35s cubic-bezier(.25,1.3,.5,1) both;
 }
 @keyframes addrBannerIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -230,7 +230,7 @@ a{color:inherit;text-decoration:none}
 .srd-empty{padding:22px;text-align:center;color:var(--tx3);font-size:.76rem}
 
 /* ── CATEGORY PANELS ── */
-.home-cats-wrap{margin-bottom:20px}
+.home-cats-wrap{margin-bottom:10px}
 .cat-panels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
 .cat-panel{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:16px 12px 14px;cursor:pointer;transition:all .18s var(--ease);text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .cat-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--cat-c,var(--acc)),transparent 70%);opacity:0;transition:opacity .2s}
@@ -259,7 +259,7 @@ a{color:inherit;text-decoration:none}
 .cat.active{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 2px 10px var(--acc-shadow)}
 
 /* ── PRODUCT GRID ── */
-.pg{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.pg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .pc{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:border-color var(--tf),transform var(--t),box-shadow var(--t);box-shadow:var(--shadow)}
 .pc:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:var(--shadow-md)}
 .pc-img{aspect-ratio:1/1;width:100%;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
@@ -389,10 +389,10 @@ select.addr-inp{cursor:pointer}
 .toast.ok .tdot{background:var(--acc)}.toast.err .tdot{background:var(--red)}.toast.info .tdot{background:var(--blue)}
 
 /* ── STORES ── */
-.stores-section{margin-bottom:20px}
+.stores-section{margin-bottom:10px}
 
 /* ── PROMO BANNER ── */
-.promo-section{margin-bottom:20px}
+.promo-section{margin-bottom:10px}
 .promo-card{
   display:block;border-radius:16px;overflow:hidden;
   aspect-ratio:984/312;background:var(--s2);
@@ -451,7 +451,7 @@ select.addr-inp{cursor:pointer}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
-.gen-cats-section{margin-bottom:20px}
+.gen-cats-section{margin-bottom:10px}
 .gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:2px 22px 8px}
 .gen-cats-scroll::-webkit-scrollbar{display:none}
 .gen-cats-row{display:flex;flex-direction:row;gap:4px;width:max-content;align-items:flex-start}
@@ -1092,7 +1092,7 @@ select.addr-inp{cursor:pointer}
 
       <!-- STORES SECTION -->
       <div class="stores-section" id="stores-section">
-        <div class="sh" style="margin-bottom:14px">
+        <div class="sh" style="margin-bottom:10px">
           <div><div class="sh-tag">Дӯконҳо</div><div class="sh-title">Каталогҳои <em>мо</em></div></div>
         </div>
         <div class="stores-scroll">
@@ -1123,7 +1123,7 @@ select.addr-inp{cursor:pointer}
 
       <!-- PROMO SECTION — управляется из админ-панели (config/homePromo) -->
       <div class="promo-section" id="promo-section" style="display:none">
-        <div class="sh" style="margin-bottom:12px">
+        <div class="sh" style="margin-bottom:10px">
           <div><div class="sh-tag">Пешниҳодҳо</div><div class="sh-title">Барои <em>шумо</em></div></div>
         </div>
         <a class="promo-card no-link" id="promo-card" target="_blank" rel="noopener">
@@ -1134,7 +1134,7 @@ select.addr-inp{cursor:pointer}
       </div>
 
       <div class="home-cats-wrap">
-        <div class="sh" style="margin-bottom:12px"><div><div class="sh-tag">Категорияҳо</div><div class="sh-title">Аз куҷо <em>фармоиш</em> диҳем?</div></div></div>
+        <div class="sh" style="margin-bottom:10px"><div><div class="sh-tag">Категорияҳо</div><div class="sh-title">Аз куҷо <em>фармоиш</em> диҳем?</div></div></div>
         <div class="cat-panels" id="home-cats"></div>
         <button class="all-cats-btn" onclick="goPage('catalog')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -1172,7 +1172,7 @@ select.addr-inp{cursor:pointer}
       <div class="cart-layout">
         <div id="cart-list"></div>
         <div style="min-width:0;max-width:100%"><div class="cs" id="cart-sum">
-          <div class="sh-tag" style="margin-bottom:14px">Ҷамъбаст</div>
+          <div class="sh-tag" style="margin-bottom:10px">Ҷамъбаст</div>
           <div class="cs-row"><span>Маҳсулот</span><span id="cs-items">0 см</span></div>
           <div class="cs-row"><span>Расонидан</span><span id="cs-del">7 см</span></div>
           <div class="cs-row total"><span>Ҷамъ</span><span class="price" id="cs-total">7 см</span></div>
@@ -1396,7 +1396,7 @@ select.addr-inp{cursor:pointer}
               </div>
             </div>
             <div style="font-size:.6rem;color:var(--tx3);margin:-6px 0 12px;line-height:1.55">Рақами телефон — идентификатори ҳисоби шумо ва тағйирнопазир аст</div>
-            <div class="ff" style="margin-bottom:12px">
+            <div class="ff" style="margin-bottom:10px">
               <label class="fl">Суроғаи пешфарзи расонидан</label>
               <div style="display:flex;gap:8px;align-items:center">
                 <input class="fi" type="text" id="pf-addr" placeholder="кӯчаи Рӯдакӣ, д. 1, хв. 1" style="flex:1"/>
@@ -1791,7 +1791,7 @@ window.__openGenCat=function(slug){
         <input class="addr-detail-inp" id="addr-floor" type="text" placeholder="Ошёна (масалан 3)" inputmode="numeric"/>
         <input class="addr-detail-inp" id="addr-apt" type="text" placeholder="Хонаи (масалан 12)" inputmode="numeric"/>
       </div>
-      <input class="addr-detail-inp" id="addr-note" type="text" placeholder="Изоҳ (дарбоз, нишона…)" style="margin-bottom:12px"/>
+      <input class="addr-detail-inp" id="addr-note" type="text" placeholder="Изоҳ (дарбоз, нишона…)" style="margin-bottom:10px"/>
       <button class="addr-confirm-btn" id="addr-confirm-btn" onclick="confirmAddr()" disabled>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Суроғро тасдиқ кунед
@@ -1820,7 +1820,7 @@ window.__openGenCat=function(slug){
 @media(min-width:861px){.app-bar{bottom:20px;left:auto;right:24px;width:340px}}
 .app-bar-ico{width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--accd,#dcfce7)}
 .app-bar-ico img{width:100%;height:100%;object-fit:cover;display:block}
-.app-bar-name{flex:1;min-width:0;font-family:var(--fd,sans-serif);font-weight:800;font-size:.78rem;color:var(--tx,#111);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-bar-name{flex:1;min-width:0;font-family:var(--fs,'Inter',sans-serif);font-weight:700;font-size:.78rem;color:var(--tx,#111);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-bar-btn{background:linear-gradient(135deg,var(--acc,#16a34a),var(--acc2,#22c55e));color:#fff;border:none;border-radius:9px;font-family:var(--fd,sans-serif);font-weight:800;font-size:.68rem;padding:7px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 2px 8px var(--acc-shadow,rgba(22,163,74,.28));transition:opacity .15s}
 .app-bar-btn:active{opacity:.82}
 .app-bar-close{width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--s2,#f3f4f6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3,#888);transition:background .15s}
