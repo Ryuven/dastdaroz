@@ -477,9 +477,17 @@ select.addr-inp{cursor:pointer}
 /* ─── Skeleton: order card (orders page) ─────────────────────── */
 .oc-skl{pointer-events:none;cursor:default}
 .oc-skl:hover{border-color:var(--b0)!important;box-shadow:var(--shadow)!important;transform:none!important}
+/* ─── Skeleton: cart items ───────────────────────────────────── */
+.ci-skl{pointer-events:none;cursor:default}
+.ci-skl:hover{border-color:var(--b0)!important}
 /* ─── Skeleton: profile card loading overlay ─────────────────── */
 .prof-card-new{position:relative}
 #prof-card-loading{position:absolute;inset:0;background:var(--s1);border-radius:16px;display:flex;align-items:center;gap:14px;padding:18px 18px 16px;z-index:2;box-sizing:border-box}
+/* ─── Skeleton: profile content sections ────────────────────── */
+#prof-content-loading{margin-top:20px}
+.prof-skl-section{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;overflow:hidden}
+.prof-skl-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1.5px solid var(--b0)}
+.prof-skl-row:last-child{border-bottom:none}
 
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
@@ -1172,7 +1180,11 @@ select.addr-inp{cursor:pointer}
     <div class="page" id="page-cart">
       <div class="sh"><div><div class="sh-tag">Расмикунонӣ</div><div class="sh-title">Сабад</div></div><button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Тоза кардан</button></div>
       <div class="cart-layout">
-        <div id="cart-list"></div>
+        <div id="cart-list">
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:58%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:34%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:66%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:44%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+        </div>
         <div style="min-width:0;max-width:100%"><div class="cs" id="cart-sum">
           <div class="sh-tag" style="margin-bottom:10px">Ҷамъбаст</div>
           <div class="cs-row"><span>Маҳсулот</span><span id="cs-items">0 см</span></div>
@@ -1391,6 +1403,35 @@ select.addr-inp{cursor:pointer}
           </div>
         </div>
 
+        <!-- ── Skeleton: кошелек + секции (убирается в renderProfile / renderGuestProfile) ── -->
+        <div id="prof-content-loading">
+          <div class="skl-block" style="height:7px;width:48px;border-radius:5px;margin-bottom:9px"></div>
+          <div class="prof-skl-section" style="border-radius:13px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div class="skl-block" style="width:34px;height:34px;border-radius:8px;flex-shrink:0"></div>
+            <div style="flex:1;min-width:0"><div class="skl-block" style="height:10px;width:40%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:58%"></div></div>
+            <div class="skl-block" style="height:10px;width:52px;flex-shrink:0"></div>
+          </div>
+          <div class="skl-block" style="height:7px;width:56px;border-radius:5px;margin-bottom:9px"></div>
+          <div class="prof-skl-section" style="margin-bottom:20px">
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:52%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:38%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:46%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+          </div>
+          <div class="skl-block" style="height:7px;width:44px;border-radius:5px;margin-bottom:9px"></div>
+          <div class="prof-skl-section" style="margin-bottom:20px">
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:60%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+          </div>
+          <div class="skl-block" style="height:7px;width:36px;border-radius:5px;margin-bottom:9px"></div>
+          <div class="prof-skl-section">
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:44%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:32%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+            <div class="prof-skl-row"><div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skl-block" style="height:9px;width:50%"></div></div><div class="skl-block" style="width:7px;height:12px;border-radius:4px"></div></div>
+          </div>
+        </div>
+
+        <!-- Реальный контент — скрыт пока скелетон активен -->
+        <div id="prof-real-content" style="display:none">
+
         <!-- ── Кошелек ────────────────────────────────────── -->
         <div class="prof-section-lbl">Кошелек</div>
         <div class="prof-wallet-card">
@@ -1572,6 +1613,7 @@ select.addr-inp{cursor:pointer}
           </a>
         </div>
       </div><!-- /prof-nav-section -->
+        </div><!-- /prof-real-content -->
 
         <!-- ── Аккаунт ────────────────────────────────────── -->
         <div class="prof-section-lbl">Аккаунт</div>

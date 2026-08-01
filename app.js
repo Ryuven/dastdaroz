@@ -246,8 +246,15 @@ function removeGuestBanner() {
 }
 
 // ─── Гостевой профиль ────────────────────────────────────────
-function renderGuestProfile() {
+function showProfContent() {
   document.getElementById('prof-card-loading')?.remove();
+  document.getElementById('prof-content-loading')?.remove();
+  const rc = document.getElementById('prof-real-content');
+  if (rc) rc.style.display = '';
+}
+
+function renderGuestProfile() {
+  showProfContent();
   const av = document.getElementById('sb-av');
   if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   const nm = document.getElementById('sb-uname');
@@ -2463,7 +2470,7 @@ function updateSupportBadgeUI(count) {
 
 // ─── Профиль ─────────────────────────────────────────────────
 function renderProfile() {
-  document.getElementById('prof-card-loading')?.remove();
+  showProfContent();
   const name = UD?.displayName || CU.displayName || '';
   const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   const phone = UD?.phone || phoneFromPseudoEmail(CU.email);
@@ -2607,68 +2614,4 @@ function updateBookingTimer() {
 
   const m  = Math.floor(left / 60000);
   const s  = Math.floor((left % 60000) / 1000);
-  const el = document.getElementById('bk-timer-val');
-  if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
-
-  const total = 10 * 60 * 1000;
-  const pct   = Math.max(0, Math.min(100, (left / total) * 100));
-  const bar   = document.getElementById('bk-timer-bar');
-  if (bar) {
-    bar.style.width      = pct + '%';
-    bar.style.background = pct > 40 ? 'var(--acc)' : pct > 15 ? 'var(--amber)' : 'var(--red)';
-  }
-  if (el) el.style.color = left < 60000 ? 'var(--red)' : left < 180000 ? 'var(--amber)' : 'var(--acc)';
-}
-
-/** Вызывается, когда 10 минут истекли */
-async function expireBooking() {
-  if (_bookingOid) {
-    try {
-      await updateDoc(doc(db, 'orders', _bookingOid), {
-        status:        'cancelled',
-        paymentStatus: 'expired',
-        cancelReason:  'Вақти пардохт гузашт',
-        updatedAt:     serverTimestamp(),
-      });
-      await loadOrders();
-    } catch(e) { console.error('expireBooking:', e); }
-  }
-  const valEl = document.getElementById('bk-timer-val');
-  if (valEl) { valEl.textContent = '0:00'; valEl.style.color = 'var(--red)'; }
-  const barEl = document.getElementById('bk-timer-bar');
-  if (barEl) { barEl.style.width = '0%'; barEl.style.background = 'var(--red)'; }
-  const expEl = document.getElementById('bk-expired');
-  if (expEl) expEl.style.display = 'block';
-  document.querySelectorAll('.bk-pay-btn').forEach(b => { b.disabled = true; });
-  const cancelBtn = document.getElementById('bk-cancel-btn');
-  if (cancelBtn) cancelBtn.style.display = 'none';
-}
-
-/** Нажатие «Оплатить картой» → переход на payment.html */
-window.goToCardPayment = function() {
-  if (!_bookingOid) { toast('Хато: Фармоиш ёфт нашуд', 'err'); return; }
-  stopBookingTimer();
-  location.href = 'payment.html?oid=' + _bookingOid;
-};
-
-/** Нажатие «Отменить» на странице бронирования */
-window.cancelBooking = async function() {
-  if (!confirm('Фармоишро бекор кунем?')) return;
-  stopBookingTimer();
-  if (_bookingOid) {
-    try {
-      await updateDoc(doc(db, 'orders', _bookingOid), {
-        status:        'cancelled',
-        paymentStatus: 'cancelled',
-        cancelReason:  'Бекор аз тарафи корбар',
-        updatedAt:     serverTimestamp(),
-      });
-      await loadOrders();
-    } catch(e) { console.error(e); }
-  }
-  _bookingOid      = null;
-  _bookingOrder    = null;
-  _bookingDeadline = null;
-  toast('Фармоиш бекор шуд');
-  goPage('home');
-};
+  const el = document.getElementById('bk-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
