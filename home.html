@@ -448,12 +448,13 @@ select.addr-inp{cursor:pointer}
 .store-card-placeholder svg{opacity:.2}
 .store-card-placeholder span{font-size:.6rem;opacity:.4}
 .store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-/* ── Unavailable overlay ── */
-.store-card-unav{position:absolute;inset:0;z-index:3;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;border-radius:inherit}
-.store-card-unav span{color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.4);padding:5px 13px;border-radius:8px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(4px)}
-.store-card-unav-dim{pointer-events:none!important;cursor:default!important}
-.store-card-unav-dim:hover{transform:none!important;box-shadow:var(--shadow)!important;border-color:var(--b0)!important}
-.store-card-unav-dim .store-card-img{transform:none!important;filter:grayscale(.7) brightness(.8)}
+/* ─── Store: недоступный магазин ─────────────────────────────── */
+.store-card-restricted{cursor:not-allowed!important}
+.store-card-restricted:hover{transform:none!important;box-shadow:var(--shadow)!important;border-color:var(--b0)!important}
+.store-card-restricted .store-card-img{filter:grayscale(55%)}
+.store-card-restricted .store-card-placeholder{opacity:.5}
+.store-unavail-overlay{position:absolute;inset:0;background:rgba(0,0,0,.58);border-radius:inherit;display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.store-unavail-overlay span{color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(0,0,0,.32);padding:5px 13px;border-radius:99px;border:1px solid rgba(255,255,255,.22);white-space:nowrap}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
@@ -1738,18 +1739,56 @@ window.__openGenCat=function(slug){
   // TODO: в будущем откроет магазины по категории
 };
 
-(async()=>{
-  try{
-    const q=query(collection(_db,'generalCatalogs'),orderBy('order','asc'));
-    const snap=await getDocs(q);
-    if(snap.empty){
-      renderGenCats(GC_DEFAULTS.map((c,i)=>({...c,order:i,active:true})));
-    }else{
-      renderGenCats(snap.docs.map(d=>({id:d.id,...d.data()})));
+// ── Оверлей «Недоступен» для ограниченных магазинов ──────────
+window._storeRestrictMap = null;
+
+function _applyStoreOverlays() {
+  if (!window._storeRestrictMap) return;
+  document.querySelectorAll('#stores-grid .store-card:not(.store-card-restricted)').forEach(card => {
+    const m = card.getAttribute('onclick')?.match(/openStore\('(.+?)'\)/);
+    if (!m) return;
+    if (window._storeRestrictMap[m[1]]) {
+      card.classList.add('store-card-restricted');
+      card.setAttribute('onclick', '');
+      const ov = document.createElement('div');
+      ov.className = 'store-unavail-overlay';
+      ov.innerHTML = '<span>Недоступен</span>';
+      card.appendChild(ov);
     }
-  }catch(e){
-    console.error('GenCats:',e);
-    renderGenCats(GC_DEFAULTS.map((c,i)=>({...c,order:i,active:true})));
+  });
+}
+
+// Следим за заполнением stores-grid (renderStoresGrid может отработать позже)
+const _sgEl = document.getElementById('stores-grid');
+if (_sgEl) new MutationObserver(_applyStoreOverlays).observe(_sgEl, { childList: true });
+
+(async () => {
+  try {
+    const [gcSnap, srSnap] = await Promise.allSettled([
+      getDocs(query(collection(_db, 'generalCatalogs'), orderBy('order', 'asc'))),
+      getDocs(collection(_db, 'stores')),
+    ]);
+
+    // generalCatalogs
+    if (gcSnap.status === 'fulfilled') {
+      const snap = gcSnap.value;
+      if (snap.empty) renderGenCats(GC_DEFAULTS.map((c, i) => ({ ...c, order: i, active: true })));
+      else renderGenCats(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } else {
+      renderGenCats(GC_DEFAULTS.map((c, i) => ({ ...c, order: i, active: true })));
+    }
+
+    // stores — строим карту restricted
+    if (srSnap.status === 'fulfilled') {
+      window._storeRestrictMap = {};
+      srSnap.value.docs.forEach(d => {
+        window._storeRestrictMap[d.id] = d.data().restricted === true;
+      });
+      _applyStoreOverlays(); // применяем сразу, если карточки уже в DOM
+    }
+  } catch (e) {
+    console.error('HomeModule:', e);
+    renderGenCats(GC_DEFAULTS.map((c, i) => ({ ...c, order: i, active: true })));
   }
 })();
 </script>
