@@ -37,6 +37,8 @@ let currentOTab   = 'all';
 let homeSearchQ   = '';
 let activeStore   = null;  // текущий открытый магазин
 let storeCatFilter = 'all'; // фильтр категорий внутри магазина
+let jsonMenuData  = null;  // данные из .json каталога партнёра
+let jsonProdsMap  = {};    // pid → product для addToCart/openProdModal
 
 const DFEE = 7; // стоимость доставки
 
@@ -472,12 +474,43 @@ function renderStoresGrid() {
   }).join('');
 }
 
-window.openStore = function (sid) {
+window.openStore = async function (sid) {
   activeStore     = stores.find(s => s.id === sid);
   storeCatFilter  = 'all';
+  jsonMenuData    = null;
+  jsonProdsMap    = {};
   if (!activeStore) return;
   goPage('store');
+  if (activeStore.menuUrl) await loadJsonMenu(activeStore.menuUrl);
 };
+
+// ─── Загрузка JSON-каталога партнёра ──────────────────────────
+async function loadJsonMenu(url) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const raw = await resp.json();
+    // Поддерживаем два формата: массив или {categories, products/items}
+    if (Array.isArray(raw)) {
+      jsonMenuData = { categories: [], products: raw };
+    } else {
+      jsonMenuData = {
+        categories: raw.categories || [],
+        products:   raw.products   || raw.items || [],
+      };
+    }
+  } catch (e) {
+    console.error('JSON menu:', e);
+    jsonMenuData = { categories: [], products: [], error: e.message };
+  }
+  // Регистрируем товары для поиска через addToCart / openProdModal
+  jsonProdsMap = {};
+  (jsonMenuData.products || []).forEach(p => {
+    if (p.id) jsonProdsMap[p.id] = { ...p, storeId: activeStore?.id };
+  });
+  renderStoreCatPills();
+  renderStoreProds();
+}
 
 window.filterStoreCat = function (id) {
   storeCatFilter = id;
@@ -519,6 +552,18 @@ function getStoreCats() {
 function renderStoreCatPills() {
   const el = document.getElementById('store-cats');
   if (!el) return;
+
+  // JSON-режим: категории из .json файла
+  if (jsonMenuData) {
+    const jcats = jsonMenuData.categories || [];
+    el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Ҳама</button>`
+      + jcats.map(c =>
+          `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+        ).join('');
+    return;
+  }
+
+  // Обычный режим: категории из Firestore
   const storeCats = getStoreCats();
   el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Ҳама</button>`
     + storeCats.map(c =>
@@ -529,6 +574,48 @@ function renderStoreCatPills() {
 function renderStoreProds() {
   const el = document.getElementById('store-prods');
   if (!el || !activeStore) return;
+
+  // JSON-режим: скелетон пока идёт загрузка
+  if (activeStore.menuUrl && jsonMenuData === null) {
+    el.innerHTML = Array(6).fill(0).map(() =>
+      `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
+        <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
+        <div class="skl-block" style="height:10px;width:80%"></div>
+        <div class="skl-block" style="height:7px;width:40%;margin-top:4px"></div>
+        <div class="pc-footer" style="border-top:1px solid var(--b0);padding-top:9px;margin-top:auto">
+          <div class="skl-block" style="height:13px;width:45%"></div>
+          <div class="skl-block" style="height:26px;width:26px;border-radius:8px"></div>
+        </div>
+      </div></div>`
+    ).join('');
+    return;
+  }
+
+  // JSON-режим: показываем товары из .json
+  if (jsonMenuData) {
+    if (jsonMenuData.error && !jsonMenuData.products?.length) {
+      el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
+        <span class="store-cat-empty-ico">⚠️</span>
+        <div class="store-cat-empty-t">Хатогӣ ҳангоми боргирӣ</div>
+        <div class="store-cat-empty-s">${jsonMenuData.error}</div>
+      </div>`;
+      return;
+    }
+    let list = jsonMenuData.products || [];
+    if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
+    if (!list.length) {
+      el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
+        <span class="store-cat-empty-ico">📦</span>
+        <div class="store-cat-empty-t">Маҳсулот ёфт нашуд</div>
+        <div class="store-cat-empty-s">Дар ин категория маҳсулот нест</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = list.map(p => renderPC({ ...p, storeId: activeStore.id })).join('');
+    return;
+  }
+
+  // Обычный режим: товары из Firestore
   let list = prods.filter(p => p.storeId === activeStore.id);
   if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
   if (!list.length) {
@@ -584,7 +671,7 @@ function renderPC(p) {
 
 // ─── Модалка карточки товара ──────────────────────────────────
 window.openProdModal = function (pid) {
-  const p = prods.find(x => x.id === pid);
+  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
   if (!p) return;
   renderProdModal(p);
   document.getElementById('prod-modal-bg').classList.add('open');
@@ -908,7 +995,7 @@ async function loadCart() {
 
 window.addToCart = async function (pid) {
   if (!requireAuth('Барои илова кардан ба сабад ворид шавед')) return;
-  const p = prods.find(x => x.id === pid);
+  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
   if (!p || !CU) return;
   const cr = doc(db, 'users', CU.uid, 'cart', p.id);
   const ex = cart.find(c => c.productId === p.id);
