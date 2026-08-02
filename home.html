@@ -470,6 +470,69 @@ select.addr-inp{cursor:pointer}
 .store-unavail-overlay span{color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(0,0,0,.32);padding:5px 13px;border-radius:99px;border:1px solid rgba(255,255,255,.22);white-space:nowrap}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+/* ══════════════════════════════════════════
+   WALLET BOTTOM SHEET
+══════════════════════════════════════════ */
+.wlt-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+.wlt-overlay.open{opacity:1;pointer-events:all}
+.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:#f0f2f1;border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform}
+.wlt-sheet.open{transform:translateY(0)}
+.wlt-handle-wrap{display:flex;justify-content:center;padding:10px 0 4px;cursor:grab;flex-shrink:0}
+.wlt-handle{width:36px;height:4px;border-radius:99px;background:rgba(0,0,0,.13)}
+.wlt-top{display:flex;align-items:center;gap:8px;padding:6px 18px 10px}
+.wlt-av{width:44px;height:44px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:.72rem;font-weight:700;overflow:hidden;flex-shrink:0}
+.wlt-av img{width:100%;height:100%;object-fit:cover}
+.wlt-icon-btn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#111;transition:background .13s;flex-shrink:0}
+.wlt-icon-btn:active{background:rgba(0,0,0,.13)}
+.wlt-bal-section{padding:4px 22px 26px}
+.wlt-bal-label{font-size:.68rem;color:rgba(0,0,0,.38);margin-bottom:8px;font-weight:500}
+.wlt-bal-wrap{display:flex;align-items:flex-end;gap:8px;margin-bottom:16px;line-height:1}
+.wlt-bal-num{font-family:var(--fd);font-weight:900;font-size:2.85rem;color:#0a0a0a;letter-spacing:-.03em}
+.wlt-bal-cents{font-size:1.6rem}
+.wlt-bal-cur{font-size:1.05rem;font-weight:600;color:rgba(0,0,0,.28);margin-bottom:4px;letter-spacing:.02em}
+.wlt-acc-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.07);border:none;border-radius:99px;padding:7px 14px;font-size:.72rem;font-weight:600;font-family:var(--fs);color:#0a0a0a;cursor:pointer;transition:background .13s}
+.wlt-acc-btn:active{background:rgba(0,0,0,.12)}
+.wlt-actions{display:flex;gap:4px;justify-content:center;padding:0 16px 26px}
+.wlt-act{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.wlt-act-ico{width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;color:#111;transition:transform .12s,background .12s}
+.wlt-act:active .wlt-act-ico{transform:scale(.88);background:rgba(0,0,0,.12)}
+.wlt-act-ico--prim{background:#111;color:#fff}
+.wlt-act:active .wlt-act-ico--prim{background:#2a2a2a}
+.wlt-act-lbl{font-size:.64rem;color:rgba(0,0,0,.5);font-weight:500;text-align:center;white-space:nowrap}
+.wlt-txs-panel{background:#fff;border-radius:20px 20px 0 0;min-height:260px}
+.wlt-txs-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}
+.wlt-txs-ttl{font-size:.88rem;font-weight:700;color:#0a0a0a}
+.wlt-see-all{background:none;border:none;font-size:.7rem;color:rgba(0,0,0,.35);cursor:pointer;font-family:var(--fs);padding:4px}
+.wlt-tx-item{display:flex;align-items:center;gap:14px;padding:13px 20px}
+.wlt-tx-item+.wlt-tx-item{border-top:1px solid rgba(0,0,0,.05)}
+.wlt-tx-ico{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
+.wlt-tx-body{flex:1;min-width:0}
+.wlt-tx-name{font-size:.78rem;font-weight:600;color:#0a0a0a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wlt-tx-sub{font-size:.6rem;color:rgba(0,0,0,.35)}
+.wlt-tx-right{text-align:right;flex-shrink:0}
+.wlt-tx-amt{font-size:.8rem;font-weight:600;color:#0a0a0a;margin-bottom:1px}
+.wlt-tx-amt.pos{color:#16a34a}
+.wlt-tx-acc{font-size:.57rem;color:rgba(0,0,0,.3)}
+.wlt-tx-empty{text-align:center;padding:40px 20px;font-size:.76rem;color:rgba(0,0,0,.28)}
+.wlt-tx-skl{padding:13px 20px;display:flex;align-items:center;gap:14px}
+.wlt-tx-skl-ico{width:44px;height:44px;border-radius:50%;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0}
+.wlt-tx-skl-body{flex:1;display:flex;flex-direction:column;gap:7px}
+.wlt-tx-skl-n{height:10px;width:50%;border-radius:6px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.wlt-tx-skl-s{height:7px;width:34%;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.wlt-tup-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .22s}
+.wlt-tup-overlay.open{opacity:1;pointer-events:all}
+.wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:#fff;border-radius:20px 20px 0 0;padding:22px 20px calc(var(--safe-b) + 24px);transform:translateY(100%);transition:transform .3s var(--ease)}
+.wlt-tup-sheet.open{transform:translateY(0)}
+.wlt-tup-title{font-size:.96rem;font-weight:700;color:#0a0a0a;margin-bottom:20px}
+.wlt-tup-lbl{font-size:.6rem;font-weight:700;color:rgba(0,0,0,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.wlt-tup-inp{width:100%;background:rgba(0,0,0,.05);border:1.5px solid transparent;border-radius:12px;padding:13px 14px;font-size:.9rem;font-family:var(--fs);color:#0a0a0a;outline:none;margin-bottom:14px;transition:border-color .13s,background .13s;-webkit-appearance:none}
+.wlt-tup-inp:focus{border-color:var(--acc);background:#fff}
+.wlt-tup-actions{display:flex;gap:10px;margin-top:4px}
+.wlt-tup-cancel{flex:1;padding:13px;background:rgba(0,0,0,.06);border:none;border-radius:12px;font-size:.78rem;font-weight:600;font-family:var(--fs);color:var(--tx);cursor:pointer}
+.wlt-tup-confirm{flex:2;padding:13px;background:#111;border:none;border-radius:12px;font-size:.8rem;font-weight:700;font-family:var(--fs);color:#fff;cursor:pointer;transition:background .13s}
+.wlt-tup-confirm:active{background:#2a2a2a}
+.wlt-tup-confirm:disabled{opacity:.5;cursor:default}
+
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
 .gen-cats-section{margin-bottom:10px}
 .gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:2px 22px 8px}
@@ -1481,7 +1544,7 @@ select.addr-inp{cursor:pointer}
         <!-- ── Кошелек ────────────────────────────────────── -->
         <div class="prof-section-lbl">Кошелек</div>
         <div class="prof-wallet-card">
-          <button class="prof-wallet-inner" onclick="/* TODO: wallet page */" title="Кошелек — зуд омада истода аст">
+          <button class="prof-wallet-inner" onclick="openWallet()" title="Кошелек — зуд омада истода аст">
             <div class="prof-wallet-icon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
             </div>
@@ -2187,6 +2250,85 @@ window.submitPartnerForm = async function() {
   });
 })();
 </script>
+
+
+<!-- ══ WALLET BOTTOM SHEET ══════════════════════════════════ -->
+<div class="wlt-overlay" id="wlt-overlay" onclick="closeWallet()"></div>
+<div class="wlt-sheet" id="wlt-sheet">
+  <div class="wlt-handle-wrap" id="wlt-drag-handle"><div class="wlt-handle"></div></div>
+  <div class="wlt-top">
+    <div class="wlt-av" id="wlt-av">?</div>
+    <div style="flex:1"></div>
+    <button class="wlt-icon-btn" title="Ҷустуҷӯ">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button class="wlt-icon-btn" title="Огоҳӣ">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+  </div>
+  <div class="wlt-bal-section">
+    <div class="wlt-bal-label">Шахсӣ · Ҳама ҳисобҳо</div>
+    <div class="wlt-bal-wrap">
+      <div class="wlt-bal-num" id="wlt-bal-num">0<span class="wlt-bal-cents" id="wlt-bal-cents">.00</span></div>
+      <div class="wlt-bal-cur">см</div>
+    </div>
+    <button class="wlt-acc-btn">
+      Ҳисобҳо
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+  <div class="wlt-actions">
+    <div class="wlt-act" onclick="openTopUp()">
+      <div class="wlt-act-ico wlt-act-ico--prim">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <div class="wlt-act-lbl">Пополнить</div>
+    </div>
+    <div class="wlt-act">
+      <div class="wlt-act-ico">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4 4 4M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+      </div>
+      <div class="wlt-act-lbl">Перевод</div>
+    </div>
+    <div class="wlt-act">
+      <div class="wlt-act-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+      <div class="wlt-act-lbl">Платить</div>
+    </div>
+    <div class="wlt-act">
+      <div class="wlt-act-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/><circle cx="5" cy="12" r="1.2"/></svg>
+      </div>
+      <div class="wlt-act-lbl">Ещё</div>
+    </div>
+  </div>
+  <div class="wlt-txs-panel">
+    <div class="wlt-txs-head">
+      <div class="wlt-txs-ttl" id="wlt-txs-ttl">Имрӯз</div>
+      <button class="wlt-see-all" onclick="loadAllWalletTxs()">Ҳама</button>
+    </div>
+    <div id="wlt-txs-list">
+      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
+      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
+      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOP-UP SHEET ══════════════════════════════════════════ -->
+<div class="wlt-tup-overlay" id="wlt-tup-overlay" onclick="closeTopUp()"></div>
+<div class="wlt-tup-sheet" id="wlt-tup-sheet">
+  <div class="wlt-tup-title">Пополнить кошелек</div>
+  <div class="wlt-tup-lbl">Сумма (сомонӣ)</div>
+  <input class="wlt-tup-inp" id="wlt-tup-amt" type="number" min="1" step="0.01" placeholder="0.00" inputmode="decimal" autocomplete="off">
+  <div class="wlt-tup-lbl">Тавсиф (ихтиёрӣ)</div>
+  <input class="wlt-tup-inp" id="wlt-tup-desc" type="text" placeholder="Масалан: пополнение карты" autocomplete="off">
+  <div class="wlt-tup-actions">
+    <button class="wlt-tup-cancel" onclick="closeTopUp()">Бекор кардан</button>
+    <button class="wlt-tup-confirm" id="wlt-tup-confirm" onclick="doTopUp()">Пополнить</button>
+  </div>
+</div>
 
 </body>
 </html>

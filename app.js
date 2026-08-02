@@ -326,9 +326,9 @@ async function loadUD() {
     const s = await getDoc(doc(db, 'users', CU.uid));
     UD = s.exists()
       ? s.data()
-      : { displayName: CU.displayName || '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+      : { displayName: CU.displayName || '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '', walletBalance: 0 };
   } catch {
-    UD = { displayName: '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+    UD = { displayName: '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '', walletBalance: 0 };
   }
 }
 
@@ -2607,6 +2607,12 @@ function renderProfile() {
       pfc.style.display = 'none';
     }
   }
+  // Wallet balance badge on profile card
+  const profBal = document.querySelector('.prof-wallet-bal');
+  if (profBal) {
+    const { whole, cents } = _fmtBal(UD?.walletBalance || 0);
+    profBal.textContent = whole + '.' + cents + ' см';
+  }
 }
 
 window.saveProfile = async function () {
@@ -2796,3 +2802,202 @@ window.cancelBooking = async function() {
   toast('Фармоиш бекор шуд');
   goPage('home');
 };
+
+// ══════════════════════════════════════════════════════════════
+//  WALLET — кошелёк пользователя
+//  Firestore: users/{uid}.walletBalance  +  users/{uid}/walletTransactions/
+// ══════════════════════════════════════════════════════════════
+
+let _wltTxs = [];
+
+/* ── helpers ── */
+function _fmtBal(n) {
+  const v = Number(n) || 0;
+  const whole = Math.floor(v);
+  const cents = Math.round((v - whole) * 100);
+  return { whole: whole.toLocaleString('ru-RU'), cents: cents.toString().padStart(2, '0') };
+}
+
+function _renderWltBal(n) {
+  const { whole, cents } = _fmtBal(n);
+  const el = document.getElementById('wlt-bal-num');
+  if (el) el.innerHTML = whole + '<span class="wlt-bal-cents">.' + cents + '</span>';
+}
+
+/* ── open / close ── */
+window.openWallet = async function () {
+  if (!requireAuth('Барои кошелек ворид шавед')) return;
+  // Set avatar in sheet
+  const av = document.getElementById('wlt-av');
+  if (av) {
+    const name = UD?.displayName || '';
+    const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+    av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+  }
+  // Optimistically show cached balance
+  _renderWltBal(UD?.walletBalance || 0);
+  // Open sheet
+  document.getElementById('wlt-overlay')?.classList.add('open');
+  document.getElementById('wlt-sheet')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Restore skeleton
+  const list = document.getElementById('wlt-txs-list');
+  if (list) list.innerHTML = `
+    <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
+    <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
+    <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>`;
+  await _loadWalletData(false);
+  _initWltSwipe();
+};
+
+window.closeWallet = function () {
+  document.getElementById('wlt-overlay')?.classList.remove('open');
+  document.getElementById('wlt-sheet')?.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+/* ── load data ── */
+async function _loadWalletData(all) {
+  if (!CU) return;
+  try {
+    // Fetch fresh balance
+    const snap = await getDoc(doc(db, 'users', CU.uid));
+    const bal = snap.exists() ? (snap.data().walletBalance || 0) : 0;
+    if (UD) UD.walletBalance = bal;
+    _renderWltBal(bal);
+    // Update profile card badge
+    const profBal = document.querySelector('.prof-wallet-bal');
+    if (profBal) profBal.textContent = _fmtBal(bal).whole + '.' + _fmtBal(bal).cents + ' см';
+
+    // Fetch transactions
+    let q;
+    const col = collection(db, 'users', CU.uid, 'walletTransactions');
+    if (all) {
+      q = query(col, orderBy('createdAt', 'desc'), limit(60));
+    } else {
+      // today
+      const tod = new Date(); tod.setHours(0, 0, 0, 0);
+      q = query(col, where('createdAt', '>=', tod), orderBy('createdAt', 'desc'), limit(30));
+    }
+    const txSnap = await getDocs(q);
+    _wltTxs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const ttl = document.getElementById('wlt-txs-ttl');
+    if (ttl) ttl.textContent = all ? 'Таърих' : 'Имрӯз';
+    _renderWltTxs();
+  } catch (e) { console.error('WalletLoad:', e); }
+}
+
+window.loadAllWalletTxs = async function () {
+  const list = document.getElementById('wlt-txs-list');
+  if (list) list.innerHTML = `<div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>`;
+  await _loadWalletData(true);
+};
+
+function _renderWltTxs() {
+  const list = document.getElementById('wlt-txs-list');
+  if (!list) return;
+  if (!_wltTxs.length) {
+    list.innerHTML = '<div class="wlt-tx-empty">Транзакцияҳо нестанд</div>';
+    return;
+  }
+  const icons = { topup: '💳', spend: '🛒', refund: '↩️', transfer: '↗️', order: '🛍️' };
+  const cats  = { topup: 'Пополнение', spend: 'Расход', refund: 'Возврат', transfer: 'Перевод', order: 'Заказ' };
+  list.innerHTML = _wltTxs.map(tx => {
+    const pos = tx.amount > 0;
+    const sign = pos ? '+' : '';
+    const { whole, cents } = _fmtBal(Math.abs(tx.amount));
+    const amt = sign + whole + '.' + cents + ' см';
+    const ico = icons[tx.type] || '💱';
+    const cat = cats[tx.type] || tx.type || '—';
+    const date = tx.createdAt?.toDate?.();
+    const time = date ? date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '—';
+    return `<div class="wlt-tx-item">
+      <div class="wlt-tx-ico">${ico}</div>
+      <div class="wlt-tx-body">
+        <div class="wlt-tx-name">${escHtml(tx.description || cat)}</div>
+        <div class="wlt-tx-sub">${cat} · ${time}</div>
+      </div>
+      <div class="wlt-tx-right">
+        <div class="wlt-tx-amt${pos ? ' pos' : ''}">${amt}</div>
+        <div class="wlt-tx-acc">Кошелек</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── top-up ── */
+window.openTopUp = function () {
+  const ia = document.getElementById('wlt-tup-amt');
+  const id = document.getElementById('wlt-tup-desc');
+  if (ia) ia.value = '';
+  if (id) id.value = '';
+  document.getElementById('wlt-tup-overlay')?.classList.add('open');
+  document.getElementById('wlt-tup-sheet')?.classList.add('open');
+  setTimeout(() => document.getElementById('wlt-tup-amt')?.focus(), 320);
+};
+
+window.closeTopUp = function () {
+  document.getElementById('wlt-tup-overlay')?.classList.remove('open');
+  document.getElementById('wlt-tup-sheet')?.classList.remove('open');
+};
+
+window.doTopUp = async function () {
+  if (!CU) return;
+  const amtVal = parseFloat(document.getElementById('wlt-tup-amt')?.value);
+  if (!amtVal || amtVal <= 0 || isNaN(amtVal)) { toast('Суммаро дуруст нависед', 'warn'); return; }
+  const desc = document.getElementById('wlt-tup-desc')?.value.trim() || 'Пополнение кошелька';
+  const btn  = document.getElementById('wlt-tup-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const b = writeBatch(db);
+    // atomic balance increment
+    b.update(doc(db, 'users', CU.uid), {
+      walletBalance: increment(amtVal),
+      updatedAt: serverTimestamp(),
+    });
+    // transaction record
+    b.set(doc(collection(db, 'users', CU.uid, 'walletTransactions')), {
+      amount: amtVal,
+      type: 'topup',
+      description: desc,
+      createdAt: serverTimestamp(),
+    });
+    await b.commit();
+    closeTopUp();
+    const { whole, cents } = _fmtBal(amtVal);
+    toast('+' + whole + '.' + cents + ' см — кошелек пополнен', 'ok');
+    await _loadWalletData(false);
+  } catch (e) {
+    console.error('TopUp:', e);
+    toast('Хатои пополнение', 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Пополнить'; }
+  }
+};
+
+/* ── swipe-to-close ── */
+let _wltSwiped = false;
+function _initWltSwipe() {
+  if (_wltSwiped) return;
+  _wltSwiped = true;
+  const sheet = document.getElementById('wlt-sheet');
+  const handle = document.getElementById('wlt-drag-handle');
+  if (!sheet) return;
+  let sy = 0, cy = 0, active = false;
+  sheet.addEventListener('touchstart', e => {
+    if (sheet.scrollTop > 2 && !handle?.contains(e.target)) return;
+    sy = e.touches[0].clientY; active = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (!active) return;
+    cy = e.touches[0].clientY;
+    const d = Math.max(0, cy - sy);
+    sheet.style.transform = `translateY(${d}px)`;
+  }, { passive: true });
+  sheet.addEventListener('touchend', () => {
+    if (!active) return; active = false;
+    sheet.style.transition = '';
+    if (cy - sy > 110) { closeWallet(); } else { sheet.style.transform = ''; }
+  });
+}
