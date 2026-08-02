@@ -37,8 +37,8 @@ let currentOTab   = 'all';
 let homeSearchQ   = '';
 let activeStore   = null;  // текущий открытый магазин
 let storeCatFilter = 'all'; // фильтр категорий внутри магазина
-let jsonMenuData  = null;  // данные из .json каталога партнёра
-let jsonProdsMap  = {};    // pid → product для addToCart/openProdModal
+let jsonMenuData  = null;
+let jsonProdsMap  = {};
 let deliveryService = 'dastdaroz'; // 'dastdaroz' | 'mavsimi'
 
 const DFEE = 7; // стоимость доставки
@@ -1463,11 +1463,11 @@ window.doCheckout = async function () {
       lng:            lng,
       comment:        document.getElementById('cart-comment')?.value.trim() || '',
       paymentMethod:  payMethod,
-      deliveryService: deliveryService,   // 'dastdaroz' | 'mavsimi'
+      deliveryService: deliveryService,
       // ── статус бронирования ────────────────────────────────
-      status:         'awaiting_payment',
-      paymentStatus:  'pending',
-      reservedUntil:  reservedUntil,
+      status:         'awaiting_payment',  // ждём оплату 10 мин
+      paymentStatus:  'pending',           // ещё не оплачен
+      reservedUntil:  reservedUntil,       // Timestamp дедлайна
       // ───────────────────────────────────────────────────────
       courierId:      null,
       courierName:    null,
@@ -1478,19 +1478,14 @@ window.doCheckout = async function () {
     const oid = ref.id;
     activeOid = oid;
 
-    // Если выбрана Мавсими Расон — отправляем в их очередь
     if (deliveryService === 'mavsimi') {
       submitToMavsimi({
-        orderId:     oid,
-        orderNumber: oNum,
-        clientName:  UD?.displayName || '',
-        clientPhone: UD?.phone || '',
-        items:       cart.map(c => ({ name: c.name, price: c.price, quantity: c.quantity })),
-        subtotal:    sub,
-        deliveryFee: DFEE,
-        total:       sub + DFEE,
-        address:     addr, lat, lng,
-        comment:     document.getElementById('cart-comment')?.value.trim() || '',
+        orderId: oid, orderNumber: oNum,
+        clientName: UD?.displayName || '', clientPhone: UD?.phone || '',
+        items: cart.map(c => ({ name: c.name, price: c.price, quantity: c.quantity })),
+        subtotal: sub, deliveryFee: DFEE, total: sub + DFEE,
+        address: addr, lat, lng,
+        comment: document.getElementById('cart-comment')?.value.trim() || '',
         paymentMethod: payMethod,
       }).catch(e => console.warn('[Mavsimi]', e));
     }
@@ -1532,16 +1527,11 @@ window.doCheckout = async function () {
   }
 };
 
-// ─── Мавсими Расон — интеграция (заглушка, подключить позже) ──
-// Данные заказа уже хранятся в 'orders' с deliveryService:'mavsimi'.
-// Здесь дублируем в коллекцию 'mavsimiQueue' для будущей синхронизации
-// с их базой данных / API.
+// ─── Мавсими Расон — заглушка (подключить позже) ─────────────
 async function submitToMavsimi(data) {
+  // TODO: когда получим реквизиты их Firebase/API — заполнить здесь
   await addDoc(collection(db, 'mavsimiQueue'), {
-    ...data,
-    synced:   false,   // флаг: false = ещё не передан в их систему
-    queuedAt: serverTimestamp(),
-    // TODO: когда получим ссылку на их Firebase/API — синхронизировать здесь
+    ...data, synced: false, queuedAt: serverTimestamp(),
   });
 }
 
