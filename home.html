@@ -475,50 +475,54 @@ select.addr-inp{cursor:pointer}
 ══════════════════════════════════════════ */
 .wlt-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
 .wlt-overlay.open{opacity:1;pointer-events:all}
-.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:#f0f2f1;border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform}
+.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--s1);border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform}
 .wlt-sheet.open{transform:translateY(0)}
-.wlt-handle-wrap{display:flex;justify-content:center;padding:10px 0 4px;cursor:grab;flex-shrink:0}
-.wlt-handle{width:36px;height:4px;border-radius:99px;background:rgba(0,0,0,.13)}
-.wlt-top{display:flex;align-items:center;gap:8px;padding:6px 18px 10px}
-.wlt-av{width:44px;height:44px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:.72rem;font-weight:700;overflow:hidden;flex-shrink:0}
+/* ── Зелёная шапка ─────────────────────────────────────────── */
+.wlt-header{background:linear-gradient(150deg,#1a9e4a 0%,#0d7a36 100%);border-radius:22px 22px 0 0;padding-bottom:8px}
+.wlt-handle-wrap{display:flex;justify-content:center;padding:10px 0 4px;cursor:grab;flex-shrink:0;touch-action:none}
+.wlt-handle{width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,.32)}
+.wlt-top{display:flex;align-items:center;gap:8px;padding:6px 18px 12px}
+.wlt-av{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:.72rem;font-weight:700;overflow:hidden;flex-shrink:0}
 .wlt-av img{width:100%;height:100%;object-fit:cover}
-.wlt-icon-btn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#111;transition:background .13s;flex-shrink:0}
-.wlt-icon-btn:active{background:rgba(0,0,0,.13)}
-.wlt-bal-section{padding:4px 22px 26px}
-.wlt-bal-label{font-size:.68rem;color:rgba(0,0,0,.38);margin-bottom:8px;font-weight:500}
+.wlt-icon-btn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;transition:background .13s;flex-shrink:0}
+.wlt-icon-btn:active{background:rgba(255,255,255,.3)}
+.wlt-bal-section{padding:4px 22px 28px}
+.wlt-bal-label{font-size:.68rem;color:rgba(255,255,255,.62);margin-bottom:8px;font-weight:500}
 .wlt-bal-wrap{display:flex;align-items:flex-end;gap:8px;margin-bottom:16px;line-height:1}
-.wlt-bal-num{font-family:var(--fd);font-weight:900;font-size:2.85rem;color:#0a0a0a;letter-spacing:-.03em}
+.wlt-bal-num{font-family:var(--fd);font-weight:900;font-size:2.85rem;color:#fff;letter-spacing:-.03em}
 .wlt-bal-cents{font-size:1.6rem}
-.wlt-bal-cur{font-size:1.05rem;font-weight:600;color:rgba(0,0,0,.28);margin-bottom:4px;letter-spacing:.02em}
-.wlt-acc-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.07);border:none;border-radius:99px;padding:7px 14px;font-size:.72rem;font-weight:600;font-family:var(--fs);color:#0a0a0a;cursor:pointer;transition:background .13s}
-.wlt-acc-btn:active{background:rgba(0,0,0,.12)}
-.wlt-actions{display:flex;gap:4px;justify-content:center;padding:0 16px 26px}
+.wlt-bal-cur{font-size:1.05rem;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:4px;letter-spacing:.02em}
+.wlt-acc-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:7px 14px;font-size:.72rem;font-weight:600;font-family:var(--fs);color:#fff;cursor:pointer;transition:background .13s}
+.wlt-acc-btn:active{background:rgba(255,255,255,.3)}
+/* ── Кнопки действий ───────────────────────────────────────── */
+.wlt-actions{display:flex;gap:4px;justify-content:center;padding:20px 16px 22px}
 .wlt-act{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
-.wlt-act-ico{width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;color:#111;transition:transform .12s,background .12s}
-.wlt-act:active .wlt-act-ico{transform:scale(.88);background:rgba(0,0,0,.12)}
-.wlt-act-ico--prim{background:#111;color:#fff}
-.wlt-act:active .wlt-act-ico--prim{background:#2a2a2a}
-.wlt-act-lbl{font-size:.64rem;color:rgba(0,0,0,.5);font-weight:500;text-align:center;white-space:nowrap}
-.wlt-txs-panel{background:#fff;border-radius:20px 20px 0 0;min-height:260px}
+.wlt-act-ico{width:58px;height:58px;border-radius:50%;background:var(--accd);display:flex;align-items:center;justify-content:center;color:var(--acc2);transition:transform .12s,background .12s}
+.wlt-act:active .wlt-act-ico{transform:scale(.88);background:var(--accg)}
+.wlt-act-ico--prim{background:var(--acc);color:#fff;box-shadow:0 4px 14px var(--acc-shadow)}
+.wlt-act:active .wlt-act-ico--prim{background:#0f7a33;box-shadow:none}
+.wlt-act-lbl{font-size:.64rem;color:var(--tx2);font-weight:500;text-align:center;white-space:nowrap}
+/* ── Транзакции ─────────────────────────────────────────────── */
+.wlt-txs-panel{background:var(--s2);border-radius:20px 20px 0 0;border-top:1.5px solid var(--b0);min-height:260px}
 .wlt-txs-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}
-.wlt-txs-ttl{font-size:.88rem;font-weight:700;color:#0a0a0a}
-.wlt-see-all{background:none;border:none;font-size:.7rem;color:rgba(0,0,0,.35);cursor:pointer;font-family:var(--fs);padding:4px}
+.wlt-txs-ttl{font-size:.88rem;font-weight:700;color:var(--tx)}
+.wlt-see-all{background:none;border:none;font-size:.7rem;color:var(--tx3);cursor:pointer;font-family:var(--fs);padding:4px}
 .wlt-tx-item{display:flex;align-items:center;gap:14px;padding:13px 20px}
-.wlt-tx-item+.wlt-tx-item{border-top:1px solid rgba(0,0,0,.05)}
-.wlt-tx-ico{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
+.wlt-tx-item+.wlt-tx-item{border-top:1px solid var(--b0)}
+.wlt-tx-ico{width:44px;height:44px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
 .wlt-tx-body{flex:1;min-width:0}
-.wlt-tx-name{font-size:.78rem;font-weight:600;color:#0a0a0a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wlt-tx-sub{font-size:.6rem;color:rgba(0,0,0,.35)}
+.wlt-tx-name{font-size:.78rem;font-weight:600;color:var(--tx);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wlt-tx-sub{font-size:.6rem;color:var(--tx3)}
 .wlt-tx-right{text-align:right;flex-shrink:0}
-.wlt-tx-amt{font-size:.8rem;font-weight:600;color:#0a0a0a;margin-bottom:1px}
+.wlt-tx-amt{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
 .wlt-tx-amt.pos{color:#16a34a}
-.wlt-tx-acc{font-size:.57rem;color:rgba(0,0,0,.3)}
-.wlt-tx-empty{text-align:center;padding:40px 20px;font-size:.76rem;color:rgba(0,0,0,.28)}
+.wlt-tx-acc{font-size:.57rem;color:var(--tx3)}
+.wlt-tx-empty{text-align:center;padding:40px 20px;font-size:.76rem;color:var(--tx3)}
 .wlt-tx-skl{padding:13px 20px;display:flex;align-items:center;gap:14px}
-.wlt-tx-skl-ico{width:44px;height:44px;border-radius:50%;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0}
+.wlt-tx-skl-ico{width:44px;height:44px;border-radius:50%;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0}
 .wlt-tx-skl-body{flex:1;display:flex;flex-direction:column;gap:7px}
-.wlt-tx-skl-n{height:10px;width:50%;border-radius:6px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-.wlt-tx-skl-s{height:7px;width:34%;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.wlt-tx-skl-n{height:10px;width:50%;border-radius:6px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+.wlt-tx-skl-s{height:7px;width:34%;border-radius:4px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
 .wlt-tup-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .22s}
 .wlt-tup-overlay.open{opacity:1;pointer-events:all}
 .wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:#fff;border-radius:20px 20px 0 0;padding:22px 20px calc(var(--safe-b) + 24px);transform:translateY(100%);transition:transform .3s var(--ease)}
@@ -999,14 +1003,14 @@ select.addr-inp{cursor:pointer}
 .prof-row-sub{font-size:.62rem;color:var(--tx3)}
 .prof-row-arrow{color:var(--tx3);flex-shrink:0;opacity:.4}
 /* Wallet card */
-.prof-wallet-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;overflow:hidden}
+.prof-wallet-card{background:linear-gradient(135deg,var(--accd) 0%,var(--s1) 100%);border:1.5px solid var(--accg);border-radius:13px;overflow:hidden}
 .prof-wallet-inner{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;transition:background .15s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
-.prof-wallet-inner:hover{background:var(--s2)}
-.prof-wallet-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center}
+.prof-wallet-inner:hover{background:rgba(26,158,74,.06)}
+.prof-wallet-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:var(--acc);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--acc-shadow)}
 .prof-wallet-body{flex:1;min-width:0}
-.prof-wallet-title{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
+.prof-wallet-title{font-size:.8rem;font-weight:700;color:var(--tx);margin-bottom:1px}
 .prof-wallet-sub{font-size:.62rem;color:var(--tx3)}
-.prof-wallet-bal{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-right:6px}
+.prof-wallet-bal{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--acc);margin-right:4px}
 /* Edit panel (personal info inline) */
 .prof-edit-panel{display:none;flex-direction:column;border-top:1.5px solid var(--b0);background:var(--s2);padding:16px;gap:0}
 .prof-edit-panel.open{display:flex}
@@ -1546,7 +1550,7 @@ select.addr-inp{cursor:pointer}
         <div class="prof-wallet-card">
           <button class="prof-wallet-inner" onclick="openWallet()" title="Кошелек — зуд омада истода аст">
             <div class="prof-wallet-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
             </div>
             <div class="prof-wallet-body">
               <div class="prof-wallet-title">Кошелек</div>
@@ -2099,7 +2103,7 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 .ptn-bg.open{opacity:1;pointer-events:all}
 .ptn-sheet{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:94svh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
 .ptn-bg.open .ptn-sheet{transform:translateY(0)}
-.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0}
+.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0;touch-action:none}
 .ptn-head{display:flex;align-items:center;padding:4px 16px 14px;flex-shrink:0;border-bottom:1px solid var(--b0);gap:10px}
 .ptn-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);flex:1;letter-spacing:-.02em}
 .ptn-close{width:32px;height:32px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;transition:background .15s}
@@ -2123,8 +2127,8 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 </style>
 
 <div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
-  <div class="ptn-sheet">
-    <div class="ptn-drag"></div>
+  <div class="ptn-sheet" id="ptn-sheet">
+    <div id="ptn-drag-handle" style="padding:4px 0 0;cursor:grab;flex-shrink:0"><div class="ptn-drag"></div></div>
     <div class="ptn-head">
       <div class="ptn-title">Партнерство</div>
       <button class="ptn-close" onclick="closePartnerSheet()">
@@ -2255,27 +2259,29 @@ window.submitPartnerForm = async function() {
 <!-- ══ WALLET BOTTOM SHEET ══════════════════════════════════ -->
 <div class="wlt-overlay" id="wlt-overlay" onclick="closeWallet()"></div>
 <div class="wlt-sheet" id="wlt-sheet">
-  <div class="wlt-handle-wrap" id="wlt-drag-handle"><div class="wlt-handle"></div></div>
-  <div class="wlt-top">
-    <div class="wlt-av" id="wlt-av">?</div>
-    <div style="flex:1"></div>
-    <button class="wlt-icon-btn" title="Ҷустуҷӯ">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    </button>
-    <button class="wlt-icon-btn" title="Огоҳӣ">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    </button>
-  </div>
-  <div class="wlt-bal-section">
-    <div class="wlt-bal-label">Шахсӣ · Ҳама ҳисобҳо</div>
-    <div class="wlt-bal-wrap">
-      <div class="wlt-bal-num" id="wlt-bal-num">0<span class="wlt-bal-cents" id="wlt-bal-cents">.00</span></div>
-      <div class="wlt-bal-cur">см</div>
+  <div class="wlt-header">
+    <div class="wlt-handle-wrap" id="wlt-drag-handle"><div class="wlt-handle"></div></div>
+    <div class="wlt-top">
+      <div class="wlt-av" id="wlt-av">?</div>
+      <div style="flex:1"></div>
+      <button class="wlt-icon-btn" title="Ҷустуҷӯ">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="wlt-icon-btn" title="Огоҳӣ">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
     </div>
-    <button class="wlt-acc-btn">
-      Ҳисобҳо
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-    </button>
+    <div class="wlt-bal-section">
+      <div class="wlt-bal-label">Шахсӣ · Ҳама ҳисобҳо</div>
+      <div class="wlt-bal-wrap">
+        <div class="wlt-bal-num" id="wlt-bal-num">0<span class="wlt-bal-cents" id="wlt-bal-cents">.00</span></div>
+        <div class="wlt-bal-cur">см</div>
+      </div>
+      <button class="wlt-acc-btn">
+        Ҳисобҳо
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
   </div>
   <div class="wlt-actions">
     <div class="wlt-act" onclick="openTopUp()">

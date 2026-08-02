@@ -405,6 +405,58 @@ function showOrdersSkeleton() {
   ].join('');
 }
 
+// ─── Свайп вниз для закрытия шитов ───────────────────────────
+function initSwipeToClose(sheetEl, closeFn, handleEl) {
+  if (!sheetEl) return;
+  const trigger = handleEl || sheetEl;
+  let startY = 0, lastY = 0, active = false;
+
+  trigger.addEventListener('touchstart', e => {
+    // Если нет handle — закрываем только когда контент в начале
+    if (!handleEl && sheetEl.scrollTop > 0) return;
+    startY = lastY = e.touches[0].clientY;
+    active = true;
+    sheetEl.style.transition = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!active) return;
+    lastY = e.touches[0].clientY;
+    const dy = Math.max(0, lastY - startY);
+    sheetEl.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!active) return;
+    active = false;
+    const dy = Math.max(0, lastY - startY);
+    sheetEl.style.transition = '';
+    sheetEl.style.transform = '';
+    if (dy > 100) closeFn();
+  });
+}
+
+// Регистрируем все шиты после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+  // Кошелёк — свайп только с ручки (контент внутри скроллится)
+  initSwipeToClose(
+    document.getElementById('wlt-sheet'),
+    () => typeof closeWallet === 'function' && closeWallet(),
+    document.getElementById('wlt-drag-handle')
+  );
+  // Пополнение — свайп с любого места
+  initSwipeToClose(
+    document.getElementById('wlt-tup-sheet'),
+    () => typeof closeTopUp === 'function' && closeTopUp()
+  );
+  // Заявка партнёра — свайп с ручки
+  initSwipeToClose(
+    document.getElementById('ptn-sheet'),
+    () => typeof closePartnerSheet === 'function' && closePartnerSheet(),
+    document.getElementById('ptn-drag-handle')
+  );
+});
+
 // ─── Выбор курьерской службы ──────────────────────────────────
 window.selectDeliveryService = function(svc) {
   deliveryService = svc;
@@ -2847,7 +2899,7 @@ window.openWallet = async function () {
     <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
     <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>`;
   await _loadWalletData(false);
-  _initWltSwipe();
+  // swipe-to-close подключён в DOMContentLoaded
 };
 
 window.closeWallet = function () {
@@ -2975,29 +3027,4 @@ window.doTopUp = async function () {
   }
 };
 
-/* ── swipe-to-close ── */
-let _wltSwiped = false;
-function _initWltSwipe() {
-  if (_wltSwiped) return;
-  _wltSwiped = true;
-  const sheet = document.getElementById('wlt-sheet');
-  const handle = document.getElementById('wlt-drag-handle');
-  if (!sheet) return;
-  let sy = 0, cy = 0, active = false;
-  sheet.addEventListener('touchstart', e => {
-    if (sheet.scrollTop > 2 && !handle?.contains(e.target)) return;
-    sy = e.touches[0].clientY; active = true;
-    sheet.style.transition = 'none';
-  }, { passive: true });
-  sheet.addEventListener('touchmove', e => {
-    if (!active) return;
-    cy = e.touches[0].clientY;
-    const d = Math.max(0, cy - sy);
-    sheet.style.transform = `translateY(${d}px)`;
-  }, { passive: true });
-  sheet.addEventListener('touchend', () => {
-    if (!active) return; active = false;
-    sheet.style.transition = '';
-    if (cy - sy > 110) { closeWallet(); } else { sheet.style.transform = ''; }
-  });
-}
+/* swipe-to-close подключён через initSwipeToClose в DOMContentLoaded */
