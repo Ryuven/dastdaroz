@@ -475,7 +475,7 @@ select.addr-inp{cursor:pointer}
 ══════════════════════════════════════════ */
 .wlt-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
 .wlt-overlay.open{opacity:1;pointer-events:all}
-.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--s1);border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform}
+.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--s1);border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform;display:flex;flex-direction:column}
 .wlt-sheet.open{transform:translateY(0)}
 /* ── Зелёная шапка ─────────────────────────────────────────── */
 .wlt-header{background:linear-gradient(150deg,#1a9e4a 0%,#0d7a36 100%);border-radius:22px 22px 0 0;padding-bottom:8px}
@@ -503,7 +503,7 @@ select.addr-inp{cursor:pointer}
 .wlt-act:active .wlt-act-ico--prim{background:#0f7a33;box-shadow:none}
 .wlt-act-lbl{font-size:.64rem;color:var(--tx2);font-weight:500;text-align:center;white-space:nowrap}
 /* ── Транзакции ─────────────────────────────────────────────── */
-.wlt-txs-panel{background:var(--s2);border-radius:20px 20px 0 0;border-top:1.5px solid var(--b0);min-height:260px}
+.wlt-txs-panel{background:var(--s2);border-radius:20px 20px 0 0;border-top:1.5px solid var(--b0);flex:1;min-height:200px}
 .wlt-txs-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}
 .wlt-txs-ttl{font-size:.88rem;font-weight:700;color:var(--tx)}
 .wlt-see-all{background:none;border:none;font-size:.7rem;color:var(--tx3);cursor:pointer;font-family:var(--fs);padding:4px}
@@ -525,17 +525,24 @@ select.addr-inp{cursor:pointer}
 .wlt-tx-skl-s{height:7px;width:34%;border-radius:4px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
 .wlt-tup-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .22s}
 .wlt-tup-overlay.open{opacity:1;pointer-events:all}
-.wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:#fff;border-radius:20px 20px 0 0;padding:22px 20px calc(var(--safe-b) + 24px);transform:translateY(100%);transition:transform .3s var(--ease)}
+.wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 18px calc(var(--safe-b) + 20px);transform:translateY(100%);transition:transform .3s var(--ease)}
 .wlt-tup-sheet.open{transform:translateY(0)}
-.wlt-tup-title{font-size:.96rem;font-weight:700;color:#0a0a0a;margin-bottom:20px}
-.wlt-tup-lbl{font-size:.6rem;font-weight:700;color:rgba(0,0,0,.35);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
-.wlt-tup-inp{width:100%;background:rgba(0,0,0,.05);border:1.5px solid transparent;border-radius:12px;padding:13px 14px;font-size:.9rem;font-family:var(--fs);color:#0a0a0a;outline:none;margin-bottom:14px;transition:border-color .13s,background .13s;-webkit-appearance:none}
-.wlt-tup-inp:focus{border-color:var(--acc);background:#fff}
-.wlt-tup-actions{display:flex;gap:10px;margin-top:4px}
-.wlt-tup-cancel{flex:1;padding:13px;background:rgba(0,0,0,.06);border:none;border-radius:12px;font-size:.78rem;font-weight:600;font-family:var(--fs);color:var(--tx);cursor:pointer}
-.wlt-tup-confirm{flex:2;padding:13px;background:#111;border:none;border-radius:12px;font-size:.8rem;font-weight:700;font-family:var(--fs);color:#fff;cursor:pointer;transition:background .13s}
-.wlt-tup-confirm:active{background:#2a2a2a}
-.wlt-tup-confirm:disabled{opacity:.5;cursor:default}
+.wlt-tup-handle{display:flex;justify-content:center;margin-bottom:14px}<div style="width:34px;height:4px;border-radius:99px;background:var(--b0)"></div>
+.wlt-tup-title{font-size:.94rem;font-weight:700;color:var(--tx);margin-bottom:18px}
+.wlt-tup-lbl{font-size:.58rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
+/* ── Карточка метода оплаты ──────────────────────────────────── */
+.wlt-pay-method{display:flex;align-items:center;gap:13px;padding:13px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:14px;-webkit-tap-highlight-color:transparent;user-select:none}
+.wlt-pay-method:hover{border-color:var(--acc);background:var(--accd)}
+.wlt-pay-method:active{transform:scale(.98)}
+.wlt-pay-logo{width:42px;height:42px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid var(--b0)}
+.wlt-pay-logo-fb{width:42px;height:42px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:800;color:var(--tx3);flex-shrink:0;letter-spacing:.04em}
+.wlt-pay-info{flex:1;min-width:0}
+.wlt-pay-name{font-size:.78rem;font-weight:700;color:var(--tx);line-height:1.3}
+.wlt-pay-sub{font-size:.59rem;color:var(--tx3);margin-top:2px}
+.wlt-pay-chevron{color:var(--tx3);flex-shrink:0}
+/* ── Кнопка отмены ───────────────────────────────────────────── */
+.wlt-tup-cancel{width:100%;padding:14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;font-size:.78rem;font-weight:600;font-family:var(--fs);color:var(--tx2);cursor:pointer;transition:background .13s}
+.wlt-tup-cancel:hover{background:var(--s3)}
 
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
 .gen-cats-section{margin-bottom:10px}
@@ -2262,7 +2269,9 @@ window.submitPartnerForm = async function() {
   <div class="wlt-header">
     <div class="wlt-handle-wrap" id="wlt-drag-handle"><div class="wlt-handle"></div></div>
     <div class="wlt-top">
-      <div class="wlt-av" id="wlt-av">?</div>
+      <div class="wlt-av" id="wlt-av">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+      </div>
       <div style="flex:1"></div>
       <button class="wlt-icon-btn" title="Ҷустуҷӯ">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -2325,15 +2334,25 @@ window.submitPartnerForm = async function() {
 <!-- ══ TOP-UP SHEET ══════════════════════════════════════════ -->
 <div class="wlt-tup-overlay" id="wlt-tup-overlay" onclick="closeTopUp()"></div>
 <div class="wlt-tup-sheet" id="wlt-tup-sheet">
-  <div class="wlt-tup-title">Пополнить кошелек</div>
-  <div class="wlt-tup-lbl">Сумма (сомонӣ)</div>
-  <input class="wlt-tup-inp" id="wlt-tup-amt" type="number" min="1" step="0.01" placeholder="0.00" inputmode="decimal" autocomplete="off">
-  <div class="wlt-tup-lbl">Тавсиф (ихтиёрӣ)</div>
-  <input class="wlt-tup-inp" id="wlt-tup-desc" type="text" placeholder="Масалан: пополнение карты" autocomplete="off">
-  <div class="wlt-tup-actions">
-    <button class="wlt-tup-cancel" onclick="closeTopUp()">Бекор кардан</button>
-    <button class="wlt-tup-confirm" id="wlt-tup-confirm" onclick="doTopUp()">Пополнить</button>
+  <div style="display:flex;justify-content:center;margin-bottom:14px">
+    <div style="width:34px;height:4px;border-radius:99px;background:var(--b0)"></div>
   </div>
+  <div class="wlt-tup-title">Пополнить кошелек</div>
+  <div class="wlt-tup-lbl">Усули пардохт</div>
+
+  <!-- Dushanbe City -->
+  <div class="wlt-pay-method" onclick="window.open('https://dc.tj','_blank');closeTopUp()">
+    <img class="wlt-pay-logo" src="/storage/dushanbe_city.png" alt="Dushanbe City"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="wlt-pay-logo-fb" style="display:none">DC</div>
+    <div class="wlt-pay-info">
+      <div class="wlt-pay-name">Dushanbe City</div>
+      <div class="wlt-pay-sub">Пополнение тавассути dc.tj</div>
+    </div>
+    <svg class="wlt-pay-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+
+  <button class="wlt-tup-cancel" onclick="closeTopUp()">Бекор кардан</button>
 </div>
 
 </body>

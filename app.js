@@ -2883,8 +2883,12 @@ window.openWallet = async function () {
   const av = document.getElementById('wlt-av');
   if (av) {
     const name = UD?.displayName || '';
-    const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-    av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+    const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    av.innerHTML = UD?.avatarUrl
+      ? `<img src="${UD.avatarUrl}" alt="">`
+      : init
+        ? init
+        : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>`;
   }
   // Optimistically show cached balance
   _renderWltBal(UD?.walletBalance || 0);
@@ -2979,13 +2983,8 @@ function _renderWltTxs() {
 
 /* ── top-up ── */
 window.openTopUp = function () {
-  const ia = document.getElementById('wlt-tup-amt');
-  const id = document.getElementById('wlt-tup-desc');
-  if (ia) ia.value = '';
-  if (id) id.value = '';
   document.getElementById('wlt-tup-overlay')?.classList.add('open');
   document.getElementById('wlt-tup-sheet')?.classList.add('open');
-  setTimeout(() => document.getElementById('wlt-tup-amt')?.focus(), 320);
 };
 
 window.closeTopUp = function () {
