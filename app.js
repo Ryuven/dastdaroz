@@ -1126,16 +1126,17 @@ function renderCart() {
   } else {
     el.innerHTML = cart.map(i => {
       const ic = catIcon(i.productId, '').svg;
-      return `<div class="ci"><div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div><div class="ci-body"><div class="ci-top"><div class="ci-name">${i.name}</div><div class="ci-total">${i.price * i.quantity} см</div></div><div class="ci-bot"><span class="ci-price">${i.price} см / дона</span><div class="qty"><button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button><div class="qty-val">${i.quantity}</div><button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button></div></div></div><button class="ci-del" onclick="removeCI('${i.productId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+      return `<div class="ci"><div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div><div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price} см / дона</div></div><div class="qty"><button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button><div class="qty-val">${i.quantity}</div><button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button></div><div class="ci-total">${i.price * i.quantity} см</div><button class="ci-del" onclick="removeCI('${i.productId}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>`;
     }).join('');
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '1';
     const cb = document.getElementById('checkout-btn'); if (cb) cb.disabled = false;
   }
   const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
   const tot = sub + (cart.length ? DFEE : 0);
-  const ci  = document.getElementById('cs-items');  if (ci) ci.textContent = sub + ' см';
-  const cd  = document.getElementById('cs-del');    if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
-  const ct  = document.getElementById('cs-total');  if (ct) ct.textContent = tot + ' см';
+  const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' см';
+  const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
+  const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' см';
+  const ch  = document.getElementById('cs-header-items'); if (ch) ch.textContent = cart.length + ' мавқеъ';
 }
 
 function updateBadges() {
@@ -2659,12 +2660,11 @@ function renderProfile() {
       pfc.style.display = 'none';
     }
   }
-  // Wallet balance badge on profile card
-  const profBal = document.querySelector('.prof-wallet-bal');
-  if (profBal) {
-    const { whole, cents } = _fmtBal(UD?.walletBalance || 0);
-    profBal.textContent = whole + '.' + cents + ' см';
-  }
+  // Wallet balance badge — обновляем все элементы (профиль + корзина)
+  const _wbFmt = _fmtBal(UD?.walletBalance || 0);
+  document.querySelectorAll('.prof-wallet-bal').forEach(function(el) {
+    el.textContent = _wbFmt.whole + '.' + _wbFmt.cents + ' см';
+  });
 }
 
 window.saveProfile = async function () {
@@ -2921,9 +2921,11 @@ async function _loadWalletData(all) {
     const bal = snap.exists() ? (snap.data().walletBalance || 0) : 0;
     if (UD) UD.walletBalance = bal;
     _renderWltBal(bal);
-    // Update profile card badge
-    const profBal = document.querySelector('.prof-wallet-bal');
-    if (profBal) profBal.textContent = _fmtBal(bal).whole + '.' + _fmtBal(bal).cents + ' см';
+    // Update balance badge everywhere (профиль + корзина)
+    const _wbFmt2 = _fmtBal(bal);
+    document.querySelectorAll('.prof-wallet-bal').forEach(function(el) {
+      el.textContent = _wbFmt2.whole + '.' + _wbFmt2.cents + ' см';
+    });
 
     // Fetch transactions
     let q;

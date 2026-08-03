@@ -282,46 +282,26 @@ a{color:inherit;text-decoration:none}
 .add-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* ── CART ── */
-.cart-layout{display:flex;flex-direction:column;gap:10px}
-/* ── Cart items ── */
-.cart-items-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;overflow:hidden}
-.ci{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--b0);background:transparent;box-shadow:none;margin-bottom:0;transition:background var(--tf);box-sizing:border-box;width:100%;max-width:100%;overflow:visible}
-.ci:last-child{border-bottom:none}
-.ci:hover{background:var(--s2)}
-.ci-img{width:52px;height:52px;border-radius:12px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.cart-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-width:0}
+.ci{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;padding:10px 12px;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;align-items:center;gap:8px;margin-bottom:8px;transition:border-color var(--tf);box-shadow:var(--shadow);overflow:hidden;box-sizing:border-box;width:100%;max-width:100%}
+.ci:hover{border-color:var(--accg)}
+.ci-img{width:44px;height:44px;border-radius:9px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .ci-img img{width:100%;height:100%;object-fit:cover}
-.ci-body{flex:1;min-width:0}
-.ci-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
-.ci-name{font-weight:700;font-size:.8rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.ci-total{font-family:var(--fd);font-weight:900;font-size:.84rem;color:var(--tx);white-space:nowrap;flex-shrink:0}
-.ci-bot{display:flex;align-items:center;gap:8px}
-.ci-price{font-size:.6rem;color:var(--tx3);flex:1}
+.ci-info{min-width:0;overflow:hidden}
+.ci-name{font-weight:700;font-size:.78rem;color:var(--tx);margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ci-price{font-size:.63rem;color:var(--tx3)}
 .qty{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--b0);border-radius:8px;overflow:hidden;flex-shrink:0}
 .qty-btn{width:26px;height:26px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:color var(--tf),background var(--tf)}
 .qty-btn:hover{color:var(--acc);background:var(--accd)}
 .qty-val{min-width:22px;height:26px;text-align:center;line-height:26px;font-size:.78rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
-.ci-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:5px;border-radius:8px;transition:all var(--tf);flex-shrink:0;align-self:flex-start;margin-top:-2px}
+.ci-total{font-family:var(--fd);font-weight:900;font-size:.85rem;color:var(--tx);white-space:nowrap;flex-shrink:0;min-width:44px;text-align:right}
+.ci-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:4px;border-radius:6px;transition:all var(--tf);flex-shrink:0}
 .ci-del:hover{color:var(--red);background:var(--redd)}
-/* ── Cart form + summary cards ── */
-.cart-form-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;overflow:hidden}
-.cart-sec{padding:14px 18px;border-bottom:1px solid var(--b0)}
-.cart-sec:last-child{border-bottom:none}
-.cart-sec-ttl{font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);margin-bottom:9px;font-weight:700;display:block}
-.cart-sec .delivery-tabs{margin-bottom:0}
-.cart-sec .addr-card{margin-bottom:0}
-.cart-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;color:var(--tx);font-family:var(--fs);font-size:.8rem;padding:10px 13px;outline:none;transition:border-color var(--tf);box-sizing:border-box}
-.cart-inp:focus{border-color:var(--acc)}
-.cart-inp::placeholder{color:var(--tx3)}
-.cart-pay-row{display:flex;align-items:center;gap:12px}
-.cart-pay-ico{width:38px;height:38px;border-radius:10px;background:var(--blue-d);border:1px solid rgba(37,99,235,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cart-pay-body{flex:1}
-.cart-pay-name{font-size:.78rem;font-weight:600;color:var(--tx);margin-bottom:1px}
-.cart-pay-sub{font-size:.6rem;color:var(--tx3)}
-.cart-pay-check{width:20px;height:20px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cart-sum-card{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:16px 18px;box-sizing:border-box;width:100%}
+.cs{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:18px 20px;position:sticky;top:0;box-shadow:var(--shadow);box-sizing:border-box;overflow:hidden;min-width:0;max-width:100%;width:100%}
 .cs-row{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;color:var(--tx2);margin-bottom:9px}
-.cs-row.total{margin-top:12px;padding-top:12px;border-top:1.5px solid var(--b0);color:var(--tx);font-weight:600;margin-bottom:16px}
+.cs-row.total{margin-top:14px;padding-top:14px;border-top:1.5px solid var(--b0);color:var(--tx);font-weight:600;margin-bottom:0}
 .cs-row.total .price{font-family:var(--fd);font-weight:900;font-size:1.2rem;color:var(--acc)}
+.cs-divider{height:1px;background:var(--b0);margin:14px 0}
 /* ─── Вкладки курьерской службы ─────────────────────────────── */
 .delivery-tabs{display:flex;flex-direction:column;gap:7px;margin-bottom:2px}
 .dtab{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1.5px solid var(--b0);border-radius:12px;background:var(--s2);cursor:pointer;transition:border-color var(--tf),background var(--tf),box-shadow var(--tf);-webkit-tap-highlight-color:transparent;user-select:none}
@@ -593,7 +573,7 @@ select.addr-inp{cursor:pointer}
 .oc-skl:hover{border-color:var(--b0)!important;box-shadow:var(--shadow)!important;transform:none!important}
 /* ─── Skeleton: cart items ───────────────────────────────────── */
 .ci-skl{pointer-events:none;cursor:default}
-.ci-skl:hover{background:transparent!important}
+.ci-skl:hover{border-color:var(--b0)!important}
 /* ─── Skeleton: profile card loading overlay ─────────────────── */
 .prof-card-new{position:relative}
 #prof-card-loading{position:absolute;inset:0;background:var(--s1);border-radius:16px;display:flex;align-items:center;gap:14px;padding:18px 18px 16px;z-index:2;box-sizing:border-box}
@@ -1054,6 +1034,82 @@ select.addr-inp{cursor:pointer}
 .tog input:checked ~ .tog-track{background:var(--acc);border-color:var(--acc)}
 .tog-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .25s var(--spring)}
 .tog input:checked ~ .tog-thumb{transform:translateX(18px)}
+
+/* ── CART DESIGN POLISH ──────────────────────────────────────── */
+/* Улучшенный заголовок блока сводки */
+.cs-header{
+  display:flex;align-items:center;gap:9px;
+  padding:0 0 14px;margin-bottom:4px;
+  border-bottom:1.5px solid var(--b0);
+}
+.cs-header-ico{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;flex-shrink:0;
+  box-shadow:0 2px 8px var(--acc-shadow);
+}
+.cs-header-title{
+  font-family:var(--fd);font-weight:900;font-size:.82rem;
+  color:var(--tx);letter-spacing:-.01em;
+}
+.cs-header-items{
+  margin-left:auto;font-size:.6rem;color:var(--tx3);
+  background:var(--s2);border:1px solid var(--b0);
+  border-radius:99px;padding:2px 9px;font-weight:600;
+}
+
+/* Улучшенная карточка товара в корзине */
+.ci{
+  background:var(--s1);border:1.5px solid var(--b0);
+  border-radius:14px;padding:11px 13px;
+  display:grid;grid-template-columns:46px minmax(0,1fr) auto auto auto;
+  align-items:center;gap:9px;margin-bottom:7px;
+  transition:border-color var(--tf),box-shadow var(--tf),transform .15s var(--spring);
+  box-shadow:var(--shadow);overflow:hidden;box-sizing:border-box;width:100%;max-width:100%;
+}
+.ci:hover{border-color:var(--accg);box-shadow:0 4px 16px rgba(26,158,74,.1);transform:translateY(-1px)}
+.ci-img{
+  width:46px;height:46px;border-radius:10px;
+  background:var(--s2);display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;overflow:hidden;
+  border:1px solid var(--b0);
+}
+
+/* ── CART PAYMENT METHOD TABS ────────────────────────────────── */
+/* Карточка кошелька как метод оплаты (точная копия профиля) */
+.pay-wallet-tab{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 14px;margin-top:7px;
+  background:linear-gradient(135deg,var(--accd) 0%,rgba(34,197,94,.03) 100%);
+  border:1.5px solid var(--accg);border-radius:13px;
+  cursor:pointer;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.pay-wallet-tab:hover{
+  border-color:var(--acc);
+  background:linear-gradient(135deg,rgba(26,158,74,.14) 0%,rgba(34,197,94,.05) 100%);
+}
+.pay-wallet-tab.active{
+  border-color:var(--acc);
+  box-shadow:0 0 0 1px var(--acc);
+  background:var(--accd);
+}
+/* Состояние радио внутри wallet-tab */
+.pay-wallet-tab .dtab-radio{
+  width:16px;height:16px;border-radius:50%;
+  border:1.5px solid var(--b1);background:var(--s1);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all var(--tf);
+}
+.pay-wallet-tab.active .dtab-radio{
+  border-color:var(--acc);background:var(--acc);
+}
+.pay-wallet-tab.active .dtab-radio::after{
+  content:'';width:5px;height:5px;
+  background:#fff;border-radius:50%;display:block;
+}
 </style>
 <!-- Leaflet (бесплатно, без API ключа) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -1292,147 +1348,112 @@ select.addr-inp{cursor:pointer}
 
     <!-- CART -->
     <div class="page" id="page-cart">
-      <div class="sh">
-        <div><div class="sh-tag">Расмикунонӣ</div><div class="sh-title">Сабад</div></div>
-        <button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Тоза кардан</button>
-      </div>
+      <div class="sh"><div><div class="sh-tag">Расмикунонӣ</div><div class="sh-title">Сабад</div></div><button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Тоза кардан</button></div>
       <div class="cart-layout">
-
-        <!-- ── ITEMS ── -->
-        <div class="cart-items-card" id="cart-list">
-          <div class="ci ci-skl">
-            <div class="skl-block" style="width:52px;height:52px;border-radius:12px;flex-shrink:0"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-                <div class="skl-block" style="height:10px;width:54%"></div>
-                <div class="skl-block" style="height:14px;width:50px;flex-shrink:0"></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="skl-block" style="height:7px;width:34%;flex:1"></div>
-                <div class="skl-block" style="width:68px;height:26px;border-radius:8px;flex-shrink:0"></div>
-              </div>
-            </div>
-            <div class="skl-block" style="width:22px;height:22px;border-radius:7px;align-self:flex-start;flex-shrink:0"></div>
-          </div>
-          <div class="ci ci-skl">
-            <div class="skl-block" style="width:52px;height:52px;border-radius:12px;flex-shrink:0"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-                <div class="skl-block" style="height:10px;width:66%"></div>
-                <div class="skl-block" style="height:14px;width:50px;flex-shrink:0"></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="skl-block" style="height:7px;width:28%;flex:1"></div>
-                <div class="skl-block" style="width:68px;height:26px;border-radius:8px;flex-shrink:0"></div>
-              </div>
-            </div>
-            <div class="skl-block" style="width:22px;height:22px;border-radius:7px;align-self:flex-start;flex-shrink:0"></div>
-          </div>
-          <div class="ci ci-skl">
-            <div class="skl-block" style="width:52px;height:52px;border-radius:12px;flex-shrink:0"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-                <div class="skl-block" style="height:10px;width:48%"></div>
-                <div class="skl-block" style="height:14px;width:50px;flex-shrink:0"></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="skl-block" style="height:7px;width:40%;flex:1"></div>
-                <div class="skl-block" style="width:68px;height:26px;border-radius:8px;flex-shrink:0"></div>
-              </div>
-            </div>
-            <div class="skl-block" style="width:22px;height:22px;border-radius:7px;align-self:flex-start;flex-shrink:0"></div>
-          </div>
+        <div id="cart-list">
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:58%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:34%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:66%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:44%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
         </div>
-
-        <!-- ── ORDER FORM ── -->
-        <div class="cart-form-card">
-
-          <!-- Delivery service -->
-          <div class="cart-sec">
-            <span class="cart-sec-ttl">Хидмати расонидан</span>
-            <div class="delivery-tabs" id="delivery-tabs">
-              <div class="dtab active" data-svc="dastdaroz" onclick="selectDeliveryService('dastdaroz')">
-                <img class="dtab-logo" src="/storage/delivery-service/dastdaroz.png" alt="Dastdaroz"
-                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <div class="dtab-logo-fb" style="display:none">DD</div>
-                <div class="dtab-info">
-                  <div class="dtab-name">Dastdaroz</div>
-                  <div class="dtab-sub">Хидмати расонидани мо</div>
-                </div>
-                <div class="dtab-radio"></div>
-              </div>
-              <div class="dtab" data-svc="mavsimi" onclick="selectDeliveryService('mavsimi')">
-                <img class="dtab-logo" src="/storage/delivery-service/mavsimi_rason.png" alt="Мавсими Расон"
-                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <div class="dtab-logo-fb" style="display:none">МР</div>
-                <div class="dtab-info">
-                  <div class="dtab-name">Мавсими Расон</div>
-                  <div class="dtab-sub">Хидмати расонидан</div>
-                </div>
-                <div class="dtab-radio"></div>
-              </div>
+        <div style="min-width:0;max-width:100%"><div class="cs" id="cart-sum">
+          <div class="cs-header">
+            <div class="cs-header-ico">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
             </div>
+            <div class="cs-header-title">Ҷамъбаст</div>
+            <span class="cs-header-items" id="cs-header-items">0 мавқеъ</span>
           </div>
-
-          <!-- Address -->
-          <div class="cart-sec">
-            <span class="cart-sec-ttl">Суроғаи расонидан</span>
-            <div class="addr-card" onclick="openAddrModal('cart')" id="cart-addr-card">
-              <div class="addr-card-ico">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div class="addr-card-body">
-                <div class="addr-card-lbl">Нуқтаи расонидан</div>
-                <div class="addr-card-val empty" id="cart-addr-display">Суроғро нишон диҳед →</div>
-                <div class="addr-card-coords" id="cart-addr-coords" style="display:none"></div>
-              </div>
-              <div class="addr-card-arrow">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-              </div>
-            </div>
-            <input type="hidden" id="cart-addr"/>
-            <input type="hidden" id="cart-lat"/>
-            <input type="hidden" id="cart-lng"/>
-          </div>
-
-          <!-- Comment -->
-          <div class="cart-sec">
-            <span class="cart-sec-ttl">Шарҳ</span>
-            <input class="cart-inp" type="text" id="cart-comment" placeholder="Дарбоз нашавад, ошёна 3…"/>
-          </div>
-
-          <!-- Payment — card only -->
-          <div class="cart-sec">
-            <span class="cart-sec-ttl">Пардохт</span>
-            <div class="cart-pay-row">
-              <div class="cart-pay-ico">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-              </div>
-              <div class="cart-pay-body">
-                <div class="cart-pay-name">Корти бонкӣ</div>
-                <div class="cart-pay-sub">Visa · Mastercard · Корти Миллӣ</div>
-              </div>
-              <div class="cart-pay-check">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-            </div>
-            <input type="hidden" id="cart-pay" value="card"/>
-          </div>
-        </div>
-
-        <!-- ── SUMMARY + CHECKOUT ── -->
-        <div class="cart-sum-card" id="cart-sum">
           <div class="cs-row"><span>Маҳсулот</span><span id="cs-items">0 см</span></div>
           <div class="cs-row"><span>Расонидан</span><span id="cs-del">7 см</span></div>
           <div class="cs-row total"><span>Ҷамъ</span><span class="price" id="cs-total">7 см</span></div>
+          <div class="cs-divider"></div>
+
+          <!-- ── Хидмати расонидан ─────────────────────────────── -->
+          <label class="addr-lbl">Хидмати расонидан</label>
+          <div class="delivery-tabs" id="delivery-tabs">
+            <div class="dtab active" data-svc="dastdaroz" onclick="selectDeliveryService('dastdaroz')">
+              <img class="dtab-logo" src="/storage/delivery-service/dastdaroz.png" alt="Dastdaroz"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="dtab-logo-fb" style="display:none">DD</div>
+              <div class="dtab-info">
+                <div class="dtab-name">Dastdaroz</div>
+                <div class="dtab-sub">Хидмати расонидани мо</div>
+              </div>
+              <div class="dtab-radio"></div>
+            </div>
+            <div class="dtab" data-svc="mavsimi" onclick="selectDeliveryService('mavsimi')">
+              <img class="dtab-logo" src="/storage/delivery-service/mavsimi_rason.png" alt="Мавсими Расон"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <div class="dtab-logo-fb" style="display:none">МР</div>
+              <div class="dtab-info">
+                <div class="dtab-name">Мавсими Расон</div>
+                <div class="dtab-sub">Хидмати расонидан</div>
+              </div>
+              <div class="dtab-radio"></div>
+            </div>
+          </div>
+
+          <label class="addr-lbl">Суроғаи расонидан</label>
+          <div class="addr-card" onclick="openAddrModal('cart')" id="cart-addr-card">
+            <div class="addr-card-ico">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="addr-card-body">
+              <div class="addr-card-lbl">Нуқтаи расонидан</div>
+              <div class="addr-card-val empty" id="cart-addr-display">Суроғро нишон диҳед →</div>
+              <div class="addr-card-coords" id="cart-addr-coords" style="display:none"></div>
+            </div>
+            <div class="addr-card-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          </div>
+          <input type="hidden" id="cart-addr"/>
+          <input type="hidden" id="cart-lat"/>
+          <input type="hidden" id="cart-lng"/>
+          <label class="addr-lbl">Шарҳ</label>
+          <input class="addr-inp" type="text" id="cart-comment" placeholder="Дарбоз нашавад, ошёна 3…"/>
+          <label class="addr-lbl">Пардохт</label>
+          <input type="hidden" id="cart-pay" value="cash">
+          <div class="delivery-tabs" id="pay-method-tabs">
+            <!-- Нақдӣ -->
+            <div class="dtab active" data-pay="cash" onclick="selectCartPay('cash')">
+              <div class="dtab-logo-fb" style="background:rgba(16,185,129,.12);color:#059669;font-size:.9rem">💵</div>
+              <div class="dtab-info">
+                <div class="dtab-name">Нақдӣ ба курьер</div>
+                <div class="dtab-sub">Пардохти нақдинагӣ</div>
+              </div>
+              <div class="dtab-radio"></div>
+            </div>
+            <!-- Корти бонкӣ -->
+            <div class="dtab" data-pay="card" onclick="selectCartPay('card')">
+              <div class="dtab-logo-fb" style="background:rgba(37,99,235,.12);color:#2563eb;font-size:.9rem">💳</div>
+              <div class="dtab-info">
+                <div class="dtab-name">Корти бонкӣ</div>
+                <div class="dtab-sub">Visa · Mastercard · Корти Миллӣ</div>
+              </div>
+              <div class="dtab-radio"></div>
+            </div>
+          </div>
+          <!-- ── Кошелек — точная копия вкладки в профиле ── -->
+          <div class="pay-wallet-tab" id="pay-wallet-tab" onclick="selectCartPay('wallet')">
+            <div class="prof-wallet-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
+            </div>
+            <div class="prof-wallet-body">
+              <div class="prof-wallet-title">Кошелек</div>
+              <div class="prof-wallet-sub">Ҳисоби шахсии шумо</div>
+            </div>
+            <span class="prof-wallet-bal" style="font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-right:4px">0 см</span>
+            <div class="dtab-radio"></div>
+          </div>
           <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             Фармоиш расмикунонӣ
           </button>
-        </div>
-
+        </div></div>
       </div>
     </div>
+
 
     <!-- BOOKING ─ shown immediately after checkout, awaiting card payment -->
     <div class="page" id="page-booking">
@@ -2255,6 +2276,24 @@ window.submitPartnerForm = async function() {
     btn.disabled = false;
     btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Отправить';
   }
+};
+</script>
+
+<!-- ══ CART: PAYMENT METHOD SELECTOR ══ -->
+<script>
+window.selectCartPay = function(method) {
+  // Обновляем скрытый инпут (читается в doCheckout)
+  const hidden = document.getElementById('cart-pay');
+  if (hidden) hidden.value = method;
+
+  // Переключаем активность вкладок «Нақдӣ» и «Корти бонкӣ»
+  document.querySelectorAll('#pay-method-tabs .dtab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.pay === method);
+  });
+
+  // Переключаем вкладку «Кошелек»
+  const walletTab = document.getElementById('pay-wallet-tab');
+  if (walletTab) walletTab.classList.toggle('active', method === 'wallet');
 };
 </script>
 
