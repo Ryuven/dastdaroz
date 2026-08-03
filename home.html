@@ -320,6 +320,44 @@ a{color:inherit;text-decoration:none}
 .addr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
 .addr-inp::placeholder{color:var(--tx3)}
 select.addr-inp{cursor:pointer}
+
+/* ── Поле комментария (минималистичное) ── */
+.cart-note-wrap{position:relative;margin-bottom:4px}
+.cart-note-lbl{
+  font-size:.52rem;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tx3);
+  display:flex;align-items:center;gap:6px;
+  margin:16px 0 8px;
+}
+.cart-note-lbl svg{opacity:.55}
+.cart-note-area{
+  width:100%;min-height:78px;resize:none;
+  background:var(--s1);
+  border:1.5px solid var(--b0);
+  border-radius:13px;
+  color:var(--tx);font-family:var(--fs);
+  font-size:.82rem;line-height:1.65;
+  padding:13px 15px;outline:none;
+  transition:border-color var(--tf),box-shadow var(--tf),background var(--tf);
+  box-sizing:border-box;display:block;
+}
+.cart-note-area:focus{
+  border-color:var(--acc);
+  box-shadow:0 0 0 3px var(--accd);
+  background:var(--s0,#fff);
+}
+.cart-note-area::placeholder{color:var(--tx3);font-size:.78rem}
+
+/* ── Кошелек как единственный метод оплаты (статичная карточка) ── */
+.pay-wallet-only{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 15px;margin-top:2px;
+  background:linear-gradient(135deg,var(--accd) 0%,rgba(34,197,94,.03) 100%);
+  border:1.5px solid var(--acc);
+  border-radius:13px;
+  box-shadow:0 0 0 1px var(--acc);
+  pointer-events:none;
+}
 .checkout-btn{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity var(--tf),box-shadow var(--tf),transform var(--tf);display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box}
 .checkout-btn:hover{opacity:.92;box-shadow:0 6px 24px var(--acc-shadow);transform:translateY(-1px)}
 .checkout-btn:active{transform:scale(.98)}
@@ -1410,32 +1448,19 @@ select.addr-inp{cursor:pointer}
           <input type="hidden" id="cart-addr"/>
           <input type="hidden" id="cart-lat"/>
           <input type="hidden" id="cart-lng"/>
-          <label class="addr-lbl">Шарҳ</label>
-          <input class="addr-inp" type="text" id="cart-comment" placeholder="Дарбоз нашавад, ошёна 3…"/>
-          <label class="addr-lbl">Пардохт</label>
-          <input type="hidden" id="cart-pay" value="cash">
-          <div class="delivery-tabs" id="pay-method-tabs">
-            <!-- Нақдӣ -->
-            <div class="dtab active" data-pay="cash" onclick="selectCartPay('cash')">
-              <div class="dtab-logo-fb" style="background:rgba(16,185,129,.12);color:#059669;font-size:.9rem">💵</div>
-              <div class="dtab-info">
-                <div class="dtab-name">Нақдӣ ба курьер</div>
-                <div class="dtab-sub">Пардохти нақдинагӣ</div>
-              </div>
-              <div class="dtab-radio"></div>
-            </div>
-            <!-- Корти бонкӣ -->
-            <div class="dtab" data-pay="card" onclick="selectCartPay('card')">
-              <div class="dtab-logo-fb" style="background:rgba(37,99,235,.12);color:#2563eb;font-size:.9rem">💳</div>
-              <div class="dtab-info">
-                <div class="dtab-name">Корти бонкӣ</div>
-                <div class="dtab-sub">Visa · Mastercard · Корти Миллӣ</div>
-              </div>
-              <div class="dtab-radio"></div>
-            </div>
+          <!-- ── Шарҳ — минималистичное поле ── -->
+          <label class="cart-note-lbl">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Шарҳ
+          </label>
+          <div class="cart-note-wrap">
+            <textarea class="cart-note-area" id="cart-comment" rows="3" placeholder="Масалан: дарбоз нашавад, ошёна 3, истгоҳи метро…"></textarea>
           </div>
-          <!-- ── Кошелек — точная копия вкладки в профиле ── -->
-          <div class="pay-wallet-tab" id="pay-wallet-tab" onclick="selectCartPay('wallet')">
+
+          <!-- ── Пардохт — танҳо кошелек ── -->
+          <label class="addr-lbl">Пардохт</label>
+          <input type="hidden" id="cart-pay" value="wallet">
+          <div class="pay-wallet-only">
             <div class="prof-wallet-icon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
             </div>
@@ -1443,8 +1468,7 @@ select.addr-inp{cursor:pointer}
               <div class="prof-wallet-title">Кошелек</div>
               <div class="prof-wallet-sub">Ҳисоби шахсии шумо</div>
             </div>
-            <span class="prof-wallet-bal" style="font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-right:4px">0 см</span>
-            <div class="dtab-radio"></div>
+            <span class="prof-wallet-bal" style="font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-left:auto">0 см</span>
           </div>
           <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -2276,24 +2300,6 @@ window.submitPartnerForm = async function() {
     btn.disabled = false;
     btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Отправить';
   }
-};
-</script>
-
-<!-- ══ CART: PAYMENT METHOD SELECTOR ══ -->
-<script>
-window.selectCartPay = function(method) {
-  // Обновляем скрытый инпут (читается в doCheckout)
-  const hidden = document.getElementById('cart-pay');
-  if (hidden) hidden.value = method;
-
-  // Переключаем активность вкладок «Нақдӣ» и «Корти бонкӣ»
-  document.querySelectorAll('#pay-method-tabs .dtab').forEach(function(t) {
-    t.classList.toggle('active', t.dataset.pay === method);
-  });
-
-  // Переключаем вкладку «Кошелек»
-  const walletTab = document.getElementById('pay-wallet-tab');
-  if (walletTab) walletTab.classList.toggle('active', method === 'wallet');
 };
 </script>
 
