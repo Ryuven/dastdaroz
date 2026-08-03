@@ -1126,24 +1126,7 @@ function renderCart() {
   } else {
     el.innerHTML = cart.map(i => {
       const ic = catIcon(i.productId, '').svg;
-      return `<div class="ci">
-  <div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div>
-  <div class="ci-body">
-    <div class="ci-name">${i.name}</div>
-    <div class="ci-price">${i.price} см / шт</div>
-    <div class="ci-bottom">
-      <div class="qty">
-        <button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button>
-        <div class="qty-val">${i.quantity}</div>
-        <button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button>
-      </div>
-      <div class="ci-total">${i.price * i.quantity} см</div>
-    </div>
-  </div>
-  <button class="ci-del" onclick="removeCI('${i.productId}')">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-</div>`;
+      return `<div class="ci"><div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div><div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price} см / дона</div></div><div class="qty"><button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button><div class="qty-val">${i.quantity}</div><button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button></div><div class="ci-total">${i.price * i.quantity} см</div><button class="ci-del" onclick="removeCI('${i.productId}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>`;
     }).join('');
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '1';
     const cb = document.getElementById('checkout-btn'); if (cb) cb.disabled = false;
@@ -1153,7 +1136,6 @@ function renderCart() {
   const ci  = document.getElementById('cs-items');  if (ci) ci.textContent = sub + ' см';
   const cd  = document.getElementById('cs-del');    if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
   const ct  = document.getElementById('cs-total');  if (ct) ct.textContent = tot + ' см';
-  const ctb = document.getElementById('cs-total-btn'); if (ctb) ctb.textContent = tot + ' см →';
 }
 
 function updateBadges() {
@@ -1509,7 +1491,7 @@ window.doCheckout = async function () {
     const sub         = cart.reduce((s, c) => s + c.price * c.quantity, 0);
     const oNum        = nextOrderNum();
     const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const payMethod = 'card'; // корти бонкӣ — единственный метод
+    const payMethod   = document.getElementById('cart-pay')?.value || 'card';
 
     // Дедлайн оплаты: now + 10 минут
     const reservedUntil = new Date(Date.now() + PAYMENT_RESERVE_MS);

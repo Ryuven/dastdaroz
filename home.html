@@ -282,49 +282,48 @@ a{color:inherit;text-decoration:none}
 .add-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* ── CART ── */
-.cart-layout{display:flex;flex-direction:column;gap:0}
-/* ── Cart items ─────────────────────────────────────── */
-.ci{background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;padding:14px;display:flex;gap:14px;margin-bottom:10px;position:relative;box-shadow:0 2px 14px rgba(0,0,0,.06);box-sizing:border-box}
-.ci-img{width:68px;height:68px;border-radius:14px;background:var(--s2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cart-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-width:0}
+.ci{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;padding:10px 12px;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;align-items:center;gap:8px;margin-bottom:8px;transition:border-color var(--tf);box-shadow:var(--shadow);overflow:hidden;box-sizing:border-box;width:100%;max-width:100%}
+.ci:hover{border-color:var(--accg)}
+.ci-img{width:44px;height:44px;border-radius:9px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .ci-img img{width:100%;height:100%;object-fit:cover}
-.ci-body{flex:1;min-width:0;display:flex;flex-direction:column}
-.ci-name{font-weight:700;font-size:.84rem;color:var(--tx);line-height:1.35;margin-bottom:3px;padding-right:22px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.ci-price{font-size:.62rem;color:var(--tx3);padding-bottom:10px}
-.ci-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
-.ci-total{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
-.ci-del{position:absolute;top:10px;right:10px;background:var(--s2);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);transition:background .15s,color .15s}
-.ci-del:hover{background:var(--redd);color:var(--red)}
-/* ── Qty ─────────────────────────────────────────────── */
-.qty{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;overflow:hidden}
-.qty-btn{width:32px;height:32px;background:none;border:none;cursor:pointer;color:var(--tx2);font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
-.qty-btn:hover{background:var(--accd);color:var(--acc)}
-.qty-val{min-width:28px;height:32px;text-align:center;line-height:32px;font-size:.8rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
-/* ── Summary ─────────────────────────────────────────── */
-.cs{background:var(--s1);border:1.5px solid var(--b0);border-radius:20px;overflow:hidden;box-shadow:0 4px 28px rgba(0,0,0,.08);margin-top:4px}
-.cs-totals{padding:18px 18px 16px}
-.cs-row{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--tx3);margin-bottom:8px}
-.cs-row:last-child{margin-bottom:0}
-.cs-row.total{color:var(--tx);font-weight:700;padding-top:12px;margin-top:6px;border-top:1.5px dashed var(--b0);font-size:.86rem}
-.cs-row.total .price{font-family:var(--fd);font-weight:900;font-size:1.4rem;color:var(--acc)}
-.cs-section{padding:14px 18px;border-top:1.5px solid var(--b0)}
-.cs-section-lbl{font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--tx3);margin-bottom:10px;display:block}
-.cs-divider{display:none}
-.addr-lbl{display:none}
-/* ── Pay card ────────────────────────────────────────── */
-.cs-pay-card{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--s2);border:1.5px solid var(--b0);border-radius:11px}
-.cs-pay-ico{font-size:1rem;flex-shrink:0}
-.cs-pay-name{font-size:.75rem;font-weight:700;color:var(--tx);flex:1}
-.cs-pay-hint{font-size:.6rem;color:var(--tx3)}
-/* ── Note ────────────────────────────────────────────── */
-.cart-note-inp{width:100%;background:var(--s2);border:1.5px solid transparent;border-radius:10px;padding:11px 13px;font-size:.78rem;font-family:var(--fs);color:var(--tx);outline:none;transition:border-color .15s;box-sizing:border-box}
-.cart-note-inp:focus{border-color:var(--acc)}
-.cart-note-inp::placeholder{color:var(--tx3)}
-/* ── Checkout ────────────────────────────────────────── */
-.checkout-btn{width:100%;padding:17px 20px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#fff;font-family:var(--fd);font-weight:900;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:opacity .15s,transform .15s;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;border-top:1.5px solid rgba(255,255,255,.12)}
-.checkout-btn:hover{opacity:.92}
-.checkout-btn:active{transform:scale(.99)}
-.checkout-btn:disabled{opacity:.4;cursor:not-allowed}
-.checkout-btn-price{font-size:.94rem;letter-spacing:0;text-transform:none;opacity:.9}
+.ci-info{min-width:0;overflow:hidden}
+.ci-name{font-weight:700;font-size:.78rem;color:var(--tx);margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ci-price{font-size:.63rem;color:var(--tx3)}
+.qty{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--b0);border-radius:8px;overflow:hidden;flex-shrink:0}
+.qty-btn{width:26px;height:26px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:color var(--tf),background var(--tf)}
+.qty-btn:hover{color:var(--acc);background:var(--accd)}
+.qty-val{min-width:22px;height:26px;text-align:center;line-height:26px;font-size:.78rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
+.ci-total{font-family:var(--fd);font-weight:900;font-size:.85rem;color:var(--tx);white-space:nowrap;flex-shrink:0;min-width:44px;text-align:right}
+.ci-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:4px;border-radius:6px;transition:all var(--tf);flex-shrink:0}
+.ci-del:hover{color:var(--red);background:var(--redd)}
+.cs{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:18px 20px;position:sticky;top:0;box-shadow:var(--shadow);box-sizing:border-box;overflow:hidden;min-width:0;max-width:100%;width:100%}
+.cs-row{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;color:var(--tx2);margin-bottom:9px}
+.cs-row.total{margin-top:14px;padding-top:14px;border-top:1.5px solid var(--b0);color:var(--tx);font-weight:600;margin-bottom:0}
+.cs-row.total .price{font-family:var(--fd);font-weight:900;font-size:1.2rem;color:var(--acc)}
+.cs-divider{height:1px;background:var(--b0);margin:14px 0}
+/* ─── Вкладки курьерской службы ─────────────────────────────── */
+.delivery-tabs{display:flex;flex-direction:column;gap:7px;margin-bottom:2px}
+.dtab{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1.5px solid var(--b0);border-radius:12px;background:var(--s2);cursor:pointer;transition:border-color var(--tf),background var(--tf),box-shadow var(--tf);-webkit-tap-highlight-color:transparent;user-select:none}
+.dtab:hover{border-color:var(--bh);background:var(--s1)}
+.dtab.active{border-color:var(--acc);background:var(--accd);box-shadow:0 0 0 1px var(--acc)}
+.dtab-logo{height:28px;width:56px;object-fit:contain;flex-shrink:0}
+.dtab-logo-fb{width:56px;height:28px;flex-shrink:0;background:var(--s3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.52rem;font-weight:800;color:var(--tx3);letter-spacing:.04em}
+.dtab-info{flex:1;min-width:0}
+.dtab-name{font-size:.71rem;font-weight:700;color:var(--tx);line-height:1.3}
+.dtab-sub{font-size:.55rem;color:var(--tx3);margin-top:1px}
+.dtab-radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--b0);background:var(--s1);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all var(--tf)}
+.dtab.active .dtab-radio{border-color:var(--acc);background:var(--acc)}
+.dtab.active .dtab-radio::after{content:'';width:5px;height:5px;background:#fff;border-radius:50%;display:block}
+.addr-lbl{font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tx3);margin-bottom:5px;display:block;margin-top:14px;font-weight:600}
+.addr-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:9px;color:var(--tx);font-family:var(--fs);font-size:.8rem;padding:9px 13px;outline:none;transition:border-color var(--tf),box-shadow var(--tf);margin-bottom:8px;box-sizing:border-box}
+.addr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.addr-inp::placeholder{color:var(--tx3)}
+select.addr-inp{cursor:pointer}
+.checkout-btn{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity var(--tf),box-shadow var(--tf),transform var(--tf);display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box}
+.checkout-btn:hover{opacity:.92;box-shadow:0 6px 24px var(--acc-shadow);transform:translateY(-1px)}
+.checkout-btn:active{transform:scale(.98)}
+.checkout-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* ── ORDERS ── */
 .oc{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:14px 16px;margin-bottom:9px;transition:all var(--tf);position:relative;overflow:hidden;box-shadow:var(--shadow)}
@@ -1273,61 +1272,22 @@ a{color:inherit;text-decoration:none}
 
     <!-- CART -->
     <div class="page" id="page-cart">
-      <div class="sh">
-        <div><div class="sh-tag">Расмикунонӣ</div><div class="sh-title">Сабад</div></div>
-        <button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Тоза кардан</button>
-      </div>
-
-      <!-- Items list -->
-      <div id="cart-list">
-        <div class="ci ci-skl">
-          <div class="ci-img skl-block" style="width:68px;height:68px;border-radius:14px;flex-shrink:0"></div>
-          <div class="ci-body">
-            <div class="skl-block" style="height:11px;width:68%;margin-bottom:7px;border-radius:5px"></div>
-            <div class="skl-block" style="height:8px;width:44%;margin-bottom:14px;border-radius:4px"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div class="skl-block" style="height:32px;width:88px;border-radius:10px"></div>
-              <div class="skl-block" style="height:13px;width:48px;border-radius:5px"></div>
-            </div>
-          </div>
+      <div class="sh"><div><div class="sh-tag">Расмикунонӣ</div><div class="sh-title">Сабад</div></div><button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Тоза кардан</button></div>
+      <div class="cart-layout">
+        <div id="cart-list">
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:58%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:34%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
+          <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:66%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:44%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
         </div>
-        <div class="ci ci-skl">
-          <div class="ci-img skl-block" style="width:68px;height:68px;border-radius:14px;flex-shrink:0"></div>
-          <div class="ci-body">
-            <div class="skl-block" style="height:11px;width:55%;margin-bottom:7px;border-radius:5px"></div>
-            <div class="skl-block" style="height:8px;width:36%;margin-bottom:14px;border-radius:4px"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div class="skl-block" style="height:32px;width:88px;border-radius:10px"></div>
-              <div class="skl-block" style="height:13px;width:42px;border-radius:5px"></div>
-            </div>
-          </div>
-        </div>
-        <div class="ci ci-skl">
-          <div class="ci-img skl-block" style="width:68px;height:68px;border-radius:14px;flex-shrink:0"></div>
-          <div class="ci-body">
-            <div class="skl-block" style="height:11px;width:74%;margin-bottom:7px;border-radius:5px"></div>
-            <div class="skl-block" style="height:8px;width:40%;margin-bottom:14px;border-radius:4px"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div class="skl-block" style="height:32px;width:88px;border-radius:10px"></div>
-              <div class="skl-block" style="height:13px;width:52px;border-radius:5px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Summary card -->
-      <div class="cs" id="cart-sum">
-
-        <!-- Totals -->
-        <div class="cs-totals">
+        <div style="min-width:0;max-width:100%"><div class="cs" id="cart-sum">
+          <div class="sh-tag" style="margin-bottom:10px">Ҷамъбаст</div>
           <div class="cs-row"><span>Маҳсулот</span><span id="cs-items">0 см</span></div>
           <div class="cs-row"><span>Расонидан</span><span id="cs-del">7 см</span></div>
           <div class="cs-row total"><span>Ҷамъ</span><span class="price" id="cs-total">7 см</span></div>
-        </div>
+          <div class="cs-divider"></div>
 
-        <!-- Delivery service -->
-        <div class="cs-section">
-          <span class="cs-section-lbl">Хидмати расонидан</span>
+          <!-- ── Хидмати расонидан ─────────────────────────────── -->
+          <label class="addr-lbl">Хидмати расонидан</label>
           <div class="delivery-tabs" id="delivery-tabs">
             <div class="dtab active" data-svc="dastdaroz" onclick="selectDeliveryService('dastdaroz')">
               <img class="dtab-logo" src="/storage/delivery-service/dastdaroz.png" alt="Dastdaroz"
@@ -1350,11 +1310,8 @@ a{color:inherit;text-decoration:none}
               <div class="dtab-radio"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Address -->
-        <div class="cs-section">
-          <span class="cs-section-lbl">Суроғаи расонидан</span>
+          <label class="addr-lbl">Суроғаи расонидан</label>
           <div class="addr-card" onclick="openAddrModal('cart')" id="cart-addr-card">
             <div class="addr-card-ico">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1371,30 +1328,18 @@ a{color:inherit;text-decoration:none}
           <input type="hidden" id="cart-addr"/>
           <input type="hidden" id="cart-lat"/>
           <input type="hidden" id="cart-lng"/>
-        </div>
-
-        <!-- Comment -->
-        <div class="cs-section">
-          <span class="cs-section-lbl">Шарҳ ба курьер</span>
-          <input class="cart-note-inp" id="cart-comment" type="text" placeholder="Дарбоз нашавад, ошёна 3…"/>
-        </div>
-
-        <!-- Payment -->
-        <div class="cs-section">
-          <span class="cs-section-lbl">Пардохт</span>
-          <div class="cs-pay-card">
-            <span class="cs-pay-ico">💳</span>
-            <span class="cs-pay-name">Корти бонкӣ</span>
-            <span class="cs-pay-hint">Онлайн пардохт</span>
-          </div>
-        </div>
-
-        <!-- Checkout button -->
-        <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
-          <span>Фармоиш расмикунонӣ</span>
-          <span class="checkout-btn-price" id="cs-total-btn">7 см →</span>
-        </button>
-
+          <label class="addr-lbl">Шарҳ</label>
+          <input class="addr-inp" type="text" id="cart-comment" placeholder="Дарбоз нашавад, ошёна 3…"/>
+          <label class="addr-lbl">Пардохт</label>
+          <select class="addr-inp" id="cart-pay">
+            <option value="cash">💵 Нақдӣ ба курьер</option>
+            <option value="card">💳 Корти бонкӣ</option>
+          </select>
+          <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Фармоиш расмикунонӣ
+          </button>
+        </div></div>
       </div>
     </div>
 
