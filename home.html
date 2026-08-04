@@ -1774,13 +1774,13 @@ select.addr-inp{cursor:pointer}
 
         <!-- Адрес доставки -->
         <div class="prof-section-lbl">Расонидан</div>
-        <div id="prof-addr-row" onclick="openAddrModal('cart')" style="display:flex;align-items:center;gap:13px;background:var(--s1);border:1.5px solid var(--b0);padding:13px 16px;cursor:pointer;border-radius:13px;transition:background .15s;width:100%;text-align:left;box-sizing:border-box" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
+        <div id="prof-addr-row" onclick="openProfileAddrs()" style="display:flex;align-items:center;gap:13px;background:var(--s1);border:1.5px solid var(--b0);padding:13px 16px;cursor:pointer;border-radius:13px;transition:background .15s;width:100%;text-align:left;box-sizing:border-box" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
           <div class="prof-row-icon" style="background:var(--accd)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
           <div class="prof-row-body">
             <div class="prof-row-title">Суроғаи расонидан</div>
-            <div class="prof-row-sub" id="prof-addr-display" style="color:var(--tx3)">Суроғ нишон диҳед →</div>
+            <div class="prof-row-sub" id="prof-addr-display" style="color:var(--acc);font-weight:600">Суроғ нишон диҳед →</div>
           </div>
           <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -2234,6 +2234,45 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 .pf-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s;margin-top:4px}
 .pf-btn:disabled{opacity:.5;cursor:default}
 .pf-btn:active:not(:disabled){opacity:.86}
+/* ══ PROFILE ADDRESSES MODAL ══════════════════════════════════ */
+.paddr-bg{position:fixed;inset:0;z-index:650;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;box-sizing:border-box}
+.paddr-bg.open{opacity:1;pointer-events:all}
+.paddr-modal{background:var(--s1);border-radius:18px;width:100%;max-width:420px;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;transform:scale(.94) translateY(10px);transition:transform .28s var(--spring);box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.paddr-bg.open .paddr-modal{transform:none}
+.paddr-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.paddr-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
+.paddr-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
+.paddr-close:hover{background:var(--s3)}
+.paddr-list{overflow-y:auto;flex:1}
+.paddr-item{display:flex;align-items:center;gap:12px;padding:13px 18px;transition:background .13s}
+.paddr-item+.paddr-item{border-top:1px solid var(--b0)}
+.paddr-item:hover{background:var(--s2)}
+.paddr-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.paddr-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
+.paddr-item-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:5px;border-radius:7px;transition:all .13s;flex-shrink:0}
+.paddr-item-del:hover{color:var(--red);background:var(--redd)}
+.paddr-add-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;width:100%;background:none;border:none;border-top:1px solid var(--b0);cursor:pointer;transition:background .13s;font-family:var(--fs);text-align:left;flex-shrink:0}
+.paddr-add-btn:hover{background:var(--s2)}
+.paddr-add-ico{width:36px;height:36px;border-radius:10px;background:var(--s2);border:1.5px dashed var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .13s}
+.paddr-add-btn:hover .paddr-add-ico{border-color:var(--acc);color:var(--acc);background:var(--accd)}
+.paddr-add-lbl{font-size:.78rem;font-weight:600;color:var(--tx2)}
+.paddr-empty{padding:32px 20px;text-align:center;font-size:.76rem;color:var(--tx3)}
+
+/* ══ ADD ADDRESS SHEET ══════════════════════════════════════════ */
+.addaddr-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
+.addaddr-ov.open{opacity:1;pointer-events:all}
+.addaddr-sheet{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 20px calc(var(--safe-b) + 22px);transform:translateY(100%);transition:transform .32s var(--spring)}
+.addaddr-sheet.open{transform:translateY(0)}
+.addaddr-handle{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:0 auto 18px}
+.addaddr-title{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx);margin-bottom:16px}
+.addaddr-lbl{font-size:.48rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;display:block}
+.addaddr-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.84rem;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;resize:none}
+.addaddr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.addaddr-inp::placeholder{color:var(--tx3)}
+.addaddr-save{width:100%;margin-top:14px;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;transition:opacity .13s}
+.addaddr-save:active{opacity:.85}
+.addaddr-save:disabled{opacity:.5;cursor:default}
+
 </style>
 
 <div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
@@ -2457,6 +2496,41 @@ window.submitPartnerForm = async function() {
   </div>
 
   <button class="wlt-tup-cancel" onclick="closeTopUp()">Бекор кардан</button>
+</div>
+
+
+<!-- ══ PROFILE ADDRESSES MODAL ══════════════════════════════════ -->
+<div class="paddr-bg" id="paddr-bg" onclick="if(event.target===this)closeProfileAddrs()">
+  <div class="paddr-modal" id="paddr-modal">
+    <div class="paddr-head">
+      <div class="paddr-title">Суроғҳои ман</div>
+      <button class="paddr-close" onclick="closeProfileAddrs()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="paddr-list" id="paddr-list">
+      <div class="paddr-empty">Суроғе вуҷуд надорад</div>
+    </div>
+    <button class="paddr-add-btn" onclick="openAddAddrSheet()">
+      <div class="paddr-add-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <span class="paddr-add-lbl">Иловакардани суроғ</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══ ADD ADDRESS SHEET ══════════════════════════════════════════ -->
+<div class="addaddr-ov" id="addaddr-ov" onclick="closeAddAddrSheet()"></div>
+<div class="addaddr-sheet" id="addaddr-sheet">
+  <div class="addaddr-handle"></div>
+  <div class="addaddr-title">Суроғи нав</div>
+  <label class="addaddr-lbl" for="addaddr-inp">Суроғи пурра</label>
+  <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
+    placeholder="Масалан: кӯчаи Рӯдакӣ 42, хонаи 7…"></textarea>
+  <button class="addaddr-save" id="addaddr-save-btn" onclick="saveProfileAddr()">
+    Нигоҳ доштан
+  </button>
 </div>
 
 </body>

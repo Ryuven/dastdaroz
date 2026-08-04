@@ -2868,6 +2868,123 @@ window.cancelBooking = async function() {
 };
 
 // ══════════════════════════════════════════════════════════════
+//  PROFILE ADDRESSES  (users/{uid}/addresses subcollection)
+// ══════════════════════════════════════════════════════════════
+
+let _profAddrs = [];
+
+/* ── open / close the list modal ── */
+window.openProfileAddrs = async function () {
+  if (!requireAuth('Барои суроғ ворид шавед')) return;
+  document.getElementById('paddr-bg')?.classList.add('open');
+  await _loadProfAddrs();
+};
+
+window.closeProfileAddrs = function () {
+  document.getElementById('paddr-bg')?.classList.remove('open');
+};
+
+/* ── load from Firestore ── */
+async function _loadProfAddrs() {
+  if (!CU) return;
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'users', CU.uid, 'addresses'), orderBy('createdAt', 'asc'))
+    );
+    _profAddrs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderProfAddrs();
+  } catch (e) { console.error('ProfAddrs:', e); }
+}
+
+/* ── render the list inside the modal ── */
+function _renderProfAddrs() {
+  const list = document.getElementById('paddr-list');
+  if (!list) return;
+
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  if (!_profAddrs.length) {
+    list.innerHTML = '<div class="paddr-empty">Суроғе вуҷуд надорад</div>';
+  } else {
+    list.innerHTML = _profAddrs.map(a => `
+      <div class="paddr-item">
+        <div class="paddr-item-ico">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.8">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="paddr-item-text">${esc(a.text)}</div>
+        <button class="paddr-item-del" onclick="deleteProfAddr('${a.id}')" title="Нест кардан">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </div>`).join('');
+  }
+
+  // Update the profile row subtitle
+  const sub = document.getElementById('prof-addr-display');
+  if (sub) {
+    if (_profAddrs.length > 0) {
+      sub.textContent = _profAddrs[0].text;
+      sub.style.color = 'var(--tx2)';
+      sub.style.fontWeight = '500';
+    } else {
+      sub.textContent = 'Суроғ нишон диҳед →';
+      sub.style.color = 'var(--acc)';
+      sub.style.fontWeight = '600';
+    }
+  }
+}
+
+/* ── open / close the add-address sheet ── */
+window.openAddAddrSheet = function () {
+  const inp = document.getElementById('addaddr-inp');
+  if (inp) inp.value = '';
+  document.getElementById('addaddr-ov')?.classList.add('open');
+  document.getElementById('addaddr-sheet')?.classList.add('open');
+  setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 320);
+};
+
+window.closeAddAddrSheet = function () {
+  document.getElementById('addaddr-ov')?.classList.remove('open');
+  document.getElementById('addaddr-sheet')?.classList.remove('open');
+};
+
+/* ── save new address ── */
+window.saveProfileAddr = async function () {
+  if (!CU) return;
+  const text = document.getElementById('addaddr-inp')?.value.trim();
+  if (!text) { toast('Суроғро нависед', 'warn'); return; }
+  const btn = document.getElementById('addaddr-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await addDoc(collection(db, 'users', CU.uid, 'addresses'), {
+      text,
+      createdAt: serverTimestamp(),
+    });
+    closeAddAddrSheet();
+    toast('Суроғ илова шуд', 'ok');
+    await _loadProfAddrs();
+  } catch (e) {
+    console.error('SaveAddr:', e);
+    toast('Хатои сабт', 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Нигоҳ доштан'; }
+  }
+};
+
+/* ── delete an address ── */
+window.deleteProfAddr = async function (id) {
+  if (!CU) return;
+  try {
+    await deleteDoc(doc(db, 'users', CU.uid, 'addresses', id));
+    await _loadProfAddrs();
+  } catch (e) { toast('Хатои нест кардан', 'err'); }
+};
+
+// ══════════════════════════════════════════════════════════════
 //  WALLET — кошелёк пользователя
 //  Firestore: users/{uid}.walletBalance  +  users/{uid}/walletTransactions/
 // ══════════════════════════════════════════════════════════════
