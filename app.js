@@ -39,7 +39,7 @@ let activeStore   = null;  // текущий открытый магазин
 let storeCatFilter = 'all'; // фильтр категорий внутри магазина
 let jsonMenuData  = null;
 let jsonProdsMap  = {};
-let deliveryService = 'dastdaroz'; // 'dastdaroz' | 'mavsimi'
+let deliveryService = 'mavsimi';
 
 const DFEE = 7; // стоимость доставки
 
