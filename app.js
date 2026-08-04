@@ -1162,16 +1162,8 @@ function updateBadges() {
 }
 
 function setAddr() {
-  if (UD?.address) {
-    updateAddrCard(UD.address, UD.lat || null, UD.lng || null);
-  }
-  // Синхронизируем адрес в профиле (на случай первой загрузки)
-  const profAddrDisplay = document.getElementById('prof-addr-display');
-  if (profAddrDisplay) {
-    profAddrDisplay.textContent = UD?.address ? UD.address : 'Суроғ нишон диҳед →';
-    profAddrDisplay.style.color = UD?.address ? 'var(--tx2)' : 'var(--acc)';
-    profAddrDisplay.style.fontWeight = UD?.address ? '500' : '600';
-  }
+  // Cart address is now always blank by default — user picks from saved addresses sheet
+  // (No auto-fill from UD.address)
 }
 
 // ─── Адрес + Карта (Leaflet + OpenStreetMap) ─────────────────
@@ -2865,6 +2857,93 @@ window.cancelBooking = async function() {
   _bookingDeadline = null;
   toast('Фармоиш бекор шуд');
   goPage('home');
+};
+
+// ══════════════════════════════════════════════════════════════
+//  CART ADDRESS SHEET — pick from saved profile addresses
+// ══════════════════════════════════════════════════════════════
+
+window.openCartAddrSheet = async function () {
+  document.getElementById('caddrsh-ov')?.classList.add('open');
+  document.getElementById('caddrsh')?.classList.add('open');
+
+  const list = document.getElementById('caddrsh-list');
+  if (!list) return;
+
+  if (!CU) {
+    list.innerHTML = `<div class="caddrsh-empty">
+      Барои интихоби суроғ ворид шавед
+      <br><button class="caddrsh-goto" onclick="closeCartAddrSheet();goLogin()">Ворид шавед →</button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = '<div class="caddrsh-empty">Бор шуда истодааст…</div>';
+
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'users', CU.uid, 'addresses'), orderBy('createdAt', 'asc'))
+    );
+    const addrs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderCartAddrList(addrs);
+  } catch (e) {
+    console.error('CartAddrSheet:', e);
+    list.innerHTML = '<div class="caddrsh-empty">Хатои бор кардан</div>';
+  }
+};
+
+window.closeCartAddrSheet = function () {
+  document.getElementById('caddrsh-ov')?.classList.remove('open');
+  document.getElementById('caddrsh')?.classList.remove('open');
+};
+
+function _renderCartAddrList(addrs) {
+  const list = document.getElementById('caddrsh-list');
+  if (!list) return;
+  const current = document.getElementById('cart-addr')?.value || '';
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  if (!addrs.length) {
+    list.innerHTML = `<div class="caddrsh-empty">
+      Суроғе вуҷуд надорад<br>
+      <button class="caddrsh-goto" onclick="closeCartAddrSheet();goPage('profile')">
+        Дар профил илова кунед →
+      </button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = addrs.map(a => {
+    const sel = a.text === current;
+    return `<button class="caddrsh-item${sel ? ' selected' : ''}"
+        onclick="selectCartAddr(${JSON.stringify(a.text)})">
+      <div class="caddrsh-item-ico">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="1.8">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <div class="caddrsh-item-text">${esc(a.text)}</div>
+      <div class="caddrsh-item-check">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+window.selectCartAddr = function (text) {
+  const inp = document.getElementById('cart-addr');
+  if (inp) inp.value = text;
+
+  const display = document.getElementById('cart-addr-display');
+  if (display) {
+    display.textContent = text;
+    display.classList.remove('empty');
+  }
+
+  closeCartAddrSheet();
 };
 
 // ══════════════════════════════════════════════════════════════
