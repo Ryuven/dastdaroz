@@ -1428,22 +1428,19 @@ select.addr-inp{cursor:pointer}
           <!-- ══ Карточка 2: Форма заказа ══ -->
           <div class="cs">
             <label class="addr-lbl">Суроғаи расонидан</label>
-            <div class="addr-card" onclick="openAddrModal('cart')" id="cart-addr-card">
+            <div class="addr-card" onclick="openCartAddrSheet()" id="cart-addr-card">
               <div class="addr-card-ico">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
               <div class="addr-card-body">
                 <div class="addr-card-lbl">Нуқтаи расонидан</div>
-                <div class="addr-card-val empty" id="cart-addr-display">Суроғро нишон диҳед →</div>
-                <div class="addr-card-coords" id="cart-addr-coords" style="display:none"></div>
+                <div class="addr-card-val empty" id="cart-addr-display">Нишон дода нашудааст</div>
               </div>
               <div class="addr-card-arrow">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
               </div>
             </div>
             <input type="hidden" id="cart-addr"/>
-            <input type="hidden" id="cart-lat"/>
-            <input type="hidden" id="cart-lng"/>
 
             <!-- Шарҳ -->
             <label class="cart-note-lbl">
@@ -2273,6 +2270,30 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 .addaddr-save:active{opacity:.85}
 .addaddr-save:disabled{opacity:.5;cursor:default}
 
+/* ══ CART ADDRESS SHEET ════════════════════════════════════════ */
+.caddrsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
+.caddrsh-ov.open{opacity:1;pointer-events:all}
+.caddrsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding-bottom:calc(var(--safe-b) + 8px);transform:translateY(100%);transition:transform .32s var(--spring);max-height:72vh;display:flex;flex-direction:column}
+.caddrsh.open{transform:translateY(0)}
+.caddrsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
+.caddrsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.caddrsh-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
+.caddrsh-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
+.caddrsh-close:hover{background:var(--s3)}
+.caddrsh-list{overflow-y:auto;flex:1}
+.caddrsh-item{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;transition:background .13s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
+.caddrsh-item+.caddrsh-item{border-top:1px solid var(--b0)}
+.caddrsh-item:hover{background:var(--s2)}
+.caddrsh-item.selected{background:var(--accd)}
+.caddrsh-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .13s}
+.caddrsh-item.selected .caddrsh-item-ico{background:var(--acc)}
+.caddrsh-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.4}
+.caddrsh-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
+.caddrsh-item.selected .caddrsh-item-check{opacity:1}
+.caddrsh-empty{padding:34px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
+.caddrsh-goto{margin-top:12px;padding:9px 18px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.74rem;font-weight:600;color:var(--tx);cursor:pointer;font-family:var(--fs);transition:all .13s}
+.caddrsh-goto:hover{border-color:var(--acc);color:var(--acc)}
+
 </style>
 
 <div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
@@ -2531,6 +2552,24 @@ window.submitPartnerForm = async function() {
   <button class="addaddr-save" id="addaddr-save-btn" onclick="saveProfileAddr()">
     Нигоҳ доштан
   </button>
+</div>
+
+
+<!-- ══ CART ADDRESS SHEET ═══════════════════════════════════════ -->
+<div class="caddrsh-ov" id="caddrsh-ov" onclick="closeCartAddrSheet()"></div>
+<div class="caddrsh" id="caddrsh">
+  <div class="caddrsh-drag"></div>
+  <div class="caddrsh-head">
+    <div class="caddrsh-title">Суроғи расонидан</div>
+    <button class="caddrsh-close" onclick="closeCartAddrSheet()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="caddrsh-list" id="caddrsh-list">
+    <div class="caddrsh-empty">
+      Суроғҳо бор шуда истодаанд…
+    </div>
+  </div>
 </div>
 
 </body>
