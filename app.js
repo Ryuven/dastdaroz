@@ -1109,18 +1109,26 @@ function renderCart() {
   const el = document.getElementById('cart-list');
   if (!el) return;
   if (GUEST) {
-    el.innerHTML = `<div class="empty" style="padding:52px 20px 20px">
-      <span class="empty-ico">🔐</span>
-      <div class="empty-t">Барои истифода аз сабад ворид шавед</div>
-      <div class="empty-s" style="margin-bottom:20px">Маҳсулотро интихоб кунед ва фармоиш диҳед</div>
-      <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;color:#fff;font-size:.74rem;font-family:var(--fs);font-weight:700;padding:10px 28px;cursor:pointer;box-shadow:0 3px 12px rgba(26,158,74,.3)">Ворид шавед / Ҳисоб кушоед</button>
+    el.innerHTML = `<div class="ci ci-empty">
+      <div class="ci-empty-ico">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div class="ci-empty-t">Ворид нашудед</div>
+      <div class="ci-empty-s">Барои истифода аз сабад ворид шавед</div>
+      <button class="ci-empty-btn" onclick="goLogin()">Ворид шавед</button>
     </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
     const cb = document.getElementById('checkout-btn'); if (cb) cb.disabled = true;
     return;
   }
   if (!cart.length) {
-    el.innerHTML = '<div class="empty"><span class="empty-ico">🛒</span><div class="empty-t">Сабад холӣ аст</div><div class="empty-s">Аз каталог маҳсулот илова кунед</div></div>';
+    el.innerHTML = `<div class="ci ci-empty">
+      <div class="ci-empty-ico">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <div class="ci-empty-t">Сабад холӣ аст</div>
+      <div class="ci-empty-s">Аз каталог маҳсулот илова кунед</div>
+    </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
     const cb = document.getElementById('checkout-btn'); if (cb) cb.disabled = true;
   } else {
