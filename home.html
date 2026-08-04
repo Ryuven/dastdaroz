@@ -1427,19 +1427,16 @@ select.addr-inp{cursor:pointer}
 
           <!-- ══ Карточка 2: Форма заказа ══ -->
           <div class="cs">
-            <label class="addr-lbl">Суроғаи расонидан</label>
-            <div class="addr-card" onclick="openCartAddrSheet()" id="cart-addr-card">
-              <div class="addr-card-ico">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <button class="cart-addr-row" id="cart-addr-card" onclick="openCartAddrSheet()">
+              <div class="cart-addr-row-ico">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
-              <div class="addr-card-body">
-                <div class="addr-card-lbl">Нуқтаи расонидан</div>
-                <div class="addr-card-val empty" id="cart-addr-display">Нишон дода нашудааст</div>
+              <div class="cart-addr-row-body">
+                <div class="cart-addr-row-lbl">Суроғи расонидан</div>
+                <div class="cart-addr-row-val" id="cart-addr-display">Нишон дода нашудааст</div>
               </div>
-              <div class="addr-card-arrow">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-              </div>
-            </div>
+              <svg class="cart-addr-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
             <input type="hidden" id="cart-addr"/>
 
             <!-- Шарҳ -->
@@ -2293,6 +2290,19 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
 .caddrsh-empty{padding:34px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
 .caddrsh-goto{margin-top:12px;padding:9px 18px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.74rem;font-weight:600;color:var(--tx);cursor:pointer;font-family:var(--fs);transition:all .13s}
 .caddrsh-goto:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ── Cart address picker row ── */
+.cart-addr-row{display:flex;align-items:center;gap:11px;padding:13px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;cursor:pointer;transition:border-color .15s,background .15s;width:100%;box-sizing:border-box;text-align:left;font-family:var(--fs)}
+.cart-addr-row:hover{border-color:var(--accg);background:var(--accd)}
+.cart-addr-row.filled{border-color:var(--accg);background:var(--accd)}
+.cart-addr-row-ico{width:34px;height:34px;border-radius:9px;background:var(--s1);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .15s}
+.cart-addr-row:hover .cart-addr-row-ico,.cart-addr-row.filled .cart-addr-row-ico{background:var(--acc);border-color:var(--acc);color:#fff}
+.cart-addr-row-body{flex:1;min-width:0;overflow:hidden}
+.cart-addr-row-lbl{font-size:.44rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.cart-addr-row-val{font-size:.76rem;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.cart-addr-row.filled .cart-addr-row-val{color:var(--tx);font-style:normal;font-weight:600}
+.cart-addr-row-arrow{color:var(--tx3);flex-shrink:0;transition:color .15s}
+.cart-addr-row:hover .cart-addr-row-arrow,.cart-addr-row.filled .cart-addr-row-arrow{color:var(--acc)}
 
 </style>
 

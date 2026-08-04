@@ -2934,14 +2934,17 @@ function _renderCartAddrList(addrs) {
 }
 
 window.selectCartAddr = function (text) {
+  // save value
   const inp = document.getElementById('cart-addr');
   if (inp) inp.value = text;
 
+  // update display text
   const display = document.getElementById('cart-addr-display');
-  if (display) {
-    display.textContent = text;
-    display.classList.remove('empty');
-  }
+  if (display) display.textContent = text;
+
+  // switch card to "filled" state (green accent)
+  const card = document.getElementById('cart-addr-card');
+  if (card) card.classList.add('filled');
 
   closeCartAddrSheet();
 };
