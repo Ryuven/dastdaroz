@@ -2913,10 +2913,12 @@ function _renderCartAddrList(addrs) {
     return;
   }
 
+  // Use data-text attribute — avoids quote-escaping bugs in onclick
   list.innerHTML = addrs.map(a => {
     const sel = a.text === current;
+    const escAttr = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     return `<button class="caddrsh-item${sel ? ' selected' : ''}"
-        onclick="selectCartAddr(${JSON.stringify(a.text)})">
+        data-text="${escAttr(a.text)}" onclick="selectCartAddr(this.dataset.text)">
       <div class="caddrsh-item-ico">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
           stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="1.8">
