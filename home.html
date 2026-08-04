@@ -1078,29 +1078,23 @@ select.addr-inp{cursor:pointer}
 
 /* ── Пустая корзина — карточка в стиле .ci ── */
 .ci-empty{
-  display:flex!important;align-items:center;justify-content:center;
-  flex-direction:column;gap:9px;
-  padding:40px 20px!important;
-  grid-template-columns:unset!important;
-  text-align:center;
   cursor:default;transform:none!important;
 }
 .ci-empty:hover{border-color:var(--b0)!important;box-shadow:var(--shadow)!important;transform:none!important}
-.ci-empty-ico{
-  width:44px;height:44px;border-radius:12px;
-  background:var(--s2);border:1.5px solid var(--b0);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--tx3);margin-bottom:4px;
+.ci-empty-txt{
+  grid-column:2/-1;display:flex;flex-direction:column;
+  gap:3px;justify-content:center;
 }
-.ci-empty-t{font-family:var(--fd);font-weight:900;font-size:.88rem;color:var(--tx);letter-spacing:-.01em}
-.ci-empty-s{font-size:.7rem;color:var(--tx3);line-height:1.5}
+.ci-empty-t{font-family:var(--fd);font-weight:900;font-size:.8rem;color:var(--tx);letter-spacing:-.01em}
+.ci-empty-s{font-size:.68rem;color:var(--tx3)}
 .ci-empty-btn{
-  margin-top:6px;padding:9px 26px;
+  grid-column:4/-1;align-self:center;
+  padding:6px 14px;
   background:linear-gradient(135deg,var(--acc),var(--acc2));
-  border:none;border-radius:9px;color:#fff;
-  font-size:.72rem;font-family:var(--fd);font-weight:900;
-  cursor:pointer;box-shadow:0 3px 12px var(--acc-shadow);
-  letter-spacing:.03em;
+  border:none;border-radius:8px;color:#fff;
+  font-size:.66rem;font-family:var(--fd);font-weight:900;
+  cursor:pointer;box-shadow:0 2px 8px var(--acc-shadow);
+  white-space:nowrap;
 }
 
 /* ── CART PAYMENT METHOD TABS ────────────────────────────────── */

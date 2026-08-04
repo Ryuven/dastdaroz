@@ -1110,11 +1110,13 @@ function renderCart() {
   if (!el) return;
   if (GUEST) {
     el.innerHTML = `<div class="ci ci-empty">
-      <div class="ci-empty-ico">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <div class="ci-img" style="color:var(--tx3)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
       </div>
-      <div class="ci-empty-t">Ворид нашудед</div>
-      <div class="ci-empty-s">Барои истифода аз сабад ворид шавед</div>
+      <div class="ci-empty-txt">
+        <div class="ci-empty-t">Ворид нашудед</div>
+        <div class="ci-empty-s">Барои истифода аз сабад</div>
+      </div>
       <button class="ci-empty-btn" onclick="goLogin()">Ворид шавед</button>
     </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
@@ -1123,11 +1125,13 @@ function renderCart() {
   }
   if (!cart.length) {
     el.innerHTML = `<div class="ci ci-empty">
-      <div class="ci-empty-ico">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <div class="ci-img" style="color:var(--tx3)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       </div>
-      <div class="ci-empty-t">Сабад холӣ аст</div>
-      <div class="ci-empty-s">Аз каталог маҳсулот илова кунед</div>
+      <div class="ci-empty-txt">
+        <div class="ci-empty-t">Сабад холӣ аст</div>
+        <div class="ci-empty-s">Аз каталог маҳсулот илова кунед</div>
+      </div>
     </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
     const cb = document.getElementById('checkout-btn'); if (cb) cb.disabled = true;
