@@ -144,6 +144,7 @@ onAuthStateChanged(auth, async u => {
     GUEST = true;
     CU = null;
     UD = null;
+    if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
     await Promise.all([loadProds(), loadCats(), loadStores()]);
     renderSB();
     renderGuestBanner();
@@ -1166,14 +1167,25 @@ function setAddr() {
   // (No auto-fill from UD.address)
 }
 
-// ─── Адрес — проверка баннера по subcollection addresses ──────
+// ─── Баннер адреса — реальное время через onSnapshot ─────────
+let _addrBannerUnsub = null;
+
 function checkAddressBanner(uid) {
-  if (!uid) { window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: false } })); return; }
-  import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js').then(({collection, query, orderBy, onSnapshot}) => {
-    const q = query(collection(db, 'users', uid, 'addresses'), orderBy('createdAt', 'asc'));
-    onSnapshot(q, snap => {
-      window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: !snap.empty } }));
-    });
+  // Отписываемся от предыдущей подписки если была
+  if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
+
+  if (!uid) {
+    window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: false } }));
+    return;
+  }
+
+  // Используем уже импортированные Firestore-функции
+  const q = query(collection(db, 'users', uid, 'addresses'));
+  _addrBannerUnsub = onSnapshot(q, snap => {
+    window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: !snap.empty } }));
+  }, _err => {
+    // При ошибке (нет прав и т.д.) — не показываем баннер
+    window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: true } }));
   });
 }
 
