@@ -86,6 +86,104 @@ const CAT_SVG = {
   default:    { color: '#64748b', bg: 'rgba(100,116,139,.1)',svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill="#64748b" opacity=".15"/><circle cx="16" cy="16" r="6" fill="#64748b" opacity=".5"/></svg>` },
 };
 
+// ─── Общие категории каталога ─────────────────────────────────
+// Фallback-данные. Firestore-коллекция 'generalCategories' имеет приоритет.
+// Поле icon: путь к картинке (полный Storage URL или относительный путь).
+// Поле nameRu: подпись на главной и в каталоге.
+// Поле nameTj: подпись на таджикском (можно показывать по настройке).
+// Поле order: порядок сортировки.
+const GENERAL_CATS = [
+  { id: 'aromatizatory',        nameRu: 'Ароматизаторы',      nameTj: 'Хушбӯйкунанда',     icon: 'storage/general-catalogs/new-version/aromatizatory.png',        order: 1  },
+  { id: 'avtokosmetika',        nameRu: 'Автокосметика',       nameTj: 'Автокосметика',      icon: 'storage/general-catalogs/new-version/avtokosmetika.png',         order: 2  },
+  { id: 'bakaleya',             nameRu: 'Бакалея',             nameTj: 'Бакалея',            icon: 'storage/general-catalogs/new-version/bakaleya.png',              order: 3  },
+  { id: 'bystroe_pitanie',      nameRu: 'Быстрое питание',     nameTj: 'Хӯроки зуд',         icon: 'storage/general-catalogs/new-version/bystroe_pitanie.png',       order: 4  },
+  { id: 'dlya_stirki',          nameRu: 'Для стирки',          nameTj: 'Барои шустан',       icon: 'storage/general-catalogs/new-version/dlya_stirki.png',           order: 5  },
+  { id: 'dlya_uborki',          nameRu: 'Для уборки',          nameTj: 'Барои тоза кардан',  icon: 'storage/general-catalogs/new-version/dlya_uborki.png',           order: 6  },
+  { id: 'gigiena_rta',          nameRu: 'Гигиена рта',         nameTj: 'Гигиенаи даҳон',     icon: 'storage/general-catalogs/new-version/gigiena_rta.png',           order: 7  },
+  { id: 'horeca',               nameRu: 'HoReCa',              nameTj: 'HoReCa',             icon: 'storage/general-catalogs/new-version/horeca.png',                order: 8  },
+  { id: 'kosmetika_i_ukhod',    nameRu: 'Косметика и уход',    nameTj: 'Косметика',          icon: 'storage/general-catalogs/new-version/kosmetika_i_ukhod.png',     order: 9  },
+  { id: 'napitki_i_kofe',       nameRu: 'Напитки и кофе',      nameTj: 'Нӯшокиҳо ва қаҳва', icon: 'storage/general-catalogs/new-version/napitki_i_kofe.png',        order: 10 },
+  { id: 'oborudovanie_i_sklad', nameRu: 'Оборуд. и склад',     nameTj: 'Таҷҳизот',           icon: 'storage/general-catalogs/new-version/oborudovanie_i_sklad.png',  order: 11 },
+  { id: 'prof_khimiya',         nameRu: 'Проф. химия',         nameTj: 'Хими яи касбӣ',      icon: 'storage/general-catalogs/new-version/prof_khimiya.png',          order: 12 },
+  { id: 'salfetki_i_tryapki',   nameRu: 'Салфетки',            nameTj: 'Салфетка',           icon: 'storage/general-catalogs/new-version/salfetki_i_tryapki.png',   order: 13 },
+  { id: 'sladosti',             nameRu: 'Сладости',            nameTj: 'Ширинӣ',             icon: 'storage/general-catalogs/new-version/sladosti.png',             order: 14 },
+  { id: 'sneki_i_chipsy',       nameRu: 'Снеки и чипсы',       nameTj: 'Снекҳо ва чипс',    icon: 'storage/general-catalogs/new-version/sneki_i_chipsy.png',       order: 15 },
+];
+
+// Рабочий массив — заменяется данными Firestore, если они есть
+let genCats = [...GENERAL_CATS];
+
+// ─── Загрузка общих категорий из Firestore ────────────────────
+// Firestore-коллекция: generalCategories
+// Документ: { id, nameRu, nameTj, icon, order, active }
+// Если коллекция пуста или недоступна — используется GENERAL_CATS.
+// Позже администратор сможет управлять через admin-панель.
+async function loadGenCats() {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'generalCategories'), orderBy('order'))
+    );
+    if (!snap.empty) {
+      genCats = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(c => c.active !== false);      // скрытые категории пропускаем
+    }
+  } catch {
+    // Коллекция ещё не создана — тихо оставляем fallback
+  }
+  renderGenCats();
+  renderCatalogGenCats();
+}
+
+// ─── Горизонтальная лента иконок на главной (gen-cats-row) ────
+function renderGenCats() {
+  const el = document.getElementById('gen-cats-row');
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = genCats.map(c => `
+    <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
+      <div class="gen-cat-img-wrap">
+        <img class="gen-cat-img"
+          src="${c.icon}"
+          alt="${c.nameRu}"
+          loading="lazy"
+          onerror="this.style.opacity='.18'"
+        />
+      </div>
+      <div class="gen-cat-name">${c.nameRu}</div>
+    </button>`).join('');
+}
+
+// ─── Сетка 3 колонки на странице «Каталог» (gen-cat-grid) ─────
+function renderCatalogGenCats() {
+  const el = document.getElementById('gen-cat-grid');
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = genCats.map(c => `
+    <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
+      <div class="gcat-img-wrap">
+        <img class="gcat-img"
+          src="${c.icon}"
+          alt="${c.nameRu}"
+          loading="lazy"
+          onerror="this.style.opacity='.18'"
+        />
+      </div>
+      <div class="gcat-name">${c.nameRu}</div>
+    </div>`).join('');
+  // Кликабельность добавим позже — раскомментируйте когда будет готово:
+  // el.querySelectorAll('.gcat-item').forEach(el => el.classList.add('clickable'));
+}
+
+// ─── Клик по иконке в горизонтальной ленте на главной ─────────
+// Пока просто переходит на страницу каталога (позже — откроет подкаталог)
+window.onGenCatClick = function (id) {
+  goPage('catalog');
+  // Позже: openGenCat(id);
+};
+
 // ─── Вспомогательные функции ──────────────────────────────────
 
 function catIconKey(id, name) {
@@ -145,7 +243,7 @@ onAuthStateChanged(auth, async u => {
     CU = null;
     UD = null;
     if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
-    await Promise.all([loadProds(), loadCats(), loadStores()]);
+    await Promise.all([loadProds(), loadCats(), loadStores(), loadGenCats()]);
     renderSB();
     renderGuestBanner();
     renderGuestProfile();
@@ -155,7 +253,7 @@ onAuthStateChanged(auth, async u => {
   GUEST = false;
   CU = u;
   await loadUD();
-  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores()]);
+  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadGenCats()]);
   renderSB();
   renderProfile();
   setAddr();
@@ -949,14 +1047,15 @@ function renderCatalog() {
     : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ҳеҷ чиз ёфт нашуд</div></div>`;
 }
 
-// ─── Категории ────────────────────────────────────────────────
+// ─── Категории (Firestore: products / categories pills) ───────
 async function loadCats() {
   try {
     const s = await getDocs(collection(db, 'categories'));
     cats = s.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch {}
-  renderCatPills();
   renderHomeCats();
+  // Пилюли фильтра каталога больше не нужны (страница теперь показывает
+  // иконки generalCategories), но оставляем вызов для совместимости.
 }
 
 function renderCatPills() {
