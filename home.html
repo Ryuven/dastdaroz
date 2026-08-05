@@ -915,68 +915,23 @@ select.addr-inp{cursor:pointer}
 .pm-go-cart{flex:1;height:48px;background:var(--s2);border:1.5px solid var(--accg);border-radius:14px;color:var(--acc);font-family:var(--fd);font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .14s}
 .pm-go-cart:hover{background:var(--accd)}
 /* ── ADDRESS MODAL ── */
-.addr-modal-bg{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
-.addr-modal-bg.open{opacity:1;pointer-events:all}
-.addr-modal{background:var(--s1);border-radius:28px 28px 0 0;width:100%;max-width:600px;height:92vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s var(--spring);overflow:hidden}
-.addr-modal-bg.open .addr-modal{transform:translateY(0)}
-.addr-modal-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 0;flex-shrink:0}
+/* ── (старый addr-modal удалён — используется paddr-bg в профиле) ── */
 
 /* Header */
-.addr-modal-head{padding:14px 18px 12px;flex-shrink:0;border-bottom:1px solid var(--b0)}
-.addr-modal-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);margin-bottom:10px}
-.addr-search-wrap{position:relative}
-.addr-search-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.8rem;padding:10px 42px 10px 38px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
-.addr-search-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.addr-search-inp::placeholder{color:var(--tx3)}
-.addr-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--tx3);pointer-events:none}
-.addr-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--b1);border:none;width:22px;height:28px;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;color:var(--tx3)}
-.addr-search-clear.show{display:flex}
+
 
 /* Suggestions dropdown */
-.addr-suggestions{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:10;overflow:hidden;max-height:220px;overflow-y:auto}
-.addr-sug-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;cursor:pointer;transition:background .12s;border-bottom:1px solid var(--b0)}
-.addr-sug-item:last-child{border-bottom:none}
-.addr-sug-item:hover{background:var(--s2)}
-.addr-sug-ico{width:28px;height:36px;border-radius:8px;background:var(--accd);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0;margin-top:1px}
-.addr-sug-main{font-size:.75rem;font-weight:600;color:var(--tx);line-height:1.3}
-.addr-sug-sec{font-size:.62rem;color:var(--tx3);margin-top:2px}
+
 
 /* Map container */
-#addr-map{width:100%;height:100%;z-index:1}
-.leaflet-container{font-family:var(--fs) !important}
-.addr-map-wrap{flex:1;position:relative;overflow:hidden;min-height:260px}
-.addr-map-pin{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);pointer-events:none;z-index:5;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));transition:transform .15s}
-.addr-map-pin.dragging{transform:translate(-50%,-110%) scale(1.1)}
-.addr-map-pin svg{display:block}
-.addr-map-pulse{position:absolute;top:50%;left:50%;width:16px;height:16px;border-radius:50%;background:rgba(26,158,74,.3);transform:translate(-50%,-50%);animation:mapPulse 1.8s ease-out infinite;pointer-events:none;z-index:4}
+
 @keyframes mapPulse{0%{transform:translate(-50%,-50%) scale(1);opacity:.7}100%{transform:translate(-50%,-50%) scale(3.5);opacity:0}}
 
 /* My location button */
-.addr-myloc-btn{position:absolute;right:14px;top:14px;z-index:6;width:42px;height:42px;border-radius:12px;background:var(--s1);border:1.5px solid var(--b0);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);box-shadow:0 2px 10px rgba(0,0,0,.1);transition:all .15s}
-.addr-myloc-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--accd)}
-.addr-myloc-btn.loading{animation:spinBtn 1s linear infinite}
-@keyframes spinBtn{to{transform:rotate(360deg)}}
+
 
 /* Bottom panel */
-.addr-bottom{padding:14px 18px 20px;flex-shrink:0;background:var(--s1);border-top:1px solid var(--b0)}
-.addr-bottom-label{font-size:.46rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px}
-.addr-bottom-val{font-size:.82rem;font-weight:600;color:var(--tx);margin-bottom:14px;min-height:20px;line-height:1.4}
-.addr-bottom-val.placeholder{color:var(--tx3);font-weight:400;font-style:italic}
-.addr-floor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.addr-detail-inp{background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;color:var(--tx);font-family:var(--fs);font-size:.76rem;padding:9px 12px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%;box-sizing:border-box}
-.addr-detail-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.addr-detail-inp::placeholder{color:var(--tx3)}
-.addr-confirm-btn{width:100%;padding:14px;background:var(--accg);border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(26,158,74,.3);transition:opacity .15s,transform .12s}
-.addr-confirm-btn:hover{opacity:.92;transform:translateY(-1px)}
-.addr-confirm-btn:active{transform:scale(.98)}
-.addr-confirm-btn:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
-.addr-clear-btn{display:none;align-items:center;gap:5px;background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:700;color:#dc2626;cursor:pointer;font-family:var(--fs);transition:background .14s;white-space:nowrap}
-.addr-clear-btn:hover{background:rgba(220,38,38,.13)}
-.addr-clear-btn:active{opacity:.75}
-.addr-clear-btn.visible{display:flex}
-.addr-confirm-btn:hover{opacity:.92;transform:translateY(-1px)}
-.addr-confirm-btn:active{transform:scale(.98)}
-.addr-confirm-btn:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
+
 
 /* Cart address display card */
 .addr-card{display:flex;align-items:center;gap:10px;padding:12px 13px;background:var(--s2);border:1.5px solid var(--b0);border-radius:14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;margin-bottom:8px;box-sizing:border-box;width:100%;overflow:hidden;min-width:0}
@@ -1165,9 +1120,7 @@ select.addr-inp{cursor:pointer}
 .cart-note-area:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
 .cart-note-area::placeholder{color:var(--tx3);font-size:.78rem}
 </style>
-<!-- Leaflet (бесплатно, без API ключа) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
 <style>
 /* ═══ BOOKING PAGE ══════════════════════════════════════════════
@@ -1254,7 +1207,7 @@ select.addr-inp{cursor:pointer}
   <div class="sb-logo">
     <img src="dastdaroz.png" alt="dastdaroz" style="height:36px;width:auto;object-fit:contain;display:block"/>
   </div>
-  <div class="sb-addr" id="sb-addr-row" onclick="closeSB();openAddrModal('cart')" style="cursor:pointer">
+  <div class="sb-addr" id="sb-addr-row" onclick="closeSB();openProfAddrModal()" style="cursor:pointer">
     <div class="sb-addr-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
     <div style="min-width:0"><div class="sb-addr-lbl">Суроғаи расонидан</div><div class="sb-addr-val empty" id="sb-addr-val">Суроғ нишон диҳед →</div></div>
   </div>
@@ -1320,7 +1273,7 @@ select.addr-inp{cursor:pointer}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <div class="addr-banner-text">Укажите адрес доставки</div>
-        <button class="addr-banner-set" onclick="openAddrModal('cart');hideAddrBanner()">Указать</button>
+        <button class="addr-banner-set" onclick="openProfAddrModal()">Указать</button>
         <button class="addr-banner-later" onclick="hideAddrBanner()">Потом</button>
       </div>
 
@@ -1739,7 +1692,7 @@ select.addr-inp{cursor:pointer}
               <label class="fl">Суроғаи пешфарзи расонидан</label>
               <div style="display:flex;gap:8px;align-items:center">
                 <input class="fi" type="text" id="pf-addr" placeholder="кӯчаи Рӯдакӣ, д. 1, хв. 1" style="flex:1"/>
-                <button onclick="openAddrModal('profile')" title="Дар харита нишон диҳед" style="height:38px;padding:0 12px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;white-space:nowrap;font-family:var(--fs);flex-shrink:0">
+                <button onclick="openProfAddrModal()" title="Суроғ илова кунед" style="height:38px;padding:0 12px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;white-space:nowrap;font-family:var(--fs);flex-shrink:0">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>GPS
                 </button>
               </div>
@@ -2099,66 +2052,6 @@ if (_sgEl) new MutationObserver(_applyStoreOverlays).observe(_sgEl, { childList:
 </div>
 
 <!-- ADDRESS MAP MODAL -->
-<div class="addr-modal-bg" id="addr-modal-bg">
-  <div class="addr-modal" id="addr-modal">
-    <div class="addr-modal-drag"></div>
-
-    <div class="addr-modal-head">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="addr-modal-title">Нуқтаи расонидан</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button id="addr-clear-btn" class="addr-clear-btn" onclick="clearAddress()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-            Тоза кардан
-          </button>
-          <button style="background:var(--s2);border:1px solid var(--b0);border-radius:8px;padding:5px 11px;font-size:.68rem;font-weight:600;color:var(--tx2);cursor:pointer;font-family:var(--fs)" onclick="closeAddrModal()">Бастан</button>
-        </div>
-      </div>
-      <div class="addr-search-wrap" style="position:relative">
-        <div class="addr-search-ico">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        </div>
-        <input class="addr-search-inp" id="addr-search-inp" type="text" placeholder="Ҷустуҷӯи суроғ…" oninput="onAddrSearch(this.value)" autocomplete="off"/>
-        <button class="addr-search-clear" id="addr-search-clear" onclick="clearAddrSearch()">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div class="addr-suggestions" id="addr-suggestions" style="display:none"></div>
-      </div>
-    </div>
-
-    <div class="addr-map-wrap">
-      <div id="addr-map"></div>
-      <!-- Центральный пин -->
-      <div class="addr-map-pin" id="addr-map-pin">
-        <svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.06 27.94 0 18 0z" fill="var(--acc)"/>
-          <circle cx="18" cy="18" r="7" fill="white"/>
-          <circle cx="18" cy="18" r="4" fill="var(--acc)"/>
-        </svg>
-      </div>
-      <div class="addr-map-pulse" id="addr-map-pulse"></div>
-      <!-- Кнопка "Моё место" -->
-      <button class="addr-myloc-btn" id="addr-myloc-btn" onclick="goMyLocation()" title="Мавқеи ман">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 2"/></svg>
-      </button>
-    </div>
-
-    <div class="addr-bottom">
-      <div class="addr-bottom-label">Суроғи интихобшуда</div>
-      <div class="addr-bottom-val placeholder" id="addr-bottom-val">Нуқтаро дар харита нишон диҳед…</div>
-      <div class="addr-floor-row">
-        <input class="addr-detail-inp" id="addr-floor" type="text" placeholder="Ошёна (масалан 3)" inputmode="numeric"/>
-        <input class="addr-detail-inp" id="addr-apt" type="text" placeholder="Хонаи (масалан 12)" inputmode="numeric"/>
-      </div>
-      <input class="addr-detail-inp" id="addr-note" type="text" placeholder="Изоҳ (дарбоз, нишона…)" style="margin-bottom:10px"/>
-      <button class="addr-confirm-btn" id="addr-confirm-btn" onclick="confirmAddr()" disabled>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Суроғро тасдиқ кунед
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ APP INSTALL BANNER ══ -->
 <style>
 .app-bar{
@@ -2390,26 +2283,13 @@ window.submitPartnerForm = async function() {
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
 <script>
 (function(){
-  const banner  = document.getElementById('addr-banner');
-  const addrVal = document.getElementById('sb-addr-val');
-  let observerSet = false;
-
-  function hasAddress(){
-    return addrVal && !addrVal.classList.contains('empty');
-  }
+  const banner = document.getElementById('addr-banner');
 
   function showBanner(){
     if(!banner) return;
     banner.style.display = 'flex';
     banner.style.opacity = '1';
     banner.style.transition = '';
-    // Следим за появлением адреса чтобы скрыть баннер
-    if(!observerSet && addrVal){
-      observerSet = true;
-      new MutationObserver(function(){
-        if(hasAddress()) hideAddrBanner();
-      }).observe(addrVal, {childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:['class']});
-    }
   }
 
   window.hideAddrBanner = function(){
@@ -2423,15 +2303,14 @@ window.submitPartnerForm = async function() {
     }, 200);
   };
 
-  // Слушаем сигнал от app.js — данные Firestore загружены
+  // Слушаем onSnapshot из checkAddressBanner() в app.js
   window.addEventListener('appDataLoaded', function(e){
     if(!banner) return;
     if(e.detail && e.detail.hasAddress) {
       hideAddrBanner();
-      return;
+    } else {
+      showBanner();
     }
-    if(hasAddress()) return;
-    showBanner();
   });
 })();
 </script>
