@@ -537,6 +537,13 @@ function initSwipeToClose(sheetEl, closeFn, handleEl) {
 
 // Регистрируем все шиты после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Мгновенный рендер иконок общего каталога ───────────────
+  // genCats уже заполнен GENERAL_CATS на уровне модуля — рендерим
+  // сразу, не дожидаясь Firebase/auth. Так скелетоны не мелькают.
+  // Если Firestore позже вернёт другие данные, loadGenCats() обновит.
+  renderGenCats();
+  renderCatalogGenCats();
+
   // Кошелёк — свайп только с ручки (контент внутри скроллится)
   initSwipeToClose(
     document.getElementById('wlt-sheet'),
