@@ -93,21 +93,57 @@ const CAT_SVG = {
 // Поле nameTj: подпись на таджикском (можно показывать по настройке).
 // Поле order: порядок сортировки.
 const GENERAL_CATS = [
-  { id: 'aromatizatory',        nameRu: 'Ароматизаторы',      nameTj: 'Ароматизаторы',     icon: 'storage/general-catalogs/new-version/aromatizatory.png',        order: 1  },
-  { id: 'avtokosmetika',        nameRu: 'Автокосметика',       nameTj: 'Автокосметика',      icon: 'storage/general-catalogs/new-version/avtokosmetika.png',         order: 2  },
-  { id: 'bakaleya',             nameRu: 'Бакалея',             nameTj: 'Бакалея',            icon: 'storage/general-catalogs/new-version/bakaleya.png',              order: 3  },
-  { id: 'bystroe_pitanie',      nameRu: 'Быстрое питание',     nameTj: 'Фастфуд',         icon: 'storage/general-catalogs/new-version/bystroe_pitanie.png',       order: 4  },
-  { id: 'dlya_stirki',          nameRu: 'Для стирки',          nameTj: 'Барои шустан',       icon: 'storage/general-catalogs/new-version/dlya_stirki.png',           order: 5  },
-  { id: 'dlya_uborki',          nameRu: 'Для уборки',          nameTj: 'Для уборки',  icon: 'storage/general-catalogs/new-version/dlya_uborki.png',           order: 6  },
-  { id: 'gigiena_rta',          nameRu: 'Гигиена рта',         nameTj: 'Гигиена рта',     icon: 'storage/general-catalogs/new-version/gigiena_rta.png',           order: 7  },
-  { id: 'horeca',               nameRu: 'HoReCa',              nameTj: 'HoReCa',             icon: 'storage/general-catalogs/new-version/horeca.png',                order: 8  },
-  { id: 'kosmetika_i_ukhod',    nameRu: 'Косметика и уход',    nameTj: 'Косметика',          icon: 'storage/general-catalogs/new-version/kosmetika_i_ukhod.png',     order: 9  },
-  { id: 'napitki_i_kofe',       nameRu: 'Напитки и кофе',      nameTj: 'Напитки и кофе', icon: 'storage/general-catalogs/new-version/napitki_i_kofe.png',        order: 10 },
-  { id: 'oborudovanie_i_sklad', nameRu: 'Оборуд. и склад',     nameTj: 'Оборудование',           icon: 'storage/general-catalogs/new-version/oborudovanie_i_sklad.png',  order: 11 },
-  { id: 'prof_khimiya',         nameRu: 'Проф. химия',         nameTj: 'Профессиональная химия',      icon: 'storage/general-catalogs/new-version/prof_khimiya.png',          order: 12 },
-  { id: 'salfetki_i_tryapki',   nameRu: 'Салфетки',            nameTj: 'Салфетка',           icon: 'storage/general-catalogs/new-version/salfetki_i_tryapki.png',   order: 13 },
-  { id: 'sladosti',             nameRu: 'Сладости',            nameTj: 'Сладости',             icon: 'storage/general-catalogs/new-version/sladosti.png',             order: 14 },
-  { id: 'sneki_i_chipsy',       nameRu: 'Снеки и чипсы',       nameTj: 'Снеки и чипсы',    icon: 'storage/general-catalogs/new-version/sneki_i_chipsy.png',       order: 15 },
+  { id: 'american',      nameRu: 'Американская',   nameTj: 'Амрикоӣ',        icon: 'storage/general-catalogs/american.png',      order: 1  },
+  { id: 'asian',         nameRu: 'Азиатская',      nameTj: 'Осиёӣ',          icon: 'storage/general-catalogs/asian.png',         order: 2  },
+  { id: 'baby',          nameRu: 'Детское',         nameTj: 'Барои кӯдак',    icon: 'storage/general-catalogs/baby.png',          order: 3  },
+  { id: 'bakery',        nameRu: 'Выпечка',         nameTj: 'Нонвойӣ',        icon: 'storage/general-catalogs/bakery.png',        order: 4  },
+  { id: 'bbq',           nameRu: 'Барбекю',         nameTj: 'Барбекю',        icon: 'storage/general-catalogs/bbq.png',           order: 5  },
+  { id: 'beauty',        nameRu: 'Красота',         nameTj: 'Зебоӣ',          icon: 'storage/general-catalogs/beauty.png',        order: 6  },
+  { id: 'box-catering',  nameRu: 'Кейтеринг',      nameTj: 'Кейтеринг',      icon: 'storage/general-catalogs/box-catering.png',  order: 7  },
+  { id: 'breakfast',     nameRu: 'Завтрак',         nameTj: 'Наҳорӣ',         icon: 'storage/general-catalogs/breakfast.png',     order: 8  },
+  { id: 'bubble-tea',    nameRu: 'Бабл-ти',         nameTj: 'Бабл-ти',        icon: 'storage/general-catalogs/bubble-tea.png',    order: 9  },
+  { id: 'burgers',       nameRu: 'Бургеры',         nameTj: 'Бургер',         icon: 'storage/general-catalogs/burgers.png',       order: 10 },
+  { id: 'caribbean',     nameRu: 'Карибская',       nameTj: 'Кариб',          icon: 'storage/general-catalogs/caribbean.png',     order: 11 },
+  { id: 'chinese',       nameRu: 'Китайская',       nameTj: 'Чинӣ',           icon: 'storage/general-catalogs/chinese.png',       order: 12 },
+  { id: 'coffee',        nameRu: 'Кофе',            nameTj: 'Қаҳва',          icon: 'storage/general-catalogs/coffee.png',        order: 13 },
+  { id: 'comfort-food',  nameRu: 'Домашняя',        nameTj: 'Хонагӣ',         icon: 'storage/general-catalogs/comfort-food.png',  order: 14 },
+  { id: 'desserts',      nameRu: 'Десерты',         nameTj: 'Десерт',         icon: 'storage/general-catalogs/desserts.png',      order: 15 },
+  { id: 'electronics',   nameRu: 'Электроника',     nameTj: 'Электроника',    icon: 'storage/general-catalogs/electronics.png',   order: 16 },
+  { id: 'fast-food',     nameRu: 'Фастфуд',         nameTj: 'Фастфуд',        icon: 'storage/general-catalogs/fast-food.png',     order: 17 },
+  { id: 'flowers',       nameRu: 'Цветы',           nameTj: 'Гулҳо',          icon: 'storage/general-catalogs/flowers.png',       order: 18 },
+  { id: 'gifts',         nameRu: 'Подарки',         nameTj: 'Тӯҳфаҳо',        icon: 'storage/general-catalogs/gifts.png',         order: 19 },
+  { id: 'greek',         nameRu: 'Греческая',       nameTj: 'Юнонӣ',          icon: 'storage/general-catalogs/greek.png',         order: 20 },
+  { id: 'halal',         nameRu: 'Халяль',          nameTj: 'Ҳалол',          icon: 'storage/general-catalogs/halal.png',         order: 21 },
+  { id: 'hawaiin',       nameRu: 'Гавайская',       nameTj: 'Гавайӣ',         icon: 'storage/general-catalogs/hawaiin.png',       order: 22 },
+  { id: 'healthy',       nameRu: 'Здоровое',        nameTj: 'Солим',          icon: 'storage/general-catalogs/healthy.png',       order: 23 },
+  { id: 'ice-cream',     nameRu: 'Мороженое',       nameTj: 'Яхмос',          icon: 'storage/general-catalogs/ice-cream.png',     order: 24 },
+  { id: 'indian',        nameRu: 'Индийская',       nameTj: 'Ҳиндӣ',          icon: 'storage/general-catalogs/indian.png',        order: 25 },
+  { id: 'italian',       nameRu: 'Итальянская',     nameTj: 'Италиявӣ',       icon: 'storage/general-catalogs/italian.png',       order: 26 },
+  { id: 'japanese',      nameRu: 'Японская',        nameTj: 'Японӣ',          icon: 'storage/general-catalogs/japanese.png',      order: 27 },
+  { id: 'korean',        nameRu: 'Корейская',       nameTj: 'Кореягӣ',        icon: 'storage/general-catalogs/korean.png',        order: 28 },
+  { id: 'kosher',        nameRu: 'Кошерное',        nameTj: 'Кошер',          icon: 'storage/general-catalogs/kosher.png',        order: 29 },
+  { id: 'mexican',       nameRu: 'Мексиканская',    nameTj: 'Мексикагӣ',      icon: 'storage/general-catalogs/mexican.png',       order: 30 },
+  { id: 'personal-care', nameRu: 'Уход',            nameTj: 'Нигоҳдорӣ',      icon: 'storage/general-catalogs/personal-care.png', order: 31 },
+  { id: 'pet-supplies',  nameRu: 'Зоотовары',       nameTj: 'Зоотовар',       icon: 'storage/general-catalogs/pet-supplies.png',  order: 32 },
+  { id: 'pharmacy',      nameRu: 'Аптека',          nameTj: 'Дорухона',       icon: 'storage/general-catalogs/pharmacy.png',      order: 33 },
+  { id: 'pizza',         nameRu: 'Пицца',           nameTj: 'Питса',          icon: 'storage/general-catalogs/pizza.png',         order: 34 },
+  { id: 'poke',          nameRu: 'Поке',            nameTj: 'Поке',           icon: 'storage/general-catalogs/poke.png',          order: 35 },
+  { id: 'retail',        nameRu: 'Магазины',        nameTj: 'Мағозаҳо',       icon: 'storage/general-catalogs/retail.png',        order: 36 },
+  { id: 'salads',        nameRu: 'Салаты',          nameTj: 'Салатҳо',        icon: 'storage/general-catalogs/salads.png',        order: 37 },
+  { id: 'sandwiches',    nameRu: 'Сэндвичи',        nameTj: 'Сэндвич',        icon: 'storage/general-catalogs/sandwiches.png',    order: 38 },
+  { id: 'seafood',       nameRu: 'Морепродукты',    nameTj: 'Мевои баҳр',     icon: 'storage/general-catalogs/seafood.png',       order: 39 },
+  { id: 'smoothies',     nameRu: 'Смузи',           nameTj: 'Смузи',          icon: 'storage/general-catalogs/smoothies.png',     order: 40 },
+  { id: 'soul-food',     nameRu: 'Соул-фуд',        nameTj: 'Соул-фуд',       icon: 'storage/general-catalogs/soul-food.png',     order: 41 },
+  { id: 'soup',          nameRu: 'Супы',            nameTj: 'Шӯрбо',          icon: 'storage/general-catalogs/soup.png',          order: 42 },
+  { id: 'specialty',     nameRu: 'Особое',          nameTj: 'Махсус',         icon: 'storage/general-catalogs/specialty.png',     order: 43 },
+  { id: 'street-food',   nameRu: 'Уличная еда',     nameTj: 'Хӯроки кӯча',    icon: 'storage/general-catalogs/street-food.png',   order: 44 },
+  { id: 'sushi',         nameRu: 'Суши',            nameTj: 'Суши',           icon: 'storage/general-catalogs/sushi.png',         order: 45 },
+  { id: 'sweets',        nameRu: 'Сладости',        nameTj: 'Ширинӣ',         icon: 'storage/general-catalogs/sweets.png',        order: 46 },
+  { id: 'taiwanese',     nameRu: 'Тайваньская',     nameTj: 'Тайванӣ',        icon: 'storage/general-catalogs/taiwanese.png',     order: 47 },
+  { id: 'thai',          nameRu: 'Тайская',         nameTj: 'Тайӣ',           icon: 'storage/general-catalogs/thai.png',          order: 48 },
+  { id: 'vegan',         nameRu: 'Веганское',       nameTj: 'Веган',          icon: 'storage/general-catalogs/vegan.png',         order: 49 },
+  { id: 'vietnamese',    nameRu: 'Вьетнамская',     nameTj: 'Вьетнамӣ',       icon: 'storage/general-catalogs/vietnamese.png',    order: 50 },
+  { id: 'wings',         nameRu: 'Крылышки',        nameTj: 'Болҳо',          icon: 'storage/general-catalogs/wings.png',         order: 51 },
 ];
 
 // Рабочий массив — заменяется данными Firestore, если они есть
@@ -116,24 +152,56 @@ let genCats = [...GENERAL_CATS];
 // ─── Загрузка общих категорий из Firestore ────────────────────
 // Firestore-коллекция: generalCategories
 // Документ: { id, nameRu, nameTj, icon, order, active }
-// Если коллекция пуста или недоступна — используется GENERAL_CATS.
-// Позже администратор сможет управлять через admin-панель.
+// Если коллекция пуста или содержит устаревшие (new-version) записи — используется GENERAL_CATS.
+// Администратор может принудительно обновить Firestore командой: seedGeneralCats()
+const LEGACY_CAT_IDS = new Set([
+  'aromatizatory','avtokosmetika','bakaleya','bystroe_pitanie','dlya_stirki',
+  'dlya_uborki','gigiena_rta','horeca','kosmetika_i_ukhod','napitki_i_kofe',
+  'oborudovanie_i_sklad','prof_khimiya','salfetki_i_tryapki','sladosti','sneki_i_chipsy',
+]);
 async function loadGenCats() {
   try {
     const snap = await getDocs(
       query(collection(db, 'generalCategories'), orderBy('order'))
     );
     if (!snap.empty) {
-      genCats = snap.docs
+      const firestoreCats = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(c => c.active !== false);      // скрытые категории пропускаем
+        .filter(c => c.active !== false);
+      // Если Firestore содержит старые (new-version) категории — игнорируем, берём fallback
+      const hasLegacy = firestoreCats.some(c => LEGACY_CAT_IDS.has(c.id));
+      if (!hasLegacy) {
+        genCats = firestoreCats;
+      }
+      // Иначе genCats остаётся = GENERAL_CATS (fallback уже задан выше)
     }
   } catch {
-    // Коллекция ещё не создана — тихо оставляем fallback
+    // Коллекция ещё не создана или недоступна — тихо оставляем fallback
   }
   renderGenCats();
   renderCatalogGenCats();
 }
+
+// ─── Синхронизация GENERAL_CATS → Firestore (вызывать один раз из консоли) ──
+// Вызов: await seedGeneralCats()
+// Запишет все 51 категорию в коллекцию generalCategories.
+// После этого loadGenCats будет брать данные из Firestore как обычно.
+window.seedGeneralCats = async function () {
+  try {
+    const batch = writeBatch(db);
+    GENERAL_CATS.forEach(c => {
+      const ref = doc(db, 'generalCategories', c.id);
+      batch.set(ref, { nameRu: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order, active: true });
+    });
+    await batch.commit();
+    genCats = [...GENERAL_CATS];
+    renderGenCats();
+    renderCatalogGenCats();
+    console.log('✅ seedGeneralCats: записано 51 категория в Firestore.');
+  } catch (e) {
+    console.error('❌ seedGeneralCats:', e);
+  }
+};
 
 // ─── Горизонтальная лента иконок на главной (gen-cats-row) ────
 function renderGenCats() {
