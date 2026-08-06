@@ -187,6 +187,13 @@ a{color:inherit;text-decoration:none}
 .citysh-item-sub{font-size:.62rem;color:var(--tx3);margin-top:2px}
 .citysh-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
 .citysh-item.selected .citysh-item-check{opacity:1}
+.citysh-item:disabled{cursor:not-allowed;opacity:1}
+.citysh-item:disabled:hover{background:none}
+.citysh-item:disabled:active{background:none}
+.citysh-item.inactive .citysh-item-name{color:var(--tx3)}
+.citysh-item.inactive .citysh-item-sub{color:var(--tx3)}
+.citysh-item.inactive .citysh-item-ico{background:var(--s3);border-color:var(--b1)}
+.citysh-item-soon{font-size:.58rem;font-weight:700;color:var(--tx3);background:var(--s3);border:1px solid var(--b1);border-radius:6px;padding:2px 7px;flex-shrink:0;letter-spacing:.02em}
 .citysh-empty{padding:40px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
 .mob-btn{display:none;background:none;border:none;cursor:pointer;color:var(--tx3);width:36px;height:36px;border-radius:10px;align-items:center;justify-content:center;transition:all var(--tf)}
 .mob-btn:hover{background:var(--s2);color:var(--tx)}

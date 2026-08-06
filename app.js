@@ -3190,8 +3190,7 @@ async function _loadCities() {
       query(collection(db, 'cities'), orderBy('order'))
     );
     let cities = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(c => c.active !== false);
+      .map(d => ({ id: d.id, ...d.data() }));
 
     // Если коллекция пустая — показываем Душанбе как дефолт
     if (!cities.length) {
@@ -3211,13 +3210,15 @@ function _renderCities(cities) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   list.innerHTML = cities.map(c => {
-    const sel = c.id === _selectedCityId;
-    return `<button class="citysh-item${sel ? ' selected' : ''}"
+    const active = c.active !== false;
+    const sel    = active && c.id === _selectedCityId;
+    const icoClr = sel ? '#fff' : active ? 'var(--acc)' : 'var(--tx3)';
+    return `<button class="citysh-item${sel ? ' selected' : ''}${!active ? ' inactive' : ''}"
         data-id="${esc(c.id)}" data-name="${esc(c.name)}"
-        onclick="selectCity(this.dataset.id, this.dataset.name)">
+        ${!active ? 'disabled' : `onclick="selectCity(this.dataset.id, this.dataset.name)"`}>
       <div class="citysh-item-ico">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-          stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="2">
+          stroke="${icoClr}" stroke-width="2">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
           <circle cx="12" cy="10" r="3"/>
         </svg>
@@ -3226,12 +3227,14 @@ function _renderCities(cities) {
         <div class="citysh-item-name">${esc(c.name)}</div>
         ${c.region ? `<div class="citysh-item-sub">${esc(c.region)}</div>` : ''}
       </div>
-      <div class="citysh-item-check">
+      ${!active
+        ? '<div class="citysh-item-soon">Скоро</div>'
+        : `<div class="citysh-item-check">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2.5">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-      </div>
+      </div>`}
     </button>`;
   }).join('');
 }
