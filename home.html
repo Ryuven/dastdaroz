@@ -159,6 +159,35 @@ a{color:inherit;text-decoration:none}
 .tb-cart{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;cursor:pointer;color:#fff;padding:8px 15px;display:flex;align-items:center;gap:7px;font-size:.7rem;font-family:var(--fd);font-weight:800;transition:all var(--tf);white-space:nowrap;box-shadow:0 2px 10px var(--acc-shadow)}
 .tb-cart:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px var(--acc-shadow)}
 .tb-cart-cnt{background:rgba(255,255,255,.25);border-radius:99px;padding:1px 7px;font-size:.6rem;font-weight:700}
+/* ── CITY SELECTOR BUTTON (same style as cart button) ── */
+.tb-city-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;cursor:pointer;color:#fff;padding:8px 15px;display:flex;align-items:center;gap:7px;font-size:.7rem;font-family:var(--fd);font-weight:800;transition:all var(--tf);white-space:nowrap;box-shadow:0 2px 10px var(--acc-shadow);flex-shrink:0}
+.tb-city-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px var(--acc-shadow)}
+.tb-city-btn svg{flex-shrink:0}
+/* ── CITY SHEET ── */
+.citysh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .28s}
+.citysh-ov.open{opacity:1;pointer-events:all}
+.citysh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;overflow:hidden;will-change:transform}
+.citysh.open{transform:translateY(0)}
+.citysh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0;cursor:grab;touch-action:none}
+.citysh-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.citysh-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
+.citysh-close{background:var(--s2);border:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
+.citysh-close:hover{background:var(--s3)}
+.citysh-subtitle{padding:14px 18px 8px;font-size:.72rem;color:var(--tx3);flex-shrink:0;line-height:1.5}
+.citysh-list{overflow-y:auto;flex:1;padding-bottom:calc(var(--safe-b) + 16px)}
+.citysh-item{display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer;transition:background .13s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left;border-top:1px solid var(--b0)}
+.citysh-item:first-child{border-top:none}
+.citysh-item:hover{background:var(--s2)}
+.citysh-item:active{background:var(--s3)}
+.citysh-item.selected{background:var(--accd)}
+.citysh-item-ico{width:40px;height:40px;border-radius:12px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s}
+.citysh-item.selected .citysh-item-ico{background:var(--acc);border-color:var(--acc)}
+.citysh-item-body{flex:1;min-width:0}
+.citysh-item-name{font-size:.84rem;font-weight:700;color:var(--tx);line-height:1.2}
+.citysh-item-sub{font-size:.62rem;color:var(--tx3);margin-top:2px}
+.citysh-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
+.citysh-item.selected .citysh-item-check{opacity:1}
+.citysh-empty{padding:40px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
 .mob-btn{display:none;background:none;border:none;cursor:pointer;color:var(--tx3);width:36px;height:36px;border-radius:10px;align-items:center;justify-content:center;transition:all var(--tf)}
 .mob-btn:hover{background:var(--s2);color:var(--tx)}
 
@@ -1264,11 +1293,7 @@ select.addr-inp{cursor:pointer}
     </div>
     <span id="tb-title" style="display:none"></span>
     <div class="tb-search-top"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="search-inp-top" placeholder="Поиск еды…" oninput="onSearch(this.value)"/></div>
-    <button class="tb-city-btn" id="tb-city-btn" onclick="openCitySheet()">
-      <svg class="city-pin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="tb-city-name">Душанбе</span>
-      <svg class="city-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-    </button>
+    <button class="tb-city-btn" id="tb-city-btn" onclick="openCitySheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="tb-city-name">Душанбе</span></button>
   </div>
   <!-- GUEST TOPBAR — shown instead of normal topbar in guest mode -->
   <div class="guest-topbar" id="guest-topbar">
