@@ -52,11 +52,11 @@ let _bookingTimerInt = null;  // handle setInterval
 
 // ─── Лейблы и цвета статусов (на таджикском) ─────────────────
 const SL = {
-  awaiting_payment: 'Интизори пардохт',
-  pending:    'Интизор',
-  confirmed:  'Тасдиқ шуд',
+  awaiting_payment: 'Ожидание оплаты',
+  pending:    'Ожидание',
+  confirmed:  'Подтверждён',
   preparing:  'Омода мешавад',
-  delivering: 'Дар роҳ',
+  delivering: 'В пути',
   delivered:  'Расонида шуд',
   cancelled:  'Бекор шуд',
 };
@@ -93,21 +93,21 @@ const CAT_SVG = {
 // Поле nameTj: подпись на таджикском (можно показывать по настройке).
 // Поле order: порядок сортировки.
 const GENERAL_CATS = [
-  { id: 'aromatizatory',        nameRu: 'Ароматизаторы',      nameTj: 'Хушбӯйкунанда',     icon: 'storage/general-catalogs/new-version/aromatizatory.png',        order: 1  },
+  { id: 'aromatizatory',        nameRu: 'Ароматизаторы',      nameTj: 'Ароматизаторы',     icon: 'storage/general-catalogs/new-version/aromatizatory.png',        order: 1  },
   { id: 'avtokosmetika',        nameRu: 'Автокосметика',       nameTj: 'Автокосметика',      icon: 'storage/general-catalogs/new-version/avtokosmetika.png',         order: 2  },
   { id: 'bakaleya',             nameRu: 'Бакалея',             nameTj: 'Бакалея',            icon: 'storage/general-catalogs/new-version/bakaleya.png',              order: 3  },
-  { id: 'bystroe_pitanie',      nameRu: 'Быстрое питание',     nameTj: 'Хӯроки зуд',         icon: 'storage/general-catalogs/new-version/bystroe_pitanie.png',       order: 4  },
+  { id: 'bystroe_pitanie',      nameRu: 'Быстрое питание',     nameTj: 'Фастфуд',         icon: 'storage/general-catalogs/new-version/bystroe_pitanie.png',       order: 4  },
   { id: 'dlya_stirki',          nameRu: 'Для стирки',          nameTj: 'Барои шустан',       icon: 'storage/general-catalogs/new-version/dlya_stirki.png',           order: 5  },
-  { id: 'dlya_uborki',          nameRu: 'Для уборки',          nameTj: 'Барои тоза кардан',  icon: 'storage/general-catalogs/new-version/dlya_uborki.png',           order: 6  },
-  { id: 'gigiena_rta',          nameRu: 'Гигиена рта',         nameTj: 'Гигиенаи даҳон',     icon: 'storage/general-catalogs/new-version/gigiena_rta.png',           order: 7  },
+  { id: 'dlya_uborki',          nameRu: 'Для уборки',          nameTj: 'Для уборки',  icon: 'storage/general-catalogs/new-version/dlya_uborki.png',           order: 6  },
+  { id: 'gigiena_rta',          nameRu: 'Гигиена рта',         nameTj: 'Гигиена рта',     icon: 'storage/general-catalogs/new-version/gigiena_rta.png',           order: 7  },
   { id: 'horeca',               nameRu: 'HoReCa',              nameTj: 'HoReCa',             icon: 'storage/general-catalogs/new-version/horeca.png',                order: 8  },
   { id: 'kosmetika_i_ukhod',    nameRu: 'Косметика и уход',    nameTj: 'Косметика',          icon: 'storage/general-catalogs/new-version/kosmetika_i_ukhod.png',     order: 9  },
-  { id: 'napitki_i_kofe',       nameRu: 'Напитки и кофе',      nameTj: 'Нӯшокиҳо ва қаҳва', icon: 'storage/general-catalogs/new-version/napitki_i_kofe.png',        order: 10 },
-  { id: 'oborudovanie_i_sklad', nameRu: 'Оборуд. и склад',     nameTj: 'Таҷҳизот',           icon: 'storage/general-catalogs/new-version/oborudovanie_i_sklad.png',  order: 11 },
-  { id: 'prof_khimiya',         nameRu: 'Проф. химия',         nameTj: 'Хими яи касбӣ',      icon: 'storage/general-catalogs/new-version/prof_khimiya.png',          order: 12 },
+  { id: 'napitki_i_kofe',       nameRu: 'Напитки и кофе',      nameTj: 'Напитки и кофе', icon: 'storage/general-catalogs/new-version/napitki_i_kofe.png',        order: 10 },
+  { id: 'oborudovanie_i_sklad', nameRu: 'Оборуд. и склад',     nameTj: 'Оборудование',           icon: 'storage/general-catalogs/new-version/oborudovanie_i_sklad.png',  order: 11 },
+  { id: 'prof_khimiya',         nameRu: 'Проф. химия',         nameTj: 'Профессиональная химия',      icon: 'storage/general-catalogs/new-version/prof_khimiya.png',          order: 12 },
   { id: 'salfetki_i_tryapki',   nameRu: 'Салфетки',            nameTj: 'Салфетка',           icon: 'storage/general-catalogs/new-version/salfetki_i_tryapki.png',   order: 13 },
-  { id: 'sladosti',             nameRu: 'Сладости',            nameTj: 'Ширинӣ',             icon: 'storage/general-catalogs/new-version/sladosti.png',             order: 14 },
-  { id: 'sneki_i_chipsy',       nameRu: 'Снеки и чипсы',       nameTj: 'Снекҳо ва чипс',    icon: 'storage/general-catalogs/new-version/sneki_i_chipsy.png',       order: 15 },
+  { id: 'sladosti',             nameRu: 'Сладости',            nameTj: 'Сладости',             icon: 'storage/general-catalogs/new-version/sladosti.png',             order: 14 },
+  { id: 'sneki_i_chipsy',       nameRu: 'Снеки и чипсы',       nameTj: 'Снеки и чипсы',    icon: 'storage/general-catalogs/new-version/sneki_i_chipsy.png',       order: 15 },
 ];
 
 // Рабочий массив — заменяется данными Firestore, если они есть
@@ -360,7 +360,7 @@ function renderGuestProfile() {
   const av = document.getElementById('sb-av');
   if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   const nm = document.getElementById('sb-uname');
-  if (nm) nm.textContent = 'Меҳмон';
+  if (nm) nm.textContent = 'Гость';
   const adv = document.getElementById('sb-addr-val');
   if (adv) { adv.textContent = 'Барои фармоиш ворид шавед'; adv.classList.add('empty'); }
 
@@ -371,11 +371,11 @@ function renderGuestProfile() {
       <div style="max-width:400px;margin:24px auto 60px;text-align:center;padding:0 4px">
         <div style="width:80px;height:80px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--acc)">👤</div>
         <div style="font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);margin-bottom:8px">Гостевой режим</div>
-        <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Барои дидани профил, таърихи фармоишҳо ва захира кардани суроғ, лутфан ворид шавед ё ҳисоб кушоед.</div>
+        <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Для просмотра профиля, истории заказов и сохранения адреса, пожалуйста, войдите или зарегистрируйтесь.</div>
         <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-size:.78rem;font-family:var(--fd);font-weight:800;padding:13px 32px;cursor:pointer;box-shadow:0 4px 16px rgba(26,158,74,.3);width:100%;max-width:260px;transition:opacity .15s" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
-          Ворид шавед / Ҳисоб кушоед
+          Войти / Зарегистрироваться
         </button>
-        <div style="margin-top:16px;font-size:.68rem;color:var(--tx3)">Ё идома диҳед ба тарзи гостевӣ — маҳсулотро бинед, каталогро баррасӣ кунед</div>
+        <div style="margin-top:16px;font-size:.68rem;color:var(--tx3)">Или продолжите как гость — смотрите товары, изучайте каталог</div>
       </div>`;
   }
 
@@ -385,9 +385,9 @@ function renderGuestProfile() {
     ordPage.innerHTML = `
       <div style="text-align:center;padding:60px 20px">
         <div style="font-size:3rem;margin-bottom:14px">📋</div>
-        <div style="font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px">Фармоишҳо дастрас нестанд</div>
-        <div style="font-size:.76rem;color:var(--tx3);margin-bottom:24px">Барои дидани таърихи фармоишҳо ворид шавед</div>
-        <button onclick="goLogin()" style="background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.74rem;font-family:var(--fs);font-weight:700;padding:10px 28px;cursor:pointer;box-shadow:0 3px 12px rgba(26,158,74,.3)">Ворид шавед</button>
+        <div style="font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px">Заказы недоступны</div>
+        <div style="font-size:.76rem;color:var(--tx3);margin-bottom:24px">Войдите, чтобы увидеть историю заказов</div>
+        <button onclick="goLogin()" style="background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.74rem;font-family:var(--fs);font-weight:700;padding:10px 28px;cursor:pointer;box-shadow:0 3px 12px rgba(26,158,74,.3)">Войти</button>
       </div>`;
   }
 
@@ -435,7 +435,7 @@ async function loadUD() {
 function renderSB() {
   if (GUEST) {
     const nm = document.getElementById('sb-uname');
-    if (nm) nm.textContent = 'Меҳмон';
+    if (nm) nm.textContent = 'Гость';
     const av = document.getElementById('sb-av');
     if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
     const adv = document.getElementById('sb-addr-val');
@@ -443,7 +443,7 @@ function renderSB() {
     // Заменяем кнопку выхода на кнопку входа в сайдбаре
     const logoutBtn = document.querySelector('.sb-logout');
     if (logoutBtn) {
-      logoutBtn.title = 'Ворид шавед';
+      logoutBtn.title = 'Войти';
       logoutBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>`;
       logoutBtn.onclick = (e) => { e.stopPropagation(); goLogin(); };
       logoutBtn.style.color = 'var(--acc)';
@@ -454,7 +454,7 @@ function renderSB() {
     if (userEl) userEl.onclick = () => goLogin();
     return;
   }
-  const name = UD?.displayName || 'Муштарӣ';
+  const name = UD?.displayName || 'Покупатель';
   const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   document.getElementById('sb-uname').textContent = name;
   const av = document.getElementById('sb-av');
@@ -464,13 +464,13 @@ function renderSB() {
     adv.textContent = UD.address;
     adv.classList.remove('empty');
   } else {
-    adv.textContent = 'Суроғ нишон диҳед →';
+    adv.textContent = 'Указать адрес →';
     adv.classList.add('empty');
   }
   // Синхронизируем адрес в профиле
   const profAddrDisplay = document.getElementById('prof-addr-display');
   if (profAddrDisplay) {
-    profAddrDisplay.textContent = UD?.address ? UD.address : 'Суроғ нишон диҳед →';
+    profAddrDisplay.textContent = UD?.address ? UD.address : 'Указать адрес →';
     profAddrDisplay.style.color = UD?.address ? 'var(--tx2)' : 'var(--acc)';
     profAddrDisplay.style.fontWeight = UD?.address ? '500' : '600';
   }
@@ -576,9 +576,9 @@ window.goPage = function (page) {
   // Гость может смотреть только публичные страницы
   if (GUEST && (page === 'orders' || page === 'status' || page === 'cart')) {
     if (page === 'cart') {
-      toast('Барои истифода аз сабад ворид шавед', 'info');
+      toast('Войдите, чтобы использовать корзину', 'info');
     } else {
-      toast('Барои дидани фармоишҳо ворид шавед', 'info');
+      toast('Войдите, чтобы видеть заказы', 'info');
     }
     return;
   }
@@ -593,10 +593,10 @@ window.goPage = function (page) {
   else tb.textContent = {
     catalog: 'Каталог',
     cart:    'Сабад',
-    orders:  'Фармоишҳоям',
-    status:  'Ҳолати фармоиш',
+    orders:  'Мои заказы',
+    status:  'Статус заказа',
     profile: 'Профил',
-    booking: 'Тасдиқи фармоиш',
+    booking: 'Подтверждение заказа',
   }[page] || 'Galelium Delivery';
   if (page === 'status')  { renderStatusPage(); }
   if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
@@ -625,7 +625,7 @@ function renderStoresGrid() {
   const el = document.getElementById('stores-grid');
   if (!el) return;
   if (!stores.length) {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--tx3);font-size:.76rem">Дӯконҳо ёфт нашуданд</div>';
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--tx3);font-size:.76rem">Магазины не найдены</div>';
     return;
   }
   el.innerHTML = stores.map(s => {
@@ -697,7 +697,7 @@ function renderStorePage() {
       ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
       <div class="store-cat-header-overlay"></div>
       <div class="store-cat-header-body">
-        <div class="store-cat-header-tag">Дӯкон</div>
+        <div class="store-cat-header-tag">Магазин</div>
         <div class="store-cat-header-name">${activeStore.name}</div>
         ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
       </div>
@@ -723,7 +723,7 @@ function renderStoreCatPills() {
   // JSON-режим: категории из .json файла
   if (jsonMenuData) {
     const jcats = jsonMenuData.categories || [];
-    el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Ҳама</button>`
+    el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`
       + jcats.map(c =>
           `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
         ).join('');
@@ -732,7 +732,7 @@ function renderStoreCatPills() {
 
   // Обычный режим: категории из Firestore
   const storeCats = getStoreCats();
-  el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Ҳама</button>`
+  el.innerHTML = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`
     + storeCats.map(c =>
         `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
       ).join('');
@@ -763,7 +763,7 @@ function renderStoreProds() {
     if (jsonMenuData.error && !jsonMenuData.products?.length) {
       el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
         <span class="store-cat-empty-ico">⚠️</span>
-        <div class="store-cat-empty-t">Хатогӣ ҳангоми боргирӣ</div>
+        <div class="store-cat-empty-t">Ошибка при загрузке</div>
         <div class="store-cat-empty-s">${jsonMenuData.error}</div>
       </div>`;
       return;
@@ -773,8 +773,8 @@ function renderStoreProds() {
     if (!list.length) {
       el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
         <span class="store-cat-empty-ico">📦</span>
-        <div class="store-cat-empty-t">Маҳсулот ёфт нашуд</div>
-        <div class="store-cat-empty-s">Дар ин категория маҳсулот нест</div>
+        <div class="store-cat-empty-t">Товары ёфт нашуд</div>
+        <div class="store-cat-empty-s">В этой категории товаров нет</div>
       </div>`;
       return;
     }
@@ -788,8 +788,8 @@ function renderStoreProds() {
   if (!list.length) {
     el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
       <span class="store-cat-empty-ico">📦</span>
-      <div class="store-cat-empty-t">Маҳсулот ҳоло нест</div>
-      <div class="store-cat-empty-s">Ба зудӣ маҳсулот илова мешавад</div>
+      <div class="store-cat-empty-t">Товары ҳоло нест</div>
+      <div class="store-cat-empty-s">Скоро товары будут добавлены</div>
     </div>`;
     return;
   }
@@ -914,7 +914,7 @@ function renderProdModal(p) {
   const buyHtml = unavail
     ? `<button class="pm-add-btn" disabled>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><line x1="9" y1="15" x2="15" y2="9"/></svg>
-        Мавҷуд нест
+        Нет в наличии
        </button>`
     : qty > 0
       ? `<div class="pm-buy-wrap">
@@ -939,14 +939,14 @@ function renderProdModal(p) {
       <button class="pm-close" onclick="closeProdModal()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      ${unavail ? '<div class="pm-badge-unavail">Мавҷуд нест</div>' : ''}
+      ${unavail ? '<div class="pm-badge-unavail">Нет в наличии</div>' : ''}
       ${storeBadge}
     </div>
 
     <div class="pm-body">
       <div class="pm-cat-line">
         <div class="pm-cat-dot"></div>
-        <div class="pm-cat-lbl">${cname || 'Маҳсулот'}</div>
+        <div class="pm-cat-lbl">${cname || 'Товары'}</div>
       </div>
 
       <div class="pm-name">${p.name}</div>
@@ -1037,7 +1037,7 @@ function renderHomeProds() {
   const list = prods.filter(p => p.available !== false).slice(0, 8);
   el.innerHTML = list.length
     ? list.map(renderPC).join('')
-    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Маҳсулот нест</div></div>`;
+    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Товары нест</div></div>`;
 }
 
 function renderCatalog() {
@@ -1051,7 +1051,7 @@ function renderCatalog() {
   );
   el.innerHTML = list.length
     ? list.map(renderPC).join('')
-    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ҳеҷ чиз ёфт нашуд</div></div>`;
+    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ничего не найдено</div></div>`;
 }
 
 // ─── Категории (Firestore: products / categories pills) ───────
@@ -1068,7 +1068,7 @@ async function loadCats() {
 function renderCatPills() {
   const el = document.getElementById('cats');
   if (!el) return;
-  el.innerHTML = `<button class="cat${catFilter === 'all' ? ' active' : ''}" onclick="filterCat('all')">Ҳама</button>`
+  el.innerHTML = `<button class="cat${catFilter === 'all' ? ' active' : ''}" onclick="filterCat('all')">Все</button>`
     + cats.map(c => `<button class="cat${catFilter === c.id ? ' active' : ''}" onclick="filterCat('${c.id}')">${c.name}</button>`).join('');
 }
 
@@ -1114,7 +1114,7 @@ function renderSD(q) {
     ))
     .slice(0, 7);
   if (!res.length) {
-    dd.innerHTML = `<div class="srd-empty">Ҳеҷ чиз ёфт нашуд 🔍</div>`;
+    dd.innerHTML = `<div class="srd-empty">Ничего не найдено 🔍</div>`;
     dd.classList.add('open');
     return;
   }
@@ -1204,7 +1204,7 @@ window.removeCI = async function (pid) {
 
 window.clearCartUI = async function () {
   if (!cart.length) return;
-  if (!confirm('Сабадро тоза кунем?')) return;
+  if (!confirm('Очистить корзину?')) return;
   const b = writeBatch(db);
   cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
   await b.commit();
@@ -1218,9 +1218,9 @@ function renderCart() {
   if (GUEST) {
     el.innerHTML = `<div class="ci ci-empty">
       <div class="ci-empty-txt">
-        <div class="ci-empty-t">Ворид нашудед</div>
-        <div class="ci-empty-s">Барои истифода аз сабад</div>
-        <button class="ci-empty-btn" onclick="goLogin()">Ворид шавед</button>
+        <div class="ci-empty-t">Вы не вошли</div>
+        <div class="ci-empty-s">Для использования корзины</div>
+        <button class="ci-empty-btn" onclick="goLogin()">Войти</button>
       </div>
     </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
@@ -1230,7 +1230,7 @@ function renderCart() {
   if (!cart.length) {
     el.innerHTML = `<div class="ci ci-empty">
       <div class="ci-empty-txt">
-        <div class="ci-empty-t">Сабад холӣ аст</div>
+        <div class="ci-empty-t">Корзина пуста</div>
       </div>
     </div>`;
     const cs = document.getElementById('cart-sum');   if (cs) cs.style.opacity = '.5';
@@ -1248,7 +1248,7 @@ function renderCart() {
   const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' см';
   const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
   const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' см';
-  const ch  = document.getElementById('cs-header-items'); if (ch) ch.textContent = cart.length + ' мавқеъ';
+  const ch  = document.getElementById('cs-header-items'); if (ch) ch.textContent = cart.length + ' позиций';
 }
 
 function updateBadges() {
@@ -1316,7 +1316,7 @@ window.doCheckout = async function () {
   const lat  = parseFloat(document.getElementById('cart-lat')?.value) || null;
   const lng  = parseFloat(document.getElementById('cart-lng')?.value) || null;
   if (!addr) {
-    toast('Суроғи расониданро нишон диҳед', 'err');
+    toast('Адрес доставкиро нишон диҳед', 'err');
     document.getElementById('cart-addr').focus();
     return;
   }
@@ -1413,7 +1413,7 @@ window.doCheckout = async function () {
     btn.disabled = false;
     btn.innerHTML =
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-      '<path d="M5 12h14M12 5l7 7-7 7"/></svg> Фармоиш расмикунонӣ';
+      '<path d="M5 12h14M12 5l7 7-7 7"/></svg> Оформить заказ';
   }
 };
 
@@ -1481,8 +1481,8 @@ async function submitToMavsimi(data) {
             const title = document.getElementById('bk-verify-title');
             const sub   = document.getElementById('bk-verify-sub');
             if (icon)  { icon.classList.add('success'); icon.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'; }
-            if (title) { title.textContent = 'Пардохт тасдиқ шуд!'; title.style.color = 'var(--acc)'; }
-            if (sub)   sub.textContent = 'Фармоиши шумо ба ошхона фиристода шуд. Мо онро зуд омода мекунем 🚀';
+            if (title) { title.textContent = 'Оплата подтверждена!'; title.style.color = 'var(--acc)'; }
+            if (sub)   sub.textContent = 'Ваш заказ отправлен на кухню. Мы быстро его приготовим 🚀';
 
             // Через 2с — грузим заказы и открываем статус
             setTimeout(() => {
@@ -1503,14 +1503,14 @@ async function submitToMavsimi(data) {
             const title = document.getElementById('bk-verify-title');
             const sub   = document.getElementById('bk-verify-sub');
             if (icon)  { icon.classList.add('fail'); icon.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'; }
-            if (title) { title.textContent = 'Пардохт тасдиқ нашуд'; title.style.color = 'var(--red)'; }
-            if (sub)   sub.textContent = 'Мутаассифона, пардохт тасдиқ нашуд. Лутфан дубора кӯшиш кунед.';
+            if (title) { title.textContent = 'Оплата не подтверждена'; title.style.color = 'var(--red)'; }
+            if (sub)   sub.textContent = 'К сожалению, оплата не прошла. Пожалуйста, попробуйте ещё раз.';
             // Показываем кнопку «Повторить»
             const vEl = document.getElementById('bk-verify');
             if (vEl) {
               const retryBtn = document.createElement('button');
               retryBtn.className = 'bk-verify-retry';
-              retryBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Дубора кӯшиш кунед';
+              retryBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Попробовать снова';
               retryBtn.onclick = () => { location.href = 'payment.html?oid=' + oid; };
               vEl.appendChild(retryBtn);
             }
@@ -1588,7 +1588,7 @@ function renderOrders() {
   if (!el) return;
   const list = filterOrders();
   if (!list.length) {
-    el.innerHTML = '<div class="empty"><span class="empty-ico">📦</span><div class="empty-t">Фармоишҳо нест</div></div>';
+    el.innerHTML = '<div class="empty"><span class="empty-ico">📦</span><div class="empty-t">Заказы нест</div></div>';
     return;
   }
   el.innerHTML = list.map(o => {
@@ -1623,7 +1623,7 @@ window.openOrderModal = function (oid) {
   const c     = SC[o.status] || '#888';
   const l     = SL[o.status] || o.status;
   const si    = STEPS.indexOf(o.status);
-  const pay   = o.paymentMethod === 'cash' ? 'Нақдӣ 💵' : o.paymentMethod === 'card' ? 'Корт 💳' : 'Онлайн 📱';
+  const pay   = o.paymentMethod === 'cash' ? 'Наличные 💵' : o.paymentMethod === 'card' ? 'Карта 💳' : 'Онлайн 📱';
   const date  = fmtDate(o.createdAt);
   const isActive = ['awaiting_payment','pending','confirmed','preparing','delivering'].includes(o.status);
   const sub   = (o.items||[]).reduce((s,i) => s + i.price*i.quantity, 0);
@@ -1631,14 +1631,14 @@ window.openOrderModal = function (oid) {
 
   // Timeline вертикальный
   const stepIcons = ['⏳','✅','👨‍🍳','🛵','🎉'];
-  const stepSubs  = ['Фармоиш қабул шуд', 'Тасдиқ аз тарафи мо', 'Ошпазон омода мекунад', 'Курьер дар роҳ аст', 'Расонида шуд'];
+  const stepSubs  = ['Заказ принят', 'Подтверждение с нашей стороны', 'Повар готовит', 'Курьер в пути', 'Расонида шуд'];
   const timeline  = STEPS.map((s, i) => {
     const cls = i < si ? 'done' : i === si ? 'cur' : '';
     return `<div class="o-track-step ${cls}">
       <div class="o-track-dot">${i <= si ? stepIcons[i] : ''}</div>
       <div class="o-track-info">
         <div class="o-track-title">${SL[s]}</div>
-        <div class="o-track-sub">${i === si ? stepSubs[i] : i < si ? 'Анҷом ёфт ✓' : stepSubs[i]}</div>
+        <div class="o-track-sub">${i === si ? stepSubs[i] : i < si ? 'Завершён ✓' : stepSubs[i]}</div>
       </div>
     </div>`;
   }).join('');
@@ -1662,7 +1662,7 @@ window.openOrderModal = function (oid) {
     <div style="margin:14px 0 4px">
       <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Ҳолати фармоишро бинед
+        Посмотреть статус заказа
       </button>
     </div>
 
@@ -1691,16 +1691,16 @@ window.openOrderModal = function (oid) {
         <!-- итоги -->
         <div class="receipt-section" style="margin-bottom:8px">
           <div class="receipt-total-row">
-            <span class="receipt-total-label">Маҳсулот</span>
+            <span class="receipt-total-label">Товары</span>
             <span class="receipt-total-val">${sub} см</span>
           </div>
           <div class="receipt-total-row">
-            <span class="receipt-total-label">Расонидан</span>
+            <span class="receipt-total-label">Доставка</span>
             <span class="receipt-total-val">${delivery > 0 ? delivery : DFEE} см</span>
           </div>
           <div class="receipt-divider" style="margin:8px 0"></div>
           <div class="receipt-total-row big">
-            <span class="receipt-total-label">Ҷамъ</span>
+            <span class="receipt-total-label">Сумма</span>
             <span class="receipt-total-val">${o.total} см</span>
           </div>
         </div>
@@ -1710,7 +1710,7 @@ window.openOrderModal = function (oid) {
           <div class="receipt-section-title">Маълумот</div>
           <div class="receipt-info-grid">
             <div class="receipt-info-item">
-              <div class="receipt-info-label">Суроғ</div>
+              <div class="receipt-info-label">Адрес</div>
               <div class="receipt-info-val">${o.address || '—'}</div>
               ${o.lat && o.lng ? `<a href="https://www.google.com/maps?q=${o.lat},${o.lng}" target="_blank" style="font-size:.56rem;color:var(--acc);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:3px;margin-top:4px">
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1726,12 +1726,12 @@ window.openOrderModal = function (oid) {
               <div class="receipt-info-val">${o.courierName || 'Таъин мешавад…'}</div>
             </div>
             <div class="receipt-info-item">
-              <div class="receipt-info-label">Вақт</div>
+              <div class="receipt-info-label">Время</div>
               <div class="receipt-info-val">${date}</div>
             </div>
           </div>
           ${o.comment ? `<div class="receipt-info-item" style="margin-top:10px">
-            <div class="receipt-info-label">Изоҳ</div>
+            <div class="receipt-info-label">Комментарий</div>
             <div class="receipt-info-val">${o.comment}</div>
           </div>` : ''}
         </div>
@@ -1741,7 +1741,7 @@ window.openOrderModal = function (oid) {
           <div class="receipt-qr">
             <img src="${qrUrl}" alt="QR" loading="lazy">
           </div>
-          <div class="receipt-qr-hint">Рамзи фармоиш · GAL-${o.id.slice(-8).toUpperCase()}</div>
+          <div class="receipt-qr-hint">Код заказа · GAL-${o.id.slice(-8).toUpperCase()}</div>
         </div>
       </div>
 
@@ -1754,10 +1754,10 @@ window.openOrderModal = function (oid) {
     ${o.status === 'awaiting_payment' ? `
     <div style="margin:10px 0 4px">
       <div style="background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.25);border-radius:14px;padding:14px 18px;margin-bottom:8px">
-        <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Интизори пардохт</div>
-        <div style="font-size:.72rem;color:var(--tx2);line-height:1.6">Фармоиши шумо 10 дақиқа забронировано шудааст. Барои расмикунонӣ пардохт кунед.</div>
+        <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Ожидание оплаты</div>
+        <div style="font-size:.72rem;color:var(--tx2);line-height:1.6">Ваш заказ забронирован на 10 минут. Для оформления оплатите заказ.</div>
         <button onclick="closeOrderModal(); location.href='payment.html?oid=${o.id}'" style="margin-top:12px;width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3)">
-          💳 Пардохт кунед
+          💳 Оплатить
         </button>
       </div>
     </div>` : ''}
@@ -1847,8 +1847,8 @@ function renderLiveBanner() {
   wrap.innerHTML = `<div class="live-banner" onclick="trackO('${live.id}')"><div class="live-pulse"></div><div class="live-info"><div class="live-lbl">Фармоиши фаъол</div><div class="live-txt">Фармоиш ${num} · ${SL[live.status]} · ${live.total} см</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>`;
 }
 
-// ─── Карта трекинга курьера (страница «Ҳолати фармоиш») ───────
-// ─── Карта трекинга курьера (страница «Ҳолати фармоиш») ───────
+// ─── Карта трекинга курьера (страница «Статус заказа») ───────
+// ─── Карта трекинга курьера (страница «Статус заказа») ───────
 // Карта — звичайна карточка в потоці сторінки, з'являється ЛИШЕ
 // коли курьер призначений (courierId є в замовленні).
 let _trackMap          = null;
@@ -1988,7 +1988,7 @@ function renderStatusPage() {
   renderStatusMap(o);
 
   if (!o) {
-    el.innerHTML = '<div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Фармоишҳои фаъол нест</div><div class="empty-s">Пас аз расмикунонӣ ин ҷо намоён мешавад</div></div>';
+    el.innerHTML = '<div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Заказыи фаъол нест</div><div class="empty-s">После оформления появится здесь</div></div>';
     return;
   }
 
@@ -1997,7 +1997,7 @@ function renderStatusPage() {
   const si   = STEPS.indexOf(o.status);
   const num  = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
   const date = fmtDate(o.createdAt);
-  const pay  = o.paymentMethod === 'cash' ? 'Нақдӣ' : o.paymentMethod === 'card' ? 'Корт' : 'Онлайн';
+  const pay  = o.paymentMethod === 'cash' ? 'Наличные' : o.paymentMethod === 'card' ? 'Корт' : 'Онлайн';
 
   const stepIcoDone = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
   const steps = STEPS.map((s, i) => {
@@ -2010,10 +2010,10 @@ function renderStatusPage() {
     <div class="track">${steps}</div><div class="divider"></div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.76rem">
-      <div><div class="sh-tag" style="margin-bottom:3px">Суроғ</div><div style="color:var(--tx)">${o.address || '—'}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Адрес</div><div style="color:var(--tx)">${o.address || '—'}</div></div>
       <div><div class="sh-tag" style="margin-bottom:3px">Пардохт</div><div style="color:var(--tx)">${pay}</div></div>
       <div><div class="sh-tag" style="margin-bottom:3px">Курьер</div><div style="color:var(--tx)">${o.courierName || 'Таъин мешавад…'}</div></div>
-      <div><div class="sh-tag" style="margin-bottom:3px">Вақт</div><div style="color:var(--tx)">${date}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Время</div><div style="color:var(--tx)">${date}</div></div>
     </div>
 
     ${o.courierId ? `
@@ -2023,7 +2023,7 @@ function renderStatusPage() {
       </div>
       <div class="chat-trigger-body">
         <div class="chat-trigger-title">Чат бо курьер</div>
-        <div class="chat-trigger-sub">${o.lastMessageAt ? escHtml(o.lastMessage || 'Паём') : (escHtml(o.courierName || 'Курьер') + ' — нависед агар савол дошта бошед')}</div>
+        <div class="chat-trigger-sub">${o.lastMessageAt ? escHtml(o.lastMessage || 'Паём') : (escHtml(o.courierName || 'Курьер') + ' — напишите если есть вопросы')}</div>
       </div>
       ${o.clientUnread > 0 ? `<div class="chat-trigger-badge">${o.clientUnread}</div>` : `<svg class="chat-trigger-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`}
     </button>` : ''}
@@ -2031,24 +2031,24 @@ function renderStatusPage() {
     <div class="divider"></div>
     <div class="sh-tag" style="margin-bottom:10px">Таркиб</div>
     ${(o.items || []).map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b0);font-size:.75rem"><span style="color:var(--tx)">${escHtml(i.name)}<span style="color:var(--tx3)"> ×${i.quantity}</span></span><span style="font-weight:600;color:var(--tx2)">${i.price * i.quantity} см</span></div>`).join('')}
-    <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Расонидан</span><span>${DFEE} см</span></div>
-    <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)"><span style="font-weight:700;font-size:.8rem">Ҷамъ</span><span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Доставка</span><span>${DFEE} см</span></div>
+    <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)"><span style="font-weight:700;font-size:.8rem">Сумма</span><span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span></div>
     ${o.status === 'awaiting_payment' ? `
     <div style="margin-top:16px;background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.28);border-radius:16px;padding:16px 18px">
-      <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Интизори пардохт</div>
-      <div style="font-size:.72rem;color:var(--tx2);line-height:1.6;margin-bottom:12px">Фармоиш забронировано шудааст. Барои расмикунонии фармоиш, лутфан дар муддати 10 дақиқа пардохт кунед.</div>
+      <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Ожидание оплаты</div>
+      <div style="font-size:.72rem;color:var(--tx2);line-height:1.6;margin-bottom:12px">Заказ забронированааст. Барои расмикунонии фармоиш, лутфан дар муддати 10 дақиқа пардохт кунед.</div>
       <button onclick="location.href='payment.html?oid=${o.id}'" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.8rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);display:flex;align-items:center;justify-content:center;gap:8px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        💳 Пардохт кунед
+        💳 Оплатить
       </button>
     </div>` : ''}
     ${['awaiting_payment','pending', 'confirmed'].includes(o.status) ? `<div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Фармоишро бекор кунед</button></div>` : ''}
 
     ${o.confirmCode && !['cancelled'].includes(o.status) ? `
     <div style="margin-top:18px;background:${o.status === 'client_arrived' ? 'linear-gradient(135deg,rgba(26,158,74,.1),rgba(34,197,94,.05))' : 'linear-gradient(135deg,rgba(26,158,74,.06),rgba(34,197,94,.02))'};border:2px solid ${o.status === 'client_arrived' ? 'rgba(26,158,74,.35)' : 'rgba(26,158,74,.18)'};border-radius:18px;padding:20px;text-align:center">
-      <div style="font-size:.55rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:10px">${o.status === 'client_arrived' ? 'Рамзи тасдиқ барои курьер' : 'Рамзи тасдиқи фармоиш'}</div>
+      <div style="font-size:.55rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:10px">${o.status === 'client_arrived' ? 'Код подтверждения для курьера' : 'Код подтверждения заказа'}</div>
       <div style="font-family:var(--fd);font-weight:900;font-size:3.4rem;color:var(--tx);letter-spacing:.22em;line-height:1">${o.confirmCode}</div>
-      <div style="font-size:.62rem;color:var(--tx3);margin-top:10px;line-height:1.6">${o.status === 'client_arrived' ? 'Ин рамзро ба курьер гӯед — ӯ фармоишро тасдиқ мекунад' : o.status === 'delivered' ? 'Фармоиш расонида шуд' : 'Ин рамзро ҳангоми расидани курьер ба ӯ гӯед'}</div>
+      <div style="font-size:.62rem;color:var(--tx3);margin-top:10px;line-height:1.6">${o.status === 'client_arrived' ? 'Скажите этот код курьеру — он подтвердит заказ' : o.status === 'delivered' ? 'Фармоиш расонида шуд' : 'Скажите этот код курьеру при получении'}</div>
     </div>` : ''}
   </div>`;
 }
@@ -2105,8 +2105,8 @@ function renderChatMessages() {
   if (chatMessages.length === 0) {
     wrap.innerHTML = `<div class="chat-empty">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-      <div class="chat-empty-t">Ҳанӯз паём нест</div>
-      <div class="chat-empty-s">Ба курьер нависед, агар дар бораи фармоиш савол дошта бошед</div>
+      <div class="chat-empty-t">Сообщений пока нет</div>
+      <div class="chat-empty-s">Напишите курьеру, если есть вопросы по заказу</div>
     </div>`;
     return;
   }
@@ -2138,7 +2138,7 @@ window.sendChatMsg = async function () {
       text,
       senderId:   CU.uid,
       senderRole: 'client',
-      senderName: UD?.displayName || 'Мизоҷ',
+      senderName: UD?.displayName || 'Клиент',
       createdAt:  serverTimestamp(),
     });
     await updateDoc(doc(db, 'orders', chatOid), {
@@ -2148,7 +2148,7 @@ window.sendChatMsg = async function () {
       lastMessageSenderRole: 'client',
     });
   } catch (e) {
-    toast('Хато ҳангоми фиристодани паём', 'err');
+    toast('Ошибка при отправке сообщения', 'err');
   }
   if (btn) btn.disabled = false;
   inp.focus();
@@ -2198,7 +2198,7 @@ function showSupportComposer() {
   const msgEl = document.getElementById('support-first-msg');
   if (msgEl) msgEl.value = '';
   const sub = document.getElementById('support-modal-sub');
-  if (sub) sub.textContent = 'Ба зудӣ ҷавоб медиҳем';
+  if (sub) sub.textContent = 'Ответим быстро';
 
   supportOrderListOpen = false;
   renderSupportOrderPicker();
@@ -2210,7 +2210,7 @@ function renderSupportOrderPicker() {
 
   if (!orders || orders.length === 0) {
     supportSelectedOrderId = null;
-    wrap.innerHTML = `<div class="sup-no-orders">Шумо ҳанӯз фармоише надоред — метавонед бе интихоби фармоиш нависед</div>`;
+    wrap.innerHTML = `<div class="sup-no-orders">У вас ещё нет заказов — вы можете написать без привязки к заказу</div>`;
     return;
   }
 
@@ -2238,11 +2238,11 @@ function renderSupportOrderPicker() {
       <div class="sup-order-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="sup-order-body">
         <div class="sup-order-num">Бе фармоиш</div>
-        <div class="sup-order-meta">Муроҷиати умумӣ</div>
+        <div class="sup-order-meta">Общий запрос</div>
       </div>
     </div>`;
   }
-  html += `<button class="sup-order-change" onclick="toggleSupportOrderList()">${supportOrderListOpen ? 'Пинҳон кардан' : 'Фармоиши дигар / бе фармоиш'}</button>`;
+  html += `<button class="sup-order-change" onclick="toggleSupportOrderList()">${supportOrderListOpen ? 'Скрыть' : 'Другой заказ / без заказа'}</button>`;
 
   const listItems = orders.slice(0, 5).map(o => {
     const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6).toUpperCase();
@@ -2284,12 +2284,12 @@ window.createSupportTicket = async function () {
   const order = supportSelectedOrderId ? orders.find(o => o.id === supportSelectedOrderId) : null;
   const subject = order
     ? `Дар бораи фармоиш #${order.orderNumber || order.id.slice(-6).toUpperCase()}`
-    : 'Муроҷиати умумӣ';
+    : 'Общий запрос';
 
   try {
     const ref = await addDoc(collection(db, 'supportTickets'), {
       clientId:      CU.uid,
-      clientName:    UD?.displayName || 'Мизоҷ',
+      clientName:    UD?.displayName || 'Клиент',
       clientPhone:   UD?.phone || '',
       orderId:       order ? order.id : null,
       orderNumber:   order ? (order.orderNumber || order.id.slice(-6).toUpperCase()) : null,
@@ -2307,12 +2307,12 @@ window.createSupportTicket = async function () {
       text,
       senderId:   CU.uid,
       senderRole: 'client',
-      senderName: UD?.displayName || 'Мизоҷ',
+      senderName: UD?.displayName || 'Клиент',
       createdAt:  serverTimestamp(),
     });
     openSupportChat(ref.id);
   } catch (e) {
-    toast('Хато рӯй дод. Бори дигар кӯшиш кунед', 'err');
+    toast('Произошла ошибка. Попробуйте ещё раз', 'err');
   }
   if (btn) btn.disabled = false;
 };
@@ -2360,8 +2360,8 @@ function updateSupportStatusBanner(status) {
   if (status === 'resolved') {
     el.innerHTML = `<div class="sup-status-banner resolved">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
-      Ин муроҷиат ҳал шудааст
-      <button class="sup-status-banner-btn" onclick="startNewSupportTicket()">Муроҷиати нав</button>
+      Этот запрос решён
+      <button class="sup-status-banner-btn" onclick="startNewSupportTicket()">Новый запрос</button>
     </div>`;
     if (inputRow) inputRow.style.display = 'none';
   } else if (status === 'in_progress') {
@@ -2387,8 +2387,8 @@ function renderSupportMessages() {
   if (supportMessages.length === 0) {
     wrap.innerHTML = `<div class="chat-empty">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 11v3a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3"/></svg>
-      <div class="chat-empty-t">Мунтазири ҷавоб</div>
-      <div class="chat-empty-s">Мутахассиси мо ба зудӣ ҷавоб медиҳад</div>
+      <div class="chat-empty-t">Ожидание ответа</div>
+      <div class="chat-empty-s">Наш специалист скоро ответит</div>
     </div>`;
     return;
   }
@@ -2420,7 +2420,7 @@ window.sendSupportMsg = async function () {
       text,
       senderId:   CU.uid,
       senderRole: 'client',
-      senderName: UD?.displayName || 'Мизоҷ',
+      senderName: UD?.displayName || 'Клиент',
       createdAt:  serverTimestamp(),
     });
     await updateDoc(doc(db, 'supportTickets', supportTicketId), {
@@ -2433,7 +2433,7 @@ window.sendSupportMsg = async function () {
       updatedAt:             serverTimestamp(),
     });
   } catch (e) {
-    toast('Хато ҳангоми фиристодани паём', 'err');
+    toast('Ошибка при отправке сообщения', 'err');
   }
   if (btn) btn.disabled = false;
   inp.focus();
@@ -2528,7 +2528,7 @@ window.saveProfile = async function () {
     await setDoc(doc(db, 'users', CU.uid), saveData, { merge: true });
     UD = { ...UD, ...saveData };
     renderSB(); renderProfile(); setAddr();
-    toast('Профил сақл шуд', 'ok');
+    toast('Профиль сохранён', 'ok');
   } catch { toast('Хато', 'err'); }
 };
 
@@ -2536,7 +2536,7 @@ window.uploadAvUI = async function (inp) {
   const f = inp.files[0];
   if (!f) return;
   if (f.size > 2 * 1024 * 1024) { toast('Файл хеле калон аст', 'err'); return; }
-  toast('Боргузорӣ…');
+  toast('Загрузка…');
   try {
     const sr  = sRef(storage, `avatars/${CU.uid}`);
     await uploadBytes(sr, f);
@@ -2544,8 +2544,8 @@ window.uploadAvUI = async function (inp) {
     await setDoc(doc(db, 'users', CU.uid), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
     UD.avatarUrl = url;
     renderSB(); renderProfile();
-    toast('Акс навсозӣ шуд', 'ok');
-  } catch { toast('Хатои боргузорӣ', 'err'); }
+    toast('Фото обновлено', 'ok');
+  } catch { toast('Ошибка загрузки', 'err'); }
 };
 
 
@@ -2576,16 +2576,16 @@ function renderBookingPage() {
       <div class="bk-receipt-num">Фармоиш ${num}</div>
       <div class="bk-receipt-status">
         <div class="bk-receipt-status-dot"></div>
-        Интизори пардохт
+        Ожидание оплаты
       </div>
     </div>
     <div class="bk-receipt-body">
       <div class="bk-receipt-items">${itemsHtml}</div>
       <div class="bk-receipt-divider"></div>
-      <div class="bk-receipt-sum-row"><span>Маҳсулот</span><span>${o.subtotal} см</span></div>
-      <div class="bk-receipt-sum-row"><span>Расонидан</span><span>${o.deliveryFee} см</span></div>
+      <div class="bk-receipt-sum-row"><span>Товары</span><span>${o.subtotal} см</span></div>
+      <div class="bk-receipt-sum-row"><span>Доставка</span><span>${o.deliveryFee} см</span></div>
       <div class="bk-receipt-total-row">
-        <span class="bk-receipt-total-lbl">Ҷамъ</span>
+        <span class="bk-receipt-total-lbl">Сумма</span>
         <span class="bk-receipt-total-val">${o.total} см</span>
       </div>
       ${o.address ? `<div class="bk-receipt-addr">
@@ -2646,7 +2646,7 @@ async function expireBooking() {
       await updateDoc(doc(db, 'orders', _bookingOid), {
         status:        'cancelled',
         paymentStatus: 'expired',
-        cancelReason:  'Вақти пардохт гузашт',
+        cancelReason:  'Время оплаты истекло',
         updatedAt:     serverTimestamp(),
       });
       await loadOrders();
@@ -2679,7 +2679,7 @@ window.cancelBooking = async function() {
       await updateDoc(doc(db, 'orders', _bookingOid), {
         status:        'cancelled',
         paymentStatus: 'cancelled',
-        cancelReason:  'Бекор аз тарафи корбар',
+        cancelReason:  'Отменено пользователем',
         updatedAt:     serverTimestamp(),
       });
       await loadOrders();
@@ -2705,8 +2705,8 @@ window.openCartAddrSheet = async function () {
 
   if (!CU) {
     list.innerHTML = `<div class="caddrsh-empty">
-      Барои интихоби суроғ ворид шавед
-      <br><button class="caddrsh-goto" onclick="closeCartAddrSheet();goLogin()">Ворид шавед →</button>
+      Войдите, чтобы выбрать адрес
+      <br><button class="caddrsh-goto" onclick="closeCartAddrSheet();goLogin()">Войти →</button>
     </div>`;
     return;
   }
@@ -2738,7 +2738,7 @@ function _renderCartAddrList(addrs) {
 
   if (!addrs.length) {
     list.innerHTML = `<div class="caddrsh-empty">
-      Суроғе вуҷуд надорад<br>
+      Адресов нет<br>
       <button class="caddrsh-goto" onclick="closeCartAddrSheet();goPage('profile')">
         Дар профил илова кунед →
       </button>
@@ -2792,7 +2792,7 @@ let _profAddrs = [];
 
 /* ── open / close the list modal ── */
 window.openProfileAddrs = async function () {
-  if (!requireAuth('Барои суроғ ворид шавед')) return;
+  if (!requireAuth('Войдите, чтобы добавить адрес')) return;
   document.getElementById('paddr-bg')?.classList.add('open');
   await _loadProfAddrs();
 };
@@ -2821,7 +2821,7 @@ function _renderProfAddrs() {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   if (!_profAddrs.length) {
-    list.innerHTML = '<div class="paddr-empty">Суроғе вуҷуд надорад</div>';
+    list.innerHTML = '<div class="paddr-empty">Адресов нет</div>';
   } else {
     list.innerHTML = _profAddrs.map(a => `
       <div class="paddr-item">
@@ -2848,7 +2848,7 @@ function _renderProfAddrs() {
       sub.style.color = 'var(--tx2)';
       sub.style.fontWeight = '500';
     } else {
-      sub.textContent = 'Суроғ нишон диҳед →';
+      sub.textContent = 'Указать адрес →';
       sub.style.color = 'var(--acc)';
       sub.style.fontWeight = '600';
     }
@@ -2873,7 +2873,7 @@ window.closeAddAddrSheet = function () {
 window.saveProfileAddr = async function () {
   if (!CU) return;
   const text = document.getElementById('addaddr-inp')?.value.trim();
-  if (!text) { toast('Суроғро нависед', 'warn'); return; }
+  if (!text) { toast('Введите адрес', 'warn'); return; }
   const btn = document.getElementById('addaddr-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
@@ -2882,13 +2882,13 @@ window.saveProfileAddr = async function () {
       createdAt: serverTimestamp(),
     });
     closeAddAddrSheet();
-    toast('Суроғ илова шуд', 'ok');
+    toast('Адрес добавлен', 'ok');
     await _loadProfAddrs();
   } catch (e) {
     console.error('SaveAddr:', e);
     toast('Хатои сабт', 'err');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Нигоҳ доштан'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; }
   }
 };
 
@@ -2986,7 +2986,7 @@ async function _loadWalletData(all) {
     const txSnap = await getDocs(q);
     _wltTxs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const ttl = document.getElementById('wlt-txs-ttl');
-    if (ttl) ttl.textContent = all ? 'Таърих' : 'Имрӯз';
+    if (ttl) ttl.textContent = all ? 'Таърих' : 'Сегодня';
     _renderWltTxs();
   } catch (e) { console.error('WalletLoad:', e); }
 }
@@ -3001,7 +3001,7 @@ function _renderWltTxs() {
   const list = document.getElementById('wlt-txs-list');
   if (!list) return;
   if (!_wltTxs.length) {
-    list.innerHTML = '<div class="wlt-tx-empty">Транзакцияҳо нестанд</div>';
+    list.innerHTML = '<div class="wlt-tx-empty">Транзакций нет</div>';
     return;
   }
   const icons = { topup: '💳', spend: '🛒', refund: '↩️', transfer: '↗️', order: '🛍️' };
