@@ -1264,7 +1264,11 @@ select.addr-inp{cursor:pointer}
     </div>
     <span id="tb-title" style="display:none"></span>
     <div class="tb-search-top"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="search-inp-top" placeholder="Поиск еды…" oninput="onSearch(this.value)"/></div>
-    <button class="tb-cart" onclick="goPage('cart')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Сабад<span class="tb-cart-cnt" id="tb-cnt">0</span></button>
+    <button class="tb-city-btn" id="tb-city-btn" onclick="openCitySheet()">
+      <svg class="city-pin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="tb-city-name">Душанбе</span>
+      <svg class="city-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
   </div>
   <!-- GUEST TOPBAR — shown instead of normal topbar in guest mode -->
   <div class="guest-topbar" id="guest-topbar">
@@ -2490,6 +2494,24 @@ window.submitPartnerForm = async function() {
     <div class="caddrsh-empty">
       Адреса загружаются…
     </div>
+  </div>
+</div>
+
+<!-- CITY SELECTOR SHEET -->
+<div class="citysh-ov" id="citysh-ov" onclick="closeCitySheet()"></div>
+<div class="citysh" id="citysh">
+  <div class="citysh-drag" id="citysh-drag"></div>
+  <div class="citysh-head">
+    <div class="citysh-title">Выбор города</div>
+    <button class="citysh-close" onclick="closeCitySheet()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="citysh-subtitle">Все магазины и доставка будут показаны для выбранного города</div>
+  <div class="citysh-list" id="citysh-list">
+    <div class="citysh-empty">Загружаем города…</div>
   </div>
 </div>
 

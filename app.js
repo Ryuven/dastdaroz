@@ -22,6 +22,8 @@ import {
 
 // ─── Состояние приложения ────────────────────────────────────
 let CU        = null;   // текущий пользователь Firebase Auth
+let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';  // ID выбранного города
+let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';   // Название города
 let UD        = null;   // документ пользователя из Firestore
 let GUEST     = false;  // режим гостя
 let cart      = [];
@@ -629,6 +631,15 @@ document.addEventListener('DOMContentLoaded', () => {
     () => typeof closePartnerSheet === 'function' && closePartnerSheet(),
     document.getElementById('ptn-drag-handle')
   );
+  // Выбор города
+  initSwipeToClose(
+    document.getElementById('citysh'),
+    () => closeCitySheet(),
+    document.getElementById('citysh-drag')
+  );
+  // Инициализируем название города в топбаре
+  const _tbCityEl = document.getElementById('tb-city-name');
+  if (_tbCityEl) _tbCityEl.textContent = _selectedCityName;
 });
 
 // ─── Выбор курьерской службы ──────────────────────────────────
@@ -3143,3 +3154,115 @@ window.doTopUp = async function () {
 };
 
 /* swipe-to-close подключён через initSwipeToClose в DOMContentLoaded */
+
+
+// ══════════════════════════════════════════════════════════════
+//  CITY SELECTOR SHEET
+//
+//  Firestore: cities/{cityId}
+//  Поля документа:
+//    name   : string  — название города (напр. "Душанбе")
+//    order  : number  — порядок отображения (1, 2, 3…)
+//    active : boolean — показывать ли город (true/false)
+//    region : string  — регион/подпись (необязательно, напр. "Столица")
+//
+//  Пример документа /cities/dushanbe:
+//    { name: "Душанбе", order: 1, active: true, region: "Столица" }
+// ══════════════════════════════════════════════════════════════
+
+window.openCitySheet = async function () {
+  document.getElementById('citysh-ov')?.classList.add('open');
+  document.getElementById('citysh')?.classList.add('open');
+  await _loadCities();
+};
+
+window.closeCitySheet = function () {
+  document.getElementById('citysh-ov')?.classList.remove('open');
+  document.getElementById('citysh')?.classList.remove('open');
+};
+
+async function _loadCities() {
+  const list = document.getElementById('citysh-list');
+  if (!list) return;
+  list.innerHTML = '<div class="citysh-empty">Загружаем города…</div>';
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'cities'), orderBy('order'))
+    );
+    let cities = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(c => c.active !== false);
+
+    // Если коллекция пустая — показываем Душанбе как дефолт
+    if (!cities.length) {
+      cities = [{ id: 'dushanbe', name: 'Душанбе', order: 1, active: true, region: 'Столица' }];
+    }
+    _renderCities(cities);
+  } catch (e) {
+    console.error('CitySheet load error:', e);
+    // Фолбэк — дефолтный Душанбе
+    _renderCities([{ id: 'dushanbe', name: 'Душанбе', order: 1, active: true, region: 'Столица' }]);
+  }
+}
+
+function _renderCities(cities) {
+  const list = document.getElementById('citysh-list');
+  if (!list) return;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  list.innerHTML = cities.map(c => {
+    const sel = c.id === _selectedCityId;
+    return `<button class="citysh-item${sel ? ' selected' : ''}"
+        data-id="${esc(c.id)}" data-name="${esc(c.name)}"
+        onclick="selectCity(this.dataset.id, this.dataset.name)">
+      <div class="citysh-item-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <div class="citysh-item-body">
+        <div class="citysh-item-name">${esc(c.name)}</div>
+        ${c.region ? `<div class="citysh-item-sub">${esc(c.region)}</div>` : ''}
+      </div>
+      <div class="citysh-item-check">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+window.selectCity = function (id, name) {
+  _selectedCityId   = id;
+  _selectedCityName = name;
+  localStorage.setItem('selectedCityId',   id);
+  localStorage.setItem('selectedCityName', name);
+
+  // Обновляем кнопку в топбаре
+  const tbName = document.getElementById('tb-city-name');
+  if (tbName) tbName.textContent = name;
+
+  // Обновляем выделение в списке без перезагрузки
+  document.querySelectorAll('.citysh-item').forEach(el => {
+    const sel = el.dataset.id === id;
+    el.classList.toggle('selected', sel);
+    const ico    = el.querySelector('.citysh-item-ico');
+    const icoSvg = el.querySelector('.citysh-item-ico svg');
+    if (ico)    ico.style.background  = sel ? 'var(--acc)' : '';
+    if (ico)    ico.style.borderColor = sel ? 'var(--acc)' : '';
+    if (icoSvg) icoSvg.setAttribute('stroke', sel ? '#fff' : 'var(--acc)');
+    const check = el.querySelector('.citysh-item-check');
+    if (check) check.style.opacity = sel ? '1' : '0';
+  });
+
+  // Закрываем sheet с небольшой задержкой (чтобы пользователь увидел выбор)
+  setTimeout(closeCitySheet, 260);
+};
+
+// Экспортируем выбранный город для использования в других модулях
+window.getSelectedCityId   = () => _selectedCityId;
+window.getSelectedCityName = () => _selectedCityName;
