@@ -289,6 +289,15 @@ function nextOrderNum() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
+// ─── HTML-эскейпинг (защита от XSS) ──────────────────────────
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ─── Toast-уведомления ────────────────────────────────────────
 window.toast = function (msg, type = '') {
   const w  = document.getElementById('toast-wrap');
@@ -1595,6 +1604,7 @@ async function loadOrders() {
   const live = orders.find(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (live) { activeOid = live.id; if (!unsubLive) listenLive(live.id); }
   renderOrders(); renderOrdersBadge(); renderLiveBanner();
+  if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
   // Статистика профиля
   const tot   = orders.length;
   const spent = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
@@ -2009,7 +2019,7 @@ function renderStatusPage() {
   if (!o) o = orders.find(x => ['pending', 'confirmed', 'preparing', 'delivering'].includes(x.status));
   if (!o && orders.length > 0) o = orders[0];
 
-  renderStatusMap(o);
+  try { renderStatusMap(o); } catch (e) { console.warn('[renderStatusMap]', e); }
 
   if (!o) {
     el.innerHTML = '<div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Заказыи фаъол нест</div><div class="empty-s">После оформления появится здесь</div></div>';
