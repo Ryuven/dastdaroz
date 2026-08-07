@@ -690,35 +690,42 @@ window.goPage = function (page) {
 // Коллекция: retailers/{id}
 // Поля: name, primaryCityId, cityIds[], imageUrl, description, order, active
 // Подколлекция: retailers/{id}/locations/{locId} — точки магазина
+//
+// Логика показа:
+//   1. по primaryCityId  — ритейлер создан в этом городе (даже без точек)
+//   2. по cityIds[]      — у ритейлера есть хотя бы одна точка в этом городе
+//   Результаты мержим и дедуплицируем по id.
 async function loadStores() {
   const cityId = _selectedCityId;
   try {
-    // Ищем ритейлеров, у которых есть точки в выбранном городе
-    const q = query(
-      collection(db, 'retailers'),
-      where('cityIds', 'array-contains', cityId),
-      where('active', '==', true),
-      orderBy('order')
-    );
-    const s = await getDocs(q);
-    stores = s.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    // Fallback без orderBy (если нет индекса)
+    // Два независимых запроса — каждый работает на одном поле (no composite index needed)
+    const [byPrimary, byCityIds] = await Promise.all([
+      getDocs(query(collection(db, 'retailers'), where('primaryCityId', '==', cityId))),
+      getDocs(query(collection(db, 'retailers'), where('cityIds', 'array-contains', cityId))),
+    ]);
+
+    // Дедупликация по id + фильтр active + сортировка по order
+    const seen = new Set();
+    stores = [...byPrimary.docs, ...byCityIds.docs]
+      .filter(d => {
+        if (seen.has(d.id)) return false;
+        seen.add(d.id);
+        const data = d.data();
+        return data.active !== false;   // показываем только активных
+      })
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
+  } catch (e) {
+    // Fallback: просто все активные ритейлеры
+    console.warn('loadStores fallback:', e?.message);
     try {
-      const q2 = query(
-        collection(db, 'retailers'),
-        where('cityIds', 'array-contains', cityId),
-        where('active', '==', true)
-      );
-      const s2 = await getDocs(q2);
-      stores = s2.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch {
-      // Крайний fallback — все активные ритейлеры
-      try {
-        const s3 = await getDocs(query(collection(db, 'retailers'), where('active', '==', true)));
-        stores = s3.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch { stores = []; }
-    }
+      const s = await getDocs(query(collection(db, 'retailers'), where('active', '==', true)));
+      stores = s.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.primaryCityId === cityId || (r.cityIds || []).includes(cityId))
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    } catch { stores = []; }
   }
   renderStoresGrid();
 }
