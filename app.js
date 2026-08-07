@@ -685,17 +685,39 @@ window.goPage = function (page) {
   document.getElementById('pages').scrollTop = 0;
 };
 
-// ─── Магазины / Каталоги ──────────────────────────────────────
+// ─── Ритейлеры / Каталоги магазинов ──────────────────────────
+// Коллекция: retailers/{id}
+// Поля: name, primaryCityId, cityIds[], imageUrl, description, order, active
+// Подколлекция: retailers/{id}/locations/{locId} — точки магазина
 async function loadStores() {
+  const cityId = _selectedCityId;
   try {
-    const s = await getDocs(query(collection(db, 'stores'), orderBy('order')));
+    // Ищем ритейлеров, у которых есть точки в выбранном городе
+    const q = query(
+      collection(db, 'retailers'),
+      where('cityIds', 'array-contains', cityId),
+      where('active', '==', true),
+      orderBy('order')
+    );
+    const s = await getDocs(q);
     stores = s.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch {
-    // Если нет поля order — грузим без сортировки
+    // Fallback без orderBy (если нет индекса)
     try {
-      const s2 = await getDocs(collection(db, 'stores'));
+      const q2 = query(
+        collection(db, 'retailers'),
+        where('cityIds', 'array-contains', cityId),
+        where('active', '==', true)
+      );
+      const s2 = await getDocs(q2);
       stores = s2.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch { stores = []; }
+    } catch {
+      // Крайний fallback — все активные ритейлеры
+      try {
+        const s3 = await getDocs(query(collection(db, 'retailers'), where('active', '==', true)));
+        stores = s3.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch { stores = []; }
+    }
   }
   renderStoresGrid();
 }
@@ -704,31 +726,123 @@ function renderStoresGrid() {
   const el = document.getElementById('stores-grid');
   if (!el) return;
   if (!stores.length) {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--tx3);font-size:.76rem">Магазины не найдены</div>';
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px 20px;color:var(--tx3);font-size:.76rem">
+      <div style="font-size:1.6rem;margin-bottom:8px;opacity:.3">🏪</div>
+      В городе <strong>${_selectedCityName}</strong> магазинов пока нет
+    </div>`;
     return;
   }
   el.innerHTML = stores.map(s => {
-    const imgUrl  = s.imageUrl || '';
+    const imgUrl = s.imageUrl || '';
+    const esc = v => String(v||'').replace(/'/g, '&#39;');
     return `
-    <div class="store-card" onclick="openStore('${s.id}')" title="${s.name}">
+    <div class="store-card" onclick="openRetailer('${s.id}')" title="${esc(s.name)}">
       <div class="store-card-img-wrap">
         ${imgUrl
-          ? `<img class="store-card-img" src="${imgUrl}" alt="${s.name}" loading="lazy" onerror="this.style.display='none'">`
-          : `<div class="store-card-placeholder"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>${s.name}</span></div>`}
+          ? `<img class="store-card-img" src="${imgUrl}" alt="${esc(s.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="store-card-placeholder" ${imgUrl ? 'style="display:none"' : ''}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+          <span>${esc(s.name)}</span>
+        </div>
       </div>
+      ${s.name ? `<div class="store-card-name">${esc(s.name)}</div>` : ''}
     </div>`;
   }).join('');
 }
 
-window.openStore = async function (sid) {
+// ─── Открытие ритейлера — показываем его точки в выбранном городе ──
+window.openRetailer = async function (sid) {
   activeStore     = stores.find(s => s.id === sid);
   storeCatFilter  = 'all';
   jsonMenuData    = null;
   jsonProdsMap    = {};
   if (!activeStore) return;
   goPage('store');
-  if (activeStore.menuUrl) await loadJsonMenu(activeStore.menuUrl);
+  renderRetailerPage(activeStore);
 };
+
+// Оставляем для совместимости
+window.openStore = window.openRetailer;
+
+async function renderRetailerPage(retailer) {
+  const hdr   = document.getElementById('store-header');
+  const cats  = document.getElementById('store-cats');
+  const prods = document.getElementById('store-prods');
+  if (!hdr) return;
+
+  // ── Шапка ──
+  const imgUrl = retailer.imageUrl || '';
+  hdr.innerHTML = `
+    <div class="store-cat-header">
+      ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
+      <div class="store-cat-header-overlay"></div>
+      <div class="store-cat-header-body">
+        <div class="store-cat-header-tag">Ритейлер · ${_selectedCityName}</div>
+        <div class="store-cat-header-name">${retailer.name}</div>
+        ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
+      </div>
+    </div>`;
+
+  if (cats)  cats.innerHTML  = '';   // нет категорий у ритейлера
+  if (prods) prods.innerHTML = `
+    <div style="grid-column:1/-1">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--tx)">Точки в городе ${_selectedCityName}</span>
+      </div>
+      <div id="retailer-locations-list">
+        <div class="retailer-loc-skeleton"></div>
+        <div class="retailer-loc-skeleton"></div>
+      </div>
+    </div>`;
+
+  // ── Грузим точки ──
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'retailers', retailer.id, 'locations'),
+        where('cityId', '==', _selectedCityId)
+      )
+    );
+    const locations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const list = document.getElementById('retailer-locations-list');
+    if (!list) return;
+
+    if (!locations.length) {
+      list.innerHTML = `<div class="store-cat-empty">
+        <span class="store-cat-empty-ico">📍</span>
+        <div class="store-cat-empty-t">Точек в ${_selectedCityName} нет</div>
+        <div class="store-cat-empty-s">Попробуйте выбрать другой город</div>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = locations.map(loc => {
+      const mapsUrl = (loc.lat && loc.lng)
+        ? `https://maps.google.com/?q=${loc.lat},${loc.lng}`
+        : '';
+      return `
+      <div class="retailer-loc-card">
+        <div class="retailer-loc-ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="retailer-loc-body">
+          <div class="retailer-loc-addr">${loc.address || '—'}</div>
+          ${loc.lat && loc.lng ? `<div class="retailer-loc-coords">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}</div>` : ''}
+        </div>
+        ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          Карта
+        </a>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Retailer locations error:', e);
+    const list = document.getElementById('retailer-locations-list');
+    if (list) list.innerHTML = `<div class="store-cat-empty"><div class="store-cat-empty-t">Ошибка загрузки</div></div>`;
+  }
+}
 
 // ─── Загрузка JSON-каталога партнёра ──────────────────────────
 async function loadJsonMenu(url) {
@@ -3261,6 +3375,9 @@ window.selectCity = function (id, name) {
     const check = el.querySelector('.citysh-item-check');
     if (check) check.style.opacity = sel ? '1' : '0';
   });
+
+  // ── Перезагружаем ритейлеров для нового города ──
+  loadStores();
 
   // Закрываем sheet с небольшой задержкой (чтобы пользователь увидел выбор)
   setTimeout(closeCitySheet, 260);

@@ -637,6 +637,18 @@ select.addr-inp{cursor:pointer}
 .prof-skl-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1.5px solid var(--b0)}
 .prof-skl-row:last-child{border-bottom:none}
 
+/* ── RETAILER LOCATIONS ── */
+.retailer-loc-card{display:flex;align-items:center;gap:13px;padding:14px 16px;background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;margin-bottom:9px;box-shadow:var(--shadow);transition:border-color var(--tf),transform var(--t)}
+.retailer-loc-card:hover{border-color:var(--accg);transform:translateY(-2px)}
+.retailer-loc-ico{width:42px;height:42px;border-radius:12px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
+.retailer-loc-body{flex:1;min-width:0}
+.retailer-loc-addr{font-size:.82rem;font-weight:600;color:var(--tx);line-height:1.4;margin-bottom:3px}
+.retailer-loc-coords{font-size:.58rem;color:var(--acc);font-weight:500}
+.retailer-loc-map-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);font-size:.64rem;font-weight:700;font-family:var(--fs);cursor:pointer;text-decoration:none;flex-shrink:0;transition:background var(--tf)}
+.retailer-loc-map-btn:hover{background:var(--accg)}
+.retailer-loc-skeleton{height:72px;border-radius:14px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;margin-bottom:9px}
+/* store-card name label */
+.store-card-name{font-size:.66rem;font-weight:700;color:var(--tx);text-align:center;padding:4px 6px 6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
 .store-cat-header-img{width:100%;height:100%;object-fit:cover;display:block}
