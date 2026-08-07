@@ -45,16 +45,11 @@ let deliveryService = 'mavsimi';
 
 const DFEE = 7; // стоимость доставки
 
-// ─── Состояние страницы бронирования ────────────────────────
-let _bookingOid      = null;  // Firestore ID заказа
-let _bookingOrder    = null;  // snapshot данных заказа
-let _bookingDeadline = null;  // Date() — дедлайн оплаты
-let _bookingTimerInt = null;  // handle setInterval
+
 
 
 // ─── Лейблы и цвета статусов (на таджикском) ─────────────────
 const SL = {
-  awaiting_payment: 'Ожидание оплаты',
   pending:    'Ожидание',
   confirmed:  'Подтверждён',
   preparing:  'Готовится',
@@ -64,7 +59,6 @@ const SL = {
 };
 
 const SC = {
-  awaiting_payment: 'var(--teal)',
   pending:    'var(--amber)',
   confirmed:  'var(--blue)',
   preparing:  'var(--purple)',
@@ -675,12 +669,10 @@ window.goPage = function (page) {
     orders:  'Мои заказы',
     status:  'Статус заказа',
     profile: 'Профил',
-    booking: 'Подтверждение заказа',
   }[page] || 'Galelium Delivery';
   if (page === 'status')  { renderStatusPage(); }
   if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
   if (page === 'store')   { renderStorePage(); }
-  if (page === 'booking') { renderBookingPage(); startBookingTimer(); }
   closeSB();
   document.getElementById('pages').scrollTop = 0;
 };
@@ -1484,24 +1476,7 @@ function checkAddressBanner(uid) {
 window.openAddrModal = function () { openProfAddrModal(); };
 
 
-// ─── Оформление заказа + бронирование + переход к оплате ──────
-//
-//  Флоу:
-//  1. Создаём заказ со status = 'awaiting_payment' и reservedUntil = now+10мин
-//  2. Очищаем корзину
-//  3. Переходим на payment.html?oid=ORDER_ID
-//
-//  payment.html обрабатывает ответ эквайринга:
-//    status=success → меняет status на 'pending' (заказ в работу)
-//    status=cancel  → меняет status на 'cancelled'
-//    таймер = 0    → меняет status на 'cancelled' (expired)
-//
-//  Возврат на home.html через якорную ссылку #order-ORDER_ID
-//  — автоматически открывает страницу статуса нужного заказа.
-// ──────────────────────────────────────────────────────────────
-
-const PAYMENT_RESERVE_MS = 10 * 60 * 1000; // 10 минут
-
+// ─── Оформление заказа — заказ сразу идёт в работу ───────────
 window.doCheckout = async function () {
   if (!requireAuth('Войдите для оформления заказа')) return;
   if (!cart.length) return;
@@ -1516,46 +1491,39 @@ window.doCheckout = async function () {
 
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Бронируем…';
+  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Оформляем…';
 
   try {
     const sub         = cart.reduce((s, c) => s + c.price * c.quantity, 0);
     const oNum        = nextOrderNum();
     const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const payMethod   = document.getElementById('cart-pay')?.value || 'card';
-
-    // Дедлайн оплаты: now + 10 минут
-    const reservedUntil = new Date(Date.now() + PAYMENT_RESERVE_MS);
+    const payMethod   = document.getElementById('cart-pay')?.value || 'cash';
 
     const ref = await addDoc(collection(db, 'orders'), {
-      clientId:       CU.uid,
-      clientName:     UD?.displayName || '',
-      orderNumber:    oNum,
-      confirmCode:    confirmCode,
-      items:          cart.map(c => ({
+      clientId:        CU.uid,
+      clientName:      UD?.displayName || '',
+      orderNumber:     oNum,
+      confirmCode:     confirmCode,
+      items:           cart.map(c => ({
         productId: c.productId,
         name:      c.name,
         price:     c.price,
         quantity:  c.quantity,
       })),
-      subtotal:       sub,
-      deliveryFee:    DFEE,
-      total:          sub + DFEE,
-      address:        addr,
-      lat:            lat,
-      lng:            lng,
-      comment:        document.getElementById('cart-comment')?.value.trim() || '',
-      paymentMethod:  payMethod,
+      subtotal:        sub,
+      deliveryFee:     DFEE,
+      total:           sub + DFEE,
+      address:         addr,
+      lat:             lat,
+      lng:             lng,
+      comment:         document.getElementById('cart-comment')?.value.trim() || '',
+      paymentMethod:   payMethod,
       deliveryService: deliveryService,
-      // ── статус бронирования ────────────────────────────────
-      status:         'awaiting_payment',  // ждём оплату 10 мин
-      paymentStatus:  'pending',           // ещё не оплачен
-      reservedUntil:  reservedUntil,       // Timestamp дедлайна
-      // ───────────────────────────────────────────────────────
-      courierId:      null,
-      courierName:    null,
-      createdAt:      serverTimestamp(),
-      updatedAt:      serverTimestamp(),
+      status:          'pending',
+      courierId:       null,
+      courierName:     null,
+      createdAt:       serverTimestamp(),
+      updatedAt:       serverTimestamp(),
     });
 
     const oid = ref.id;
@@ -1573,33 +1541,18 @@ window.doCheckout = async function () {
       }).catch(e => console.warn('[Mavsimi]', e));
     }
 
-    // Очищаем корзину сразу после бронирования
+    // Очищаем корзину
     const b = writeBatch(db);
     cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
     await b.commit();
     cart = [];
     renderCart(); updateBadges();
 
-    // Сохраняем данные для страницы бронирования
-    _bookingOid      = oid;
-    _bookingDeadline = reservedUntil;
-    _bookingOrder = {
-      id:            oid,
-      orderNumber:   oNum,
-      items:         cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
-      subtotal:      sub,
-      deliveryFee:   DFEE,
-      total:         sub + DFEE,
-      address:       addr,
-      paymentMethod: payMethod,
-    };
+    toast('Фармоиш №' + oNum + ' қабул шуд! ✅', 'ok');
 
-    toast('Фармоиш №' + oNum + ' забронирован! ✅', 'ok');
-
-    // Переход на страницу бронирования (небольшая задержка для toast)
-    setTimeout(() => {
-      goPage('booking');
-    }, 420);
+    // Переходим сразу на страницу статуса
+    await loadOrders();
+    setTimeout(() => { goPage('status'); }, 420);
 
   } catch (e) {
     toast('Хато: ' + e.message, 'err');
@@ -1618,119 +1571,7 @@ async function submitToMavsimi(data) {
   });
 }
 
-// ─── Обработка возврата с payment.html (якорные ссылки) ───────
-//
-//  payment.html перенаправляет обратно как:
-//    home.html#order-<oid>   → открыть статус заказа напрямую
-//    home.html#verify-<oid>  → показать страницу бронирования с анимацией
-//                              проверки оплаты, затем перейти на статус
-//
-//  Вызывается один раз при загрузке страницы.
-// ──────────────────────────────────────────────────────────────
-(function handlePaymentReturn() {
-  const hash = location.hash;
-  const isVerify = hash.startsWith('#verify-');
-  const isOrder  = hash.startsWith('#order-');
-  if (!isVerify && !isOrder) return;
 
-  const prefix  = isVerify ? '#verify-' : '#order-';
-  const rawPart = hash.slice(prefix.length);
-  const oid     = rawPart.split('&')[0];
-  if (!oid) return;
-
-  history.replaceState(null, '', location.pathname + location.search);
-
-  const tryOpen = () => {
-    if (typeof goPage !== 'function') { setTimeout(tryOpen, 250); return; }
-
-    if (isVerify) {
-      // ── Режим проверки: показываем booking-страницу с анимацией ──
-      _bookingOid = oid;
-      goPage('booking');
-      // Прячем все обычные элементы booking-страницы
-      const hide = ['bk-timer','bk-receipt-card','bk-methods','bk-section-label',
-                    'bk-cancel-btn','bk-expired'];
-      hide.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-      });
-      document.querySelectorAll('.bk-section-label').forEach(el => el.style.display='none');
-      // Показываем блок проверки
-      const vEl = document.getElementById('bk-verify');
-      if (vEl) vEl.style.display = 'block';
-
-      // Через 1.8с — проверяем Firestore и показываем результат
-      setTimeout(async () => {
-        try {
-          const { doc: fsDoc, getDoc: fsGet } =
-            await import('https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js');
-          const snap = await fsGet(fsDoc(db, 'orders', oid));
-          const paid = snap.exists() && snap.data().paymentStatus === 'paid';
-
-          if (paid) {
-            // Успех — зелёная галочка
-            const icon = document.getElementById('bk-verify-icon');
-            const spin = document.getElementById('bk-verify-spinner');
-            const title = document.getElementById('bk-verify-title');
-            const sub   = document.getElementById('bk-verify-sub');
-            if (icon)  { icon.classList.add('success'); icon.innerHTML = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'; }
-            if (title) { title.textContent = 'Оплата подтверждена!'; title.style.color = 'var(--acc)'; }
-            if (sub)   sub.textContent = 'Ваш заказ отправлен на кухню. Мы быстро его приготовим 🚀';
-
-            // Через 2с — грузим заказы и открываем статус
-            setTimeout(() => {
-              activeOid = oid;
-              if (typeof loadOrders === 'function') {
-                loadOrders().then(() => {
-                  goPage('status');
-                  if (typeof renderStatusPage === 'function') renderStatusPage();
-                }).catch(() => goPage('status'));
-              } else {
-                goPage('status');
-              }
-            }, 2000);
-
-          } else {
-            // Не оплачен — ошибка
-            const icon  = document.getElementById('bk-verify-icon');
-            const title = document.getElementById('bk-verify-title');
-            const sub   = document.getElementById('bk-verify-sub');
-            if (icon)  { icon.classList.add('fail'); icon.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'; }
-            if (title) { title.textContent = 'Оплата не подтверждена'; title.style.color = 'var(--red)'; }
-            if (sub)   sub.textContent = 'К сожалению, оплата не прошла. Пожалуйста, попробуйте ещё раз.';
-            // Показываем кнопку «Повторить»
-            const vEl = document.getElementById('bk-verify');
-            if (vEl) {
-              const retryBtn = document.createElement('button');
-              retryBtn.className = 'bk-verify-retry';
-              retryBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Попробовать снова';
-              retryBtn.onclick = () => { location.href = 'payment.html?oid=' + oid; };
-              vEl.appendChild(retryBtn);
-            }
-          }
-        } catch(e) {
-          console.error('verify check error:', e);
-          // При ошибке — просто открываем статус
-          activeOid = oid;
-          goPage('status');
-        }
-      }, 1800);
-
-    } else {
-      // ── Прямой переход на статус (#order-) ──
-      activeOid = oid;
-      if (typeof loadOrders === 'function') {
-        loadOrders().then(() => {
-          goPage('status');
-          if (typeof renderStatusPage === 'function') renderStatusPage();
-        }).catch(() => goPage('status'));
-      } else {
-        goPage('status');
-      }
-    }
-  };
-  setTimeout(tryOpen, 500);
-})();
 
 // ─── Заказы ──────────────────────────────────────────────────
 async function loadOrders() {
@@ -1751,7 +1592,7 @@ async function loadOrders() {
       });
     } catch { orders = []; }
   }
-  const live = orders.find(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  const live = orders.find(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (live) { activeOid = live.id; if (!unsubLive) listenLive(live.id); }
   renderOrders(); renderOrdersBadge(); renderLiveBanner();
   // Статистика профиля
@@ -1770,7 +1611,7 @@ window.setOTab = function (tab, btn) {
 
 function filterOrders() {
   if (currentOTab === 'all')       return orders;
-  if (currentOTab === 'active')    return orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  if (currentOTab === 'active')    return orders.filter(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
   if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
   if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
   return orders;
@@ -1790,7 +1631,7 @@ function renderOrders() {
     const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
     const items = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
     const date  = fmtDate(o.createdAt);
-    const isActive = ['awaiting_payment','pending','confirmed','preparing','delivering'].includes(o.status);
+    const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
     return `<div class="oc st-${o.status}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
       <div class="oc-head">
         <div class="oc-num">Заказ ${num}</div>
@@ -1818,7 +1659,7 @@ window.openOrderModal = function (oid) {
   const si    = STEPS.indexOf(o.status);
   const pay   = o.paymentMethod === 'cash' ? 'Наличные 💵' : o.paymentMethod === 'card' ? 'Карта 💳' : 'Онлайн 📱';
   const date  = fmtDate(o.createdAt);
-  const isActive = ['awaiting_payment','pending','confirmed','preparing','delivering'].includes(o.status);
+  const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
   const sub   = (o.items||[]).reduce((s,i) => s + i.price*i.quantity, 0);
   const delivery = o.total - sub;
 
@@ -1944,17 +1785,7 @@ window.openOrderModal = function (oid) {
       </div>
     </div>
 
-    ${o.status === 'awaiting_payment' ? `
-    <div style="margin:10px 0 4px">
-      <div style="background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.25);border-radius:14px;padding:14px 18px;margin-bottom:8px">
-        <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Ожидание оплаты</div>
-        <div style="font-size:.72rem;color:var(--tx2);line-height:1.6">Ваш заказ забронирован на 10 минут. Для оформления оплатите заказ.</div>
-        <button onclick="closeOrderModal(); location.href='payment.html?oid=${o.id}'" style="margin-top:12px;width:100%;padding:12px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.78rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3)">
-          💳 Оплатить
-        </button>
-      </div>
-    </div>` : ''}
-  ${['awaiting_payment','pending','confirmed'].includes(o.status) ? `
+  ${['pending','confirmed'].includes(o.status) ? `
     <div style="margin-top:4px;margin-bottom:8px">
       <button class="btn-sm danger" style="width:100%;padding:10px;font-size:.64rem" onclick="cancelO('${o.id}');closeOrderModal()">Фармоишро бекор кунед</button>
     </div>` : ''}
@@ -1982,7 +1813,7 @@ window.viewOrderStatus = function (oid) {
 
 
 function renderOrdersBadge() {
-  const act = orders.filter(o => ['awaiting_payment', 'pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
+  const act = orders.filter(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)).length;
   ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
@@ -2226,16 +2057,7 @@ function renderStatusPage() {
     ${(o.items || []).map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b0);font-size:.75rem"><span style="color:var(--tx)">${escHtml(i.name)}<span style="color:var(--tx3)"> ×${i.quantity}</span></span><span style="font-weight:600;color:var(--tx2)">${i.price * i.quantity} см</span></div>`).join('')}
     <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Доставка</span><span>${DFEE} см</span></div>
     <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)"><span style="font-weight:700;font-size:.8rem">Сумма</span><span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span></div>
-    ${o.status === 'awaiting_payment' ? `
-    <div style="margin-top:16px;background:rgba(13,148,136,.08);border:1.5px solid rgba(13,148,136,.28);border-radius:16px;padding:16px 18px">
-      <div style="font-size:.48rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">⏳ Ожидание оплаты</div>
-      <div style="font-size:.72rem;color:var(--tx2);line-height:1.6;margin-bottom:12px">Заказ забронированааст. Барои расмикунонии фармоиш, лутфан дар муддати 10 дақиқа пардохт кунед.</div>
-      <button onclick="location.href='payment.html?oid=${o.id}'" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--teal),#0d9488);border:none;border-radius:12px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.8rem;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);display:flex;align-items:center;justify-content:center;gap:8px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        💳 Оплатить
-      </button>
-    </div>` : ''}
-    ${['awaiting_payment','pending', 'confirmed'].includes(o.status) ? `<div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Фармоишро бекор кунед</button></div>` : ''}
+    ${['pending', 'confirmed'].includes(o.status) ? `<div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Фармоишро бекор кунед</button></div>` : ''}
 
     ${o.confirmCode && !['cancelled'].includes(o.status) ? `
     <div style="margin-top:18px;background:${o.status === 'client_arrived' ? 'linear-gradient(135deg,rgba(26,158,74,.1),rgba(34,197,94,.05))' : 'linear-gradient(135deg,rgba(26,158,74,.06),rgba(34,197,94,.02))'};border:2px solid ${o.status === 'client_arrived' ? 'rgba(26,158,74,.35)' : 'rgba(26,158,74,.18)'};border-radius:18px;padding:20px;text-align:center">
@@ -2747,143 +2569,7 @@ window.uploadAvUI = async function (inp) {
 // ═══════════════════════════════════════════════════════════════
 
 /** Рендерит чек на странице бронирования */
-function renderBookingPage() {
-  if (!_bookingOrder) return;
-  const o   = _bookingOrder;
-  const num = o.orderNumber ? '#' + o.orderNumber : '#' + (o.id || '').slice(-6);
 
-  const receiptEl = document.getElementById('bk-receipt-card');
-  if (!receiptEl) return;
-
-  const itemsHtml = o.items.map(i =>
-    `<div class="bk-receipt-item">
-       <span class="bk-receipt-item-name">${escHtml(i.name)}</span>
-       <span class="bk-receipt-item-qty">×${i.quantity}</span>
-       <span class="bk-receipt-item-price">${i.price * i.quantity} см</span>
-     </div>`
-  ).join('');
-
-  receiptEl.innerHTML = `
-    <div class="bk-receipt-head">
-      <div class="bk-receipt-brand">Dastdaroz</div>
-      <div class="bk-receipt-num">Заказ ${num}</div>
-      <div class="bk-receipt-status">
-        <div class="bk-receipt-status-dot"></div>
-        Ожидание оплаты
-      </div>
-    </div>
-    <div class="bk-receipt-body">
-      <div class="bk-receipt-items">${itemsHtml}</div>
-      <div class="bk-receipt-divider"></div>
-      <div class="bk-receipt-sum-row"><span>Товары</span><span>${o.subtotal} см</span></div>
-      <div class="bk-receipt-sum-row"><span>Доставка</span><span>${o.deliveryFee} см</span></div>
-      <div class="bk-receipt-total-row">
-        <span class="bk-receipt-total-lbl">Сумма</span>
-        <span class="bk-receipt-total-val">${o.total} см</span>
-      </div>
-      ${o.address ? `<div class="bk-receipt-addr">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        ${escHtml(o.address)}
-      </div>` : ''}
-    </div>`;
-
-  // Reset expired state when re-entering booking page
-  const expEl = document.getElementById('bk-expired');
-  if (expEl) expEl.style.display = 'none';
-  document.querySelectorAll('.bk-pay-btn').forEach(b => { b.disabled = false; });
-  const cancelBtn = document.getElementById('bk-cancel-btn');
-  if (cancelBtn) cancelBtn.style.display = '';
-}
-
-/** Запускает (или перезапускает) таймер обратного отсчёта */
-function startBookingTimer() {
-  stopBookingTimer();
-  updateBookingTimer();
-  _bookingTimerInt = setInterval(updateBookingTimer, 1000);
-}
-
-function stopBookingTimer() {
-  if (_bookingTimerInt) { clearInterval(_bookingTimerInt); _bookingTimerInt = null; }
-}
-
-function updateBookingTimer() {
-  if (!_bookingDeadline) return;
-  const dl   = _bookingDeadline instanceof Date ? _bookingDeadline.getTime() : Number(_bookingDeadline);
-  const left = dl - Date.now();
-
-  if (left <= 0) {
-    stopBookingTimer();
-    expireBooking();
-    return;
-  }
-
-  const m  = Math.floor(left / 60000);
-  const s  = Math.floor((left % 60000) / 1000);
-  const el = document.getElementById('bk-timer-val');
-  if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
-
-  const total = 10 * 60 * 1000;
-  const pct   = Math.max(0, Math.min(100, (left / total) * 100));
-  const bar   = document.getElementById('bk-timer-bar');
-  if (bar) {
-    bar.style.width      = pct + '%';
-    bar.style.background = pct > 40 ? 'var(--acc)' : pct > 15 ? 'var(--amber)' : 'var(--red)';
-  }
-  if (el) el.style.color = left < 60000 ? 'var(--red)' : left < 180000 ? 'var(--amber)' : 'var(--acc)';
-}
-
-/** Вызывается, когда 10 минут истекли */
-async function expireBooking() {
-  if (_bookingOid) {
-    try {
-      await updateDoc(doc(db, 'orders', _bookingOid), {
-        status:        'cancelled',
-        paymentStatus: 'expired',
-        cancelReason:  'Время оплаты истекло',
-        updatedAt:     serverTimestamp(),
-      });
-      await loadOrders();
-    } catch(e) { console.error('expireBooking:', e); }
-  }
-  const valEl = document.getElementById('bk-timer-val');
-  if (valEl) { valEl.textContent = '0:00'; valEl.style.color = 'var(--red)'; }
-  const barEl = document.getElementById('bk-timer-bar');
-  if (barEl) { barEl.style.width = '0%'; barEl.style.background = 'var(--red)'; }
-  const expEl = document.getElementById('bk-expired');
-  if (expEl) expEl.style.display = 'block';
-  document.querySelectorAll('.bk-pay-btn').forEach(b => { b.disabled = true; });
-  const cancelBtn = document.getElementById('bk-cancel-btn');
-  if (cancelBtn) cancelBtn.style.display = 'none';
-}
-
-/** Нажатие «Оплатить картой» → переход на payment.html */
-window.goToCardPayment = function() {
-  if (!_bookingOid) { toast('Хато: Фармоиш ёфт нашуд', 'err'); return; }
-  stopBookingTimer();
-  location.href = 'payment.html?oid=' + _bookingOid;
-};
-
-/** Нажатие «Отменить» на странице бронирования */
-window.cancelBooking = async function() {
-  if (!confirm('Фармоишро бекор кунем?')) return;
-  stopBookingTimer();
-  if (_bookingOid) {
-    try {
-      await updateDoc(doc(db, 'orders', _bookingOid), {
-        status:        'cancelled',
-        paymentStatus: 'cancelled',
-        cancelReason:  'Отменено пользователем',
-        updatedAt:     serverTimestamp(),
-      });
-      await loadOrders();
-    } catch(e) { console.error(e); }
-  }
-  _bookingOid      = null;
-  _bookingOrder    = null;
-  _bookingDeadline = null;
-  toast('Фармоиш бекор шуд');
-  goPage('home');
-};
 
 // ══════════════════════════════════════════════════════════════
 //  CART ADDRESS SHEET — pick from saved profile addresses
