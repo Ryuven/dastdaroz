@@ -146,33 +146,39 @@ const GENERAL_CATS = [
 let genCats = [...GENERAL_CATS];
 
 // ─── Загрузка общих категорий из Firestore ────────────────────
-// Firestore-коллекция: generalCategories
-// Документ: { id, nameRu, nameTj, icon, order, active }
-// Если коллекция пуста или содержит устаревшие (new-version) записи — используется GENERAL_CATS.
-// Администратор может принудительно обновить Firestore командой: seedGeneralCats()
-const LEGACY_CAT_IDS = new Set([
-  'aromatizatory','avtokosmetika','bakaleya','bystroe_pitanie','dlya_stirki',
-  'dlya_uborki','gigiena_rta','horeca','kosmetika_i_ukhod','napitki_i_kofe',
-  'oborudovanie_i_sklad','prof_khimiya','salfetki_i_tryapki','sladosti','sneki_i_chipsy',
-]);
+// Firestore-коллекция: generalCatalogs
+// Документ: { slug, name, order, active }
+// При пустой коллекции или ошибке — используется GENERAL_CATS (fallback).
 async function loadGenCats() {
   try {
     const snap = await getDocs(
-      query(collection(db, 'generalCategories'), orderBy('order'))
+      query(collection(db, 'generalCatalogs'), orderBy('order', 'asc'))
     );
     if (!snap.empty) {
       const firestoreCats = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(c => c.active !== false);
-      // Если Firestore содержит старые (new-version) категории — игнорируем, берём fallback
-      const hasLegacy = firestoreCats.some(c => LEGACY_CAT_IDS.has(c.id));
-      if (!hasLegacy) {
+        .map(d => {
+          const data = d.data();
+          // Нормализуем поля: generalCatalogs хранит slug/name,
+          // внутри приложения используем id/nameRu/icon
+          const slug = data.slug || d.id;
+          return {
+            id:     slug,
+            nameRu: data.name || slug,
+            nameTj: data.nameTj || data.name || slug,
+            icon:   data.icon  || `storage/general-catalogs/${slug}.png`,
+            order:  data.order ?? 0,
+          };
+        })
+        .filter(c => {
+          const raw = snap.docs.find(d => (d.data().slug || d.id) === c.id)?.data();
+          return raw?.active !== false;
+        });
+      if (firestoreCats.length) {
         genCats = firestoreCats;
       }
-      // Иначе genCats остаётся = GENERAL_CATS (fallback уже задан выше)
     }
   } catch {
-    // Коллекция ещё не создана или недоступна — тихо оставляем fallback
+    // Коллекция недоступна — тихо оставляем fallback
   }
   renderGenCats();
   renderCatalogGenCats();
@@ -180,20 +186,19 @@ async function loadGenCats() {
 
 // ─── Синхронизация GENERAL_CATS → Firestore (вызывать один раз из консоли) ──
 // Вызов: await seedGeneralCats()
-// Запишет все 51 категорию в коллекцию generalCategories.
-// После этого loadGenCats будет брать данные из Firestore как обычно.
+// Запишет все 51 категорию в коллекцию generalCatalogs (slug/name/order/active).
 window.seedGeneralCats = async function () {
   try {
     const batch = writeBatch(db);
-    GENERAL_CATS.forEach(c => {
-      const ref = doc(db, 'generalCategories', c.id);
-      batch.set(ref, { nameRu: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order, active: true });
+    GENERAL_CATS.forEach((c, i) => {
+      const ref = doc(db, 'generalCatalogs', c.id);
+      batch.set(ref, { slug: c.id, name: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order ?? i, active: true });
     });
     await batch.commit();
     genCats = [...GENERAL_CATS];
     renderGenCats();
     renderCatalogGenCats();
-    console.log('✅ seedGeneralCats: записано 51 категория в Firestore.');
+    console.log('✅ seedGeneralCats: записано 51 категория в коллекцию generalCatalogs.');
   } catch (e) {
     console.error('❌ seedGeneralCats:', e);
   }
@@ -247,6 +252,40 @@ window.onGenCatClick = function (id) {
   goPage('catalog');
   // Позже: openGenCat(id);
 };
+
+// ─── Отправка заявки партнёра в Firestore ─────────────────────
+window._submitPartnerApp = async function (data) {
+  await addDoc(collection(db, 'partnerApplications'), {
+    ...data,
+    status: 'new',
+    createdAt: serverTimestamp(),
+  });
+};
+
+// ─── Оверлей «Недоступен» для ограниченных магазинов ──────────
+window._storeRestrictMap = null;
+
+function _applyStoreOverlays() {
+  if (!window._storeRestrictMap) return;
+  document.querySelectorAll('#stores-grid .store-card:not(.store-card-restricted)').forEach(card => {
+    const m = card.getAttribute('onclick')?.match(/openStore\('(.+?)'\)/);
+    if (!m) return;
+    if (window._storeRestrictMap[m[1]]) {
+      card.classList.add('store-card-restricted');
+      card.setAttribute('onclick', '');
+      const ov = document.createElement('div');
+      ov.className = 'store-unavail-overlay';
+      ov.innerHTML = '<span>Недоступен</span>';
+      card.appendChild(ov);
+    }
+  });
+}
+
+// Следим за заполнением stores-grid (loadStores может отработать позже DOM)
+(function () {
+  const sgEl = document.getElementById('stores-grid');
+  if (sgEl) new MutationObserver(_applyStoreOverlays).observe(sgEl, { childList: true });
+})();
 
 // ─── Вспомогательные функции ──────────────────────────────────
 
@@ -727,6 +766,11 @@ async function loadStores() {
         .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     } catch { stores = []; }
   }
+  // Строим карту restricted для оверлеев «Недоступен»
+  window._storeRestrictMap = {};
+  stores.forEach(s => { window._storeRestrictMap[s.id] = s.restricted === true; });
+  _applyStoreOverlays();
+
   renderStoresGrid();
 }
 
