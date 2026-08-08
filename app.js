@@ -162,6 +162,11 @@ async function loadGenCats() {
       const all = snap.docs
         .map(d => {
           const d2 = d.data();
+          // cityIds может прийти как массив, строка или отсутствовать
+          const rawCityIds = d2.cityIds;
+          let cityIds = [];
+          if (Array.isArray(rawCityIds)) cityIds = rawCityIds.filter(Boolean);
+          else if (typeof rawCityIds === 'string' && rawCityIds.trim()) cityIds = [rawCityIds.trim()];
           return {
             id:     d.id,
             nameRu: d2.nameRu || d2.name || d.id,
@@ -169,14 +174,14 @@ async function loadGenCats() {
             icon:   d2.icon   || `storage/general-catalogs/${d.id}.png`,
             order:  d2.order  ?? 0,
             active: d2.active,
-            cityIds: d2.cityIds || [],
+            cityIds,
           };
         })
-        .filter(c => c.active !== false);
+        .filter(c => c.active !== false); // undefined → показываем (поле не задано = активно)
 
       // Фильтр по городу:
-      //   если cityIds пустой — показываем везде (глобальная категория)
-      //   если cityIds заполнен — показываем только если текущий город в списке
+      //   cityIds пустой/не задан → показываем везде (глобальная категория)
+      //   cityIds заполнен → только если текущий город в списке
       genCats = all.filter(c =>
         !c.cityIds.length || c.cityIds.includes(cityId)
       );
