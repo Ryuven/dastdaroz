@@ -146,39 +146,46 @@ const GENERAL_CATS = [
 let genCats = [...GENERAL_CATS];
 
 // ─── Загрузка общих категорий из Firestore ────────────────────
-// Firestore-коллекция: generalCatalogs
-// Документ: { slug, name, order, active }
-// При пустой коллекции или ошибке — используется GENERAL_CATS (fallback).
+// Firestore-коллекция: generalCatalogs  (та же что и в admin dashboard)
+// Документ: { slug, name, nameRu?, nameTj?, icon?, order, active, cityIds? }
+//
+// Логика фильтрации по городу:
+//   cityIds пустой / не задан  → показывается во ВСЕХ городах (по умолчанию)
+//   cityIds: ['dushanbe']      → только в Душанбе
 async function loadGenCats() {
+  const cityId = _selectedCityId;
   try {
     const snap = await getDocs(
       query(collection(db, 'generalCatalogs'), orderBy('order', 'asc'))
     );
     if (!snap.empty) {
-      const firestoreCats = snap.docs
+      const all = snap.docs
         .map(d => {
-          const data = d.data();
-          // Нормализуем поля: generalCatalogs хранит slug/name,
-          // внутри приложения используем id/nameRu/icon
-          const slug = data.slug || d.id;
+          const d2 = d.data();
           return {
-            id:     slug,
-            nameRu: data.name || slug,
-            nameTj: data.nameTj || data.name || slug,
-            icon:   data.icon  || `storage/general-catalogs/${slug}.png`,
-            order:  data.order ?? 0,
+            id:     d.id,
+            nameRu: d2.nameRu || d2.name || d.id,
+            nameTj: d2.nameTj || d2.name || d.id,
+            icon:   d2.icon   || `storage/general-catalogs/${d.id}.png`,
+            order:  d2.order  ?? 0,
+            active: d2.active,
+            cityIds: d2.cityIds || [],
           };
         })
-        .filter(c => {
-          const raw = snap.docs.find(d => (d.data().slug || d.id) === c.id)?.data();
-          return raw?.active !== false;
-        });
-      if (firestoreCats.length) {
-        genCats = firestoreCats;
-      }
+        .filter(c => c.active !== false);
+
+      // Фильтр по городу:
+      //   если cityIds пустой — показываем везде (глобальная категория)
+      //   если cityIds заполнен — показываем только если текущий город в списке
+      genCats = all.filter(c =>
+        !c.cityIds.length || c.cityIds.includes(cityId)
+      );
+    } else {
+      // Firestore пуст — оставляем GENERAL_CATS (hardcoded fallback)
+      genCats = [...GENERAL_CATS];
     }
   } catch {
-    // Коллекция недоступна — тихо оставляем fallback
+    genCats = [...GENERAL_CATS];
   }
   renderGenCats();
   renderCatalogGenCats();
@@ -186,19 +193,20 @@ async function loadGenCats() {
 
 // ─── Синхронизация GENERAL_CATS → Firestore (вызывать один раз из консоли) ──
 // Вызов: await seedGeneralCats()
-// Запишет все 51 категорию в коллекцию generalCatalogs (slug/name/order/active).
+// Запишет все 51 категорию в коллекцию generalCategories.
+// После этого loadGenCats будет брать данные из Firestore как обычно.
 window.seedGeneralCats = async function () {
   try {
     const batch = writeBatch(db);
-    GENERAL_CATS.forEach((c, i) => {
-      const ref = doc(db, 'generalCatalogs', c.id);
-      batch.set(ref, { slug: c.id, name: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order ?? i, active: true });
+    GENERAL_CATS.forEach(c => {
+      const ref = doc(db, 'generalCategories', c.id);
+      batch.set(ref, { nameRu: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order, active: true });
     });
     await batch.commit();
     genCats = [...GENERAL_CATS];
     renderGenCats();
     renderCatalogGenCats();
-    console.log('✅ seedGeneralCats: записано 51 категория в коллекцию generalCatalogs.');
+    console.log('✅ seedGeneralCats: записано 51 категория в Firestore.');
   } catch (e) {
     console.error('❌ seedGeneralCats:', e);
   }
@@ -252,40 +260,6 @@ window.onGenCatClick = function (id) {
   goPage('catalog');
   // Позже: openGenCat(id);
 };
-
-// ─── Отправка заявки партнёра в Firestore ─────────────────────
-window._submitPartnerApp = async function (data) {
-  await addDoc(collection(db, 'partnerApplications'), {
-    ...data,
-    status: 'new',
-    createdAt: serverTimestamp(),
-  });
-};
-
-// ─── Оверлей «Недоступен» для ограниченных магазинов ──────────
-window._storeRestrictMap = null;
-
-function _applyStoreOverlays() {
-  if (!window._storeRestrictMap) return;
-  document.querySelectorAll('#stores-grid .store-card:not(.store-card-restricted)').forEach(card => {
-    const m = card.getAttribute('onclick')?.match(/openStore\('(.+?)'\)/);
-    if (!m) return;
-    if (window._storeRestrictMap[m[1]]) {
-      card.classList.add('store-card-restricted');
-      card.setAttribute('onclick', '');
-      const ov = document.createElement('div');
-      ov.className = 'store-unavail-overlay';
-      ov.innerHTML = '<span>Недоступен</span>';
-      card.appendChild(ov);
-    }
-  });
-}
-
-// Следим за заполнением stores-grid (loadStores может отработать позже DOM)
-(function () {
-  const sgEl = document.getElementById('stores-grid');
-  if (sgEl) new MutationObserver(_applyStoreOverlays).observe(sgEl, { childList: true });
-})();
 
 // ─── Вспомогательные функции ──────────────────────────────────
 
@@ -649,8 +623,12 @@ function initSwipeToClose(sheetEl, closeFn, handleEl) {
 
 // Регистрируем все шиты после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
-  // genCats рендерится только из loadGenCats() вместе с остальными запросами
-  // Firestore в Promise.all — скелетоны стоят до завершения загрузки.
+  // ── Мгновенный рендер иконок общего каталога ───────────────
+  // genCats уже заполнен GENERAL_CATS на уровне модуля — рендерим
+  // сразу, не дожидаясь Firebase/auth. Так скелетоны не мелькают.
+  // Если Firestore позже вернёт другие данные, loadGenCats() обновит.
+  renderGenCats();
+  renderCatalogGenCats();
 
   // Кошелёк — свайп только с ручки (контент внутри скроллится)
   initSwipeToClose(
@@ -762,11 +740,6 @@ async function loadStores() {
         .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     } catch { stores = []; }
   }
-  // Строим карту restricted для оверлеев «Недоступен»
-  window._storeRestrictMap = {};
-  stores.forEach(s => { window._storeRestrictMap[s.id] = s.restricted === true; });
-  _applyStoreOverlays();
-
   renderStoresGrid();
 }
 
@@ -3119,8 +3092,9 @@ window.selectCity = function (id, name) {
     if (check) check.style.opacity = sel ? '1' : '0';
   });
 
-  // ── Перезагружаем ритейлеров для нового города ──
+  // ── Перезагружаем данные для нового города ──
   loadStores();
+  loadGenCats();
 
   // Закрываем sheet с небольшой задержкой (чтобы пользователь увидел выбор)
   setTimeout(closeCitySheet, 260);
