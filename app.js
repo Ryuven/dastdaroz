@@ -216,7 +216,7 @@ window.seedGeneralCats = async function () {
 function renderGenCats() {
   const el = document.getElementById('gen-cats-row');
   if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; }
+  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
 
   el.innerHTML = genCats.map(c => `
     <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
@@ -236,7 +236,7 @@ function renderGenCats() {
 function renderCatalogGenCats() {
   const el = document.getElementById('gen-cat-grid');
   if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; }
+  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
 
   el.innerHTML = genCats.map(c => `
     <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
