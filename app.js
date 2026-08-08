@@ -162,11 +162,6 @@ async function loadGenCats() {
       const all = snap.docs
         .map(d => {
           const d2 = d.data();
-          // cityIds может прийти как массив, строка или отсутствовать
-          const rawCityIds = d2.cityIds;
-          let cityIds = [];
-          if (Array.isArray(rawCityIds)) cityIds = rawCityIds.filter(Boolean);
-          else if (typeof rawCityIds === 'string' && rawCityIds.trim()) cityIds = [rawCityIds.trim()];
           return {
             id:     d.id,
             nameRu: d2.nameRu || d2.name || d.id,
@@ -174,14 +169,14 @@ async function loadGenCats() {
             icon:   d2.icon   || `storage/general-catalogs/${d.id}.png`,
             order:  d2.order  ?? 0,
             active: d2.active,
-            cityIds,
+            cityIds: d2.cityIds || [],
           };
         })
-        .filter(c => c.active !== false); // undefined → показываем (поле не задано = активно)
+        .filter(c => c.active !== false);
 
       // Фильтр по городу:
-      //   cityIds пустой/не задан → показываем везде (глобальная категория)
-      //   cityIds заполнен → только если текущий город в списке
+      //   если cityIds пустой — показываем везде (глобальная категория)
+      //   если cityIds заполнен — показываем только если текущий город в списке
       genCats = all.filter(c =>
         !c.cityIds.length || c.cityIds.includes(cityId)
       );
@@ -221,7 +216,7 @@ window.seedGeneralCats = async function () {
 function renderGenCats() {
   const el = document.getElementById('gen-cats-row');
   if (!el) return;
-  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
+  if (!genCats.length) { el.innerHTML = ''; return; }
 
   el.innerHTML = genCats.map(c => `
     <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
@@ -241,7 +236,7 @@ function renderGenCats() {
 function renderCatalogGenCats() {
   const el = document.getElementById('gen-cat-grid');
   if (!el) return;
-  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
+  if (!genCats.length) { el.innerHTML = ''; return; }
 
   el.innerHTML = genCats.map(c => `
     <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
