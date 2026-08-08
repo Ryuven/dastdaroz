@@ -143,7 +143,7 @@ const GENERAL_CATS = [
 ];
 
 // Рабочий массив — заменяется данными Firestore, если они есть
-let genCats = [...GENERAL_CATS];
+let genCats = []; // заполняется в loadGenCats() из Firestore (fallback → GENERAL_CATS)
 
 // ─── Загрузка общих категорий из Firestore ────────────────────
 // Firestore-коллекция: generalCatalogs  (та же что и в admin dashboard)
@@ -626,9 +626,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Мгновенный рендер иконок общего каталога ───────────────
   // genCats уже заполнен GENERAL_CATS на уровне модуля — рендерим
   // сразу, не дожидаясь Firebase/auth. Так скелетоны не мелькают.
-  // Если Firestore позже вернёт другие данные, loadGenCats() обновит.
-  renderGenCats();
-  renderCatalogGenCats();
+  // genCats рендерится только через loadGenCats() вместе с остальными запросами
+  // Firestore в Promise.all — скелетоны стоят до завершения загрузки.
 
   // Кошелёк — свайп только с ручки (контент внутри скроллится)
   initSwipeToClose(
