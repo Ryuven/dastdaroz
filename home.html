@@ -763,34 +763,58 @@ select.addr-inp{cursor:pointer}
 .sup-entry-badge{min-width:20px;height:20px;padding:0 6px;background:var(--red);color:#fff;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;flex-shrink:0}
 .sup-entry-arrow{color:var(--tx3);flex-shrink:0}
 
-/* Композер нового обращения */
-.sup-composer{flex:1;overflow-y:auto;padding:18px 16px;-webkit-overflow-scrolling:touch}
-.sup-comp-lbl{font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin-bottom:9px}
-.sup-order-card{display:flex;align-items:center;gap:11px;background:var(--accd);border:1.5px solid var(--accg);border-radius:14px;padding:12px 13px;cursor:pointer;transition:all .15s;margin-bottom:8px}
-.sup-order-card.dim{background:var(--s2);border-color:var(--b1)}
-.sup-order-check{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sup-order-card.dim .sup-order-check{background:var(--s3);color:transparent}
-.sup-order-body{flex:1;min-width:0}
-.sup-order-num{font-weight:700;font-size:.8rem;color:var(--tx)}
-.sup-order-meta{font-size:.66rem;color:var(--tx3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sup-order-change{font-size:.68rem;color:var(--acc);font-weight:700;background:none;border:none;cursor:pointer;padding:8px 2px;margin-bottom:14px}
-.sup-order-list{display:none;flex-direction:column;gap:7px;margin-bottom:14px;background:var(--s2);border-radius:14px;padding:10px;border:1px solid var(--b0)}
-.sup-order-list.open{display:flex}
-.sup-order-list-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:.74rem;color:var(--tx2);transition:background .12s}
-.sup-order-list-item:hover{background:var(--s1)}
-.sup-order-list-item.no-order{color:var(--tx3);font-style:italic}
-.sup-no-orders{font-size:.72rem;color:var(--tx3);background:var(--s2);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px}
-.sup-comp-textarea{width:100%;min-height:96px;resize:vertical;border:1.5px solid var(--b1);border-radius:14px;padding:12px 14px;font-family:var(--fs);font-size:.84rem;background:var(--s2);color:var(--tx);outline:none;transition:border-color .15s;box-sizing:border-box}
-.sup-comp-textarea:focus{border-color:var(--acc)}
-.sup-comp-send{width:100%;padding:13px;margin-top:12px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-family:var(--fd);font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px var(--acc-shadow);transition:opacity .15s}
-.sup-comp-send:disabled{opacity:.5;cursor:default}
-.sup-comp-hint{font-size:.66rem;color:var(--tx3);margin-top:10px;text-align:center;line-height:1.5}
-
-/* Статус тикета (закрыт/в работе) */
-.sup-status-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;margin:10px 14px 0;border-radius:12px;font-size:.74rem}
-.sup-status-banner.resolved{background:var(--accd);border:1px solid var(--accg);color:var(--acc)}
-.sup-status-banner.progress{background:var(--amber-d);border:1px solid rgba(217,119,6,.25);color:var(--amber)}
-.sup-status-banner-btn{margin-left:auto;background:none;border:none;color:inherit;font-weight:700;font-size:.7rem;cursor:pointer;text-decoration:underline;flex-shrink:0}
+/* ══ SUPPORT CHAT SHEET (citysh-style) ══════════════════════ */
+.supsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .28s}
+.supsh-ov.open{opacity:1;pointer-events:all}
+.supsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:22px 22px 0 0;height:90svh;transform:translateY(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;overflow:hidden;will-change:transform}
+.supsh.open{transform:translateY(0)}
+.supsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
+.supsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.supsh-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
+.supsh-sub{font-size:.64rem;color:var(--tx3);margin-top:1px}
+.supsh-close{background:var(--s2);border:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s;flex-shrink:0}
+.supsh-close:hover{background:var(--s3)}
+/* Order strip */
+.supsh-order-strip{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--b0);flex-shrink:0;background:var(--s2)}
+.supsh-order-ico{width:30px;height:30px;border-radius:9px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--acc)}
+.supsh-order-body{flex:1;min-width:0}
+.supsh-order-lbl{font-size:.44rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3);margin-bottom:1px}
+.supsh-order-val{font-size:.74rem;font-weight:600;color:var(--tx3)}
+.supsh-order-val.has-order{color:var(--tx)}
+.supsh-order-btn{background:none;border:1.5px solid var(--accg);border-radius:8px;color:var(--acc);font-size:.62rem;font-weight:700;padding:4px 10px;cursor:pointer;flex-shrink:0;font-family:var(--fs);transition:all .13s;white-space:nowrap}
+.supsh-order-btn:hover{background:var(--accd)}
+/* Order picker */
+.supsh-order-picker{display:none;flex-direction:column;border-bottom:1px solid var(--b0);flex-shrink:0;max-height:38%;overflow-y:auto}
+.supsh-order-picker.open{display:flex}
+.supsh-order-item{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;transition:background .13s;width:100%;background:none;border:none;border-bottom:1px solid var(--b0);font-family:var(--fs);text-align:left}
+.supsh-order-item:last-child{border-bottom:none}
+.supsh-order-item:hover{background:var(--s2)}
+.supsh-order-item.selected{background:var(--accd)}
+.supsh-order-item-ico{width:34px;height:34px;border-radius:10px;background:var(--s2);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .13s}
+.supsh-order-item.selected .supsh-order-item-ico{background:var(--acc);border-color:var(--acc)}
+.supsh-order-item-body{flex:1;min-width:0}
+.supsh-order-item-num{font-size:.78rem;font-weight:700;color:var(--tx)}
+.supsh-order-item-meta{font-size:.62rem;color:var(--tx3);margin-top:1px}
+.supsh-order-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
+.supsh-order-item.selected .supsh-order-item-check{opacity:1}
+/* Messages */
+.supsh-msgs{flex:1;overflow-y:auto;padding:14px 16px 8px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.supsh-msg{max-width:80%;padding:9px 13px;border-radius:16px;font-size:.82rem;line-height:1.44;word-wrap:break-word;white-space:pre-wrap}
+.supsh-msg-them{align-self:flex-start;background:var(--s2);color:var(--tx);border-bottom-left-radius:4px}
+.supsh-msg-me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:4px}
+.supsh-msg-name{font-size:.58rem;font-weight:700;color:var(--acc2);margin-bottom:3px;display:block}
+.supsh-msg-time{font-size:.58rem;opacity:.62;margin-top:4px;display:block}
+.supsh-msg-me .supsh-msg-time{text-align:right}
+.supsh-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--tx3);padding:40px 20px;text-align:center}
+.supsh-empty svg{opacity:.3;margin-bottom:4px}
+.supsh-empty-t{font-weight:700;font-size:.82rem;color:var(--tx2)}
+.supsh-empty-s{font-size:.7rem;max-width:220px;line-height:1.55}
+/* Input */
+.supsh-input-row{display:flex;align-items:flex-end;gap:8px;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 10px);border-top:1px solid var(--b0);flex-shrink:0;background:var(--s1)}
+.supsh-input{flex:1;resize:none;max-height:100px;border:1.5px solid var(--b1);border-radius:20px;padding:9px 15px;font-family:var(--fs);font-size:.84rem;background:var(--s2);color:var(--tx);outline:none;transition:border-color .15s}
+.supsh-input:focus{border-color:var(--acc)}
+.supsh-send{width:38px;height:38px;border-radius:50%;background:var(--acc);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:transform .12s,opacity .12s}
+.supsh-send:active{transform:scale(.9)}
 
 /* Кнопка "Чат с курьером" на странице статуса */
 .chat-trigger{display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--s1);border:1.5px solid var(--accg);border-radius:16px;cursor:pointer;margin-top:14px;transition:all .15s;text-align:left;width:100%;box-sizing:border-box;font-family:var(--fs)}
@@ -1814,49 +1838,52 @@ select.addr-inp{cursor:pointer}
   </div>
 </div>
 
-<!-- SUPPORT MODAL (тех. поддержка) -->
-<div class="chat-modal-bg" id="support-modal-bg" onclick="if(event.target===this)closeSupport()">
-  <div class="chat-modal" id="support-modal">
-    <div class="chat-modal-drag"></div>
-    <div class="chat-modal-head">
-      <div class="chat-modal-av" id="support-modal-av" style="background:linear-gradient(135deg,var(--acc),var(--acc2))">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 11a9 9 0 0118 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 11v3a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3"/></svg>
-      </div>
-      <div class="chat-modal-info">
-        <div class="chat-modal-name">Поддержка dastdaroz</div>
-        <div class="chat-modal-sub" id="support-modal-sub">Ответим быстро</div>
-      </div>
-      <button class="chat-modal-close" onclick="closeSupport()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+<!-- ══ SUPPORT CHAT SHEET ══ -->
+<div class="supsh-ov" id="supsh-ov" onclick="closeSupport()"></div>
+<div class="supsh" id="supsh">
+  <div class="supsh-drag"></div>
+  <div class="supsh-head">
+    <div>
+      <div class="supsh-title">Чат с поддержкой</div>
+      <div class="supsh-sub" id="supsh-sub">Ответим быстро</div>
     </div>
+    <button class="supsh-close" onclick="closeSupport()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
 
-    <!-- Композер (новое обращение) -->
-    <div class="sup-composer" id="support-composer" style="display:none">
-      <div class="sup-comp-lbl">Есть вопрос по заказу?</div>
-      <div id="support-order-picker"></div>
-      <div class="sup-comp-lbl">Паёми шумо</div>
-      <textarea class="sup-comp-textarea" id="support-first-msg" placeholder="Опишите, что произошло, мы поможем…"></textarea>
-      <button class="sup-comp-send" id="support-send-first" onclick="createSupportTicket()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Отправить в поддержку
-      </button>
-      <div class="sup-comp-hint">Наш специалист обычно отвечает в течение нескольких минут</div>
+  <!-- Order strip (default: no order) -->
+  <div class="supsh-order-strip">
+    <div class="supsh-order-ico">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
     </div>
-
-    <!-- Статус-баннер (тикет решён/в работе) -->
-    <div id="support-status-banner"></div>
-
-    <!-- Чат существующего тикета -->
-    <div class="chat-messages" id="support-messages" style="display:none"></div>
-    <div class="chat-input-row" id="support-input-row" style="display:none">
-      <textarea class="chat-input" id="support-input" rows="1" placeholder="Написать сообщение…"
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSupportMsg();}"></textarea>
-      <button class="chat-send-btn" id="support-send-btn" onclick="sendSupportMsg()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
+    <div class="supsh-order-body">
+      <div class="supsh-order-lbl">Заказ</div>
+      <div class="supsh-order-val" id="supsh-order-val">Без заказа</div>
     </div>
+    <button class="supsh-order-btn" id="supsh-order-btn" onclick="toggleSupportOrderPicker()">Выбрать</button>
+  </div>
+
+  <!-- Order list picker (hidden by default) -->
+  <div class="supsh-order-picker" id="supsh-order-picker"></div>
+
+  <!-- Messages -->
+  <div class="supsh-msgs" id="supsh-msgs">
+    <div class="supsh-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <div class="supsh-empty-t">Нет сообщений</div>
+      <div class="supsh-empty-s">Напишите нам — ответим быстро</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="supsh-input-row">
+    <textarea class="supsh-input" id="supsh-input" rows="1" placeholder="Написать сообщение…"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSupportMsg();}"></textarea>
+    <button class="supsh-send" onclick="sendSupportMsg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
   </div>
 </div>
 
