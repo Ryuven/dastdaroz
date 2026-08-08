@@ -216,7 +216,7 @@ window.seedGeneralCats = async function () {
 function renderGenCats() {
   const el = document.getElementById('gen-cats-row');
   if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; }
+  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
 
   el.innerHTML = genCats.map(c => `
     <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
@@ -236,7 +236,7 @@ function renderGenCats() {
 function renderCatalogGenCats() {
   const el = document.getElementById('gen-cat-grid');
   if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; }
+  if (!genCats.length) return; // данные ещё не пришли — скелетоны остаются
 
   el.innerHTML = genCats.map(c => `
     <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
@@ -2199,324 +2199,199 @@ window.sendChatMsg = async function () {
 };
 
 // ─── ТЕХ. ПОДДЕРЖКА ────────────────────────────────────────────
-let supportTicketId        = null;
-let supportUnsub           = null; // слушатель сообщений
-let supportTicketDocUnsub  = null; // слушатель самого тикета (статус)
-let supportBadgeUnsub      = null; // слушатель бейджа (все тикеты клиента)
-let supportMessages        = [];
-let supportSelectedOrderId = null; // null = без привязки заказа
-let supportOrderListOpen   = false;
+/* ══ SUPPORT CHAT (user side) ═══════════════════════════════ */
+let _supChatId         = null;
+let _unsubSupMsgs      = null;
+let _supSelectedOrder  = null;
+let _supOrdersCache    = [];
+let _supOrderPickerOpen = false;
+let _supBadgeUnsub     = null;
 
-// Точка входа: если есть открытый тикет — сразу чат, иначе — композер нового обращения
-window.openSupport = async function () {
-  const bg = document.getElementById('support-modal-bg');
-  if (bg) bg.classList.add('open');
-
-  try {
-    const q = query(
-      collection(db, 'supportTickets'),
-      where('clientId', '==', CU.uid),
-      where('status', 'in', ['open', 'in_progress']),
-    );
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      // Берём самый свежий из открытых
-      const docs = snap.docs.sort((a, b) => (b.data().updatedAt?.toMillis?.() || 0) - (a.data().updatedAt?.toMillis?.() || 0));
-      openSupportChat(docs[0].id);
-      return;
-    }
-  } catch (e) { /* при отсутствии индекса — просто откроем композер */ }
-
-  showSupportComposer();
-};
-
-function showSupportComposer() {
-  supportTicketId = null;
-  if (supportUnsub)          { supportUnsub(); supportUnsub = null; }
-  if (supportTicketDocUnsub) { supportTicketDocUnsub(); supportTicketDocUnsub = null; }
-
-  document.getElementById('support-composer').style.display   = 'block';
-  document.getElementById('support-messages').style.display   = 'none';
-  document.getElementById('support-input-row').style.display  = 'none';
-  document.getElementById('support-status-banner').innerHTML  = '';
-  const msgEl = document.getElementById('support-first-msg');
-  if (msgEl) msgEl.value = '';
-  const sub = document.getElementById('support-modal-sub');
-  if (sub) sub.textContent = 'Ответим быстро';
-
-  supportOrderListOpen = false;
-  renderSupportOrderPicker();
-}
-
-function renderSupportOrderPicker() {
-  const wrap = document.getElementById('support-order-picker');
-  if (!wrap) return;
-
-  if (!orders || orders.length === 0) {
-    supportSelectedOrderId = null;
-    wrap.innerHTML = `<div class="sup-no-orders">У вас ещё нет заказов — вы можете написать без привязки к заказу</div>`;
-    return;
-  }
-
-  if (supportSelectedOrderId === undefined) supportSelectedOrderId = null;
-  // Автовыбор последнего заказа при первом открытии
-  if (supportSelectedOrderId === null && !supportOrderListOpen && !wrap.dataset.touched) {
-    supportSelectedOrderId = orders[0].id;
-  }
-  wrap.dataset.touched = '1';
-
-  const sel = supportSelectedOrderId ? orders.find(o => o.id === supportSelectedOrderId) : null;
-
-  let html = '';
-  if (sel) {
-    const num = sel.orderNumber ? '#' + sel.orderNumber : '#' + sel.id.slice(-6).toUpperCase();
-    html += `<div class="sup-order-card">
-      <div class="sup-order-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div class="sup-order-body">
-        <div class="sup-order-num">${num}</div>
-        <div class="sup-order-meta">${SL[sel.status] || sel.status} · ${sel.total || 0} см · ${fmtDate(sel.createdAt)}</div>
-      </div>
-    </div>`;
-  } else {
-    html += `<div class="sup-order-card dim">
-      <div class="sup-order-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div class="sup-order-body">
-        <div class="sup-order-num">Бе фармоиш</div>
-        <div class="sup-order-meta">Общий запрос</div>
-      </div>
-    </div>`;
-  }
-  html += `<button class="sup-order-change" onclick="toggleSupportOrderList()">${supportOrderListOpen ? 'Скрыть' : 'Другой заказ / без заказа'}</button>`;
-
-  const listItems = orders.slice(0, 5).map(o => {
-    const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6).toUpperCase();
-    return `<div class="sup-order-list-item" onclick="selectSupportOrder('${o.id}')">
-      <span>${num}</span><span style="color:var(--tx3);font-size:.66rem">${SL[o.status] || o.status}</span>
-    </div>`;
-  }).join('');
-  html += `<div class="sup-order-list ${supportOrderListOpen ? 'open' : ''}" id="sup-order-list">
-    ${listItems}
-    <div class="sup-order-list-item no-order" onclick="clearSupportOrder()">Бе интихоби фармоиш</div>
-  </div>`;
-
-  wrap.innerHTML = html;
-}
-
-window.toggleSupportOrderList = function () {
-  supportOrderListOpen = !supportOrderListOpen;
-  renderSupportOrderPicker();
-};
-window.selectSupportOrder = function (oid) {
-  supportSelectedOrderId = oid;
-  supportOrderListOpen = false;
-  renderSupportOrderPicker();
-};
-window.clearSupportOrder = function () {
-  supportSelectedOrderId = null;
-  supportOrderListOpen = false;
-  renderSupportOrderPicker();
-};
-
-window.createSupportTicket = async function () {
-  const inp  = document.getElementById('support-first-msg');
-  const text = inp ? inp.value.trim() : '';
-  if (!text) { toast('Паёмро нависед', 'warn'); return; }
-
-  const btn = document.getElementById('support-send-first');
-  if (btn) { btn.disabled = true; }
-
-  const order = supportSelectedOrderId ? orders.find(o => o.id === supportSelectedOrderId) : null;
-  const subject = order
-    ? `Дар бораи фармоиш #${order.orderNumber || order.id.slice(-6).toUpperCase()}`
-    : 'Общий запрос';
-
-  try {
-    const ref = await addDoc(collection(db, 'supportTickets'), {
-      clientId:      CU.uid,
-      clientName:    UD?.displayName || 'Клиент',
-      clientPhone:   UD?.phone || '',
-      orderId:       order ? order.id : null,
-      orderNumber:   order ? (order.orderNumber || order.id.slice(-6).toUpperCase()) : null,
-      subject,
-      status:        'open',
-      lastMessage:   text.slice(0, 120),
-      lastMessageAt: serverTimestamp(),
-      lastMessageSenderRole: 'client',
-      clientUnread:  0,
-      adminUnread:   1,
-      createdAt:     serverTimestamp(),
-      updatedAt:     serverTimestamp(),
-    });
-    await addDoc(collection(db, 'supportTickets', ref.id, 'messages'), {
-      text,
-      senderId:   CU.uid,
-      senderRole: 'client',
-      senderName: UD?.displayName || 'Клиент',
-      createdAt:  serverTimestamp(),
-    });
-    openSupportChat(ref.id);
-  } catch (e) {
-    toast('Произошла ошибка. Попробуйте ещё раз', 'err');
-  }
-  if (btn) btn.disabled = false;
-};
-
-function openSupportChat(ticketId) {
-  supportTicketId = ticketId;
-  document.getElementById('support-composer').style.display  = 'none';
-  document.getElementById('support-messages').style.display  = 'flex';
-  document.getElementById('support-input-row').style.display = 'flex';
-
-  updateDoc(doc(db, 'supportTickets', ticketId), { clientUnread: 0 }).catch(() => {});
-
-  listenSupportMessages(ticketId);
-  listenSupportTicketDoc(ticketId);
-  setTimeout(() => document.getElementById('support-input')?.focus(), 300);
-}
-
-function listenSupportMessages(ticketId) {
-  if (supportUnsub) { supportUnsub(); supportUnsub = null; }
-  const q = query(collection(db, 'supportTickets', ticketId, 'messages'), orderBy('createdAt', 'asc'));
-  supportUnsub = onSnapshot(q, snap => {
-    supportMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderSupportMessages();
-  });
-}
-
-function listenSupportTicketDoc(ticketId) {
-  if (supportTicketDocUnsub) { supportTicketDocUnsub(); supportTicketDocUnsub = null; }
-  supportTicketDocUnsub = onSnapshot(doc(db, 'supportTickets', ticketId), snap => {
-    if (!snap.exists()) return;
-    const t = snap.data();
-    updateSupportStatusBanner(t.status);
-    // Пока модал открыт на этом тикете — сразу гасим непрочитанные
-    if (t.clientUnread > 0) {
-      updateDoc(doc(db, 'supportTickets', ticketId), { clientUnread: 0 }).catch(() => {});
-    }
-  });
-}
-
-function updateSupportStatusBanner(status) {
-  const el = document.getElementById('support-status-banner');
-  const inputRow = document.getElementById('support-input-row');
-  if (!el) return;
-
-  if (status === 'resolved') {
-    el.innerHTML = `<div class="sup-status-banner resolved">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
-      Этот запрос решён
-      <button class="sup-status-banner-btn" onclick="startNewSupportTicket()">Новый запрос</button>
-    </div>`;
-    if (inputRow) inputRow.style.display = 'none';
-  } else if (status === 'in_progress') {
-    el.innerHTML = `<div class="sup-status-banner progress">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Мутахассис бо шумо кор мекунад
-    </div>`;
-    if (inputRow) inputRow.style.display = 'flex';
-  } else {
-    el.innerHTML = '';
-    if (inputRow) inputRow.style.display = 'flex';
-  }
-}
-
-window.startNewSupportTicket = function () {
-  showSupportComposer();
-};
-
-function renderSupportMessages() {
-  const wrap = document.getElementById('support-messages');
-  if (!wrap) return;
-
-  if (supportMessages.length === 0) {
-    wrap.innerHTML = `<div class="chat-empty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 11v3a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3"/></svg>
-      <div class="chat-empty-t">Ожидание ответа</div>
-      <div class="chat-empty-s">Наш специалист скоро ответит</div>
-    </div>`;
-    return;
-  }
-
-  wrap.innerHTML = supportMessages.map(m => {
-    const mine = m.senderRole === 'client';
-    const time = m.createdAt?.toDate
-      ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-      : '';
-    return `<div class="chat-msg ${mine ? 'chat-msg-me' : 'chat-msg-them'}">${escHtml(m.text)}<span class="chat-msg-time">${time}</span></div>`;
-  }).join('');
-
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-window.sendSupportMsg = async function () {
-  const inp = document.getElementById('support-input');
-  if (!inp || !supportTicketId) return;
-  const text = inp.value.trim();
-  if (!text) return;
-
-  inp.value = '';
-  inp.style.height = 'auto';
-  const btn = document.getElementById('support-send-btn');
-  if (btn) btn.disabled = true;
-
-  try {
-    await addDoc(collection(db, 'supportTickets', supportTicketId, 'messages'), {
-      text,
-      senderId:   CU.uid,
-      senderRole: 'client',
-      senderName: UD?.displayName || 'Клиент',
-      createdAt:  serverTimestamp(),
-    });
-    await updateDoc(doc(db, 'supportTickets', supportTicketId), {
-      adminUnread:           increment(1),
-      lastMessage:           text.slice(0, 120),
-      lastMessageAt:         serverTimestamp(),
-      lastMessageSenderRole: 'client',
-      // Если клиент пишет после решения — считаем обращение снова открытым
-      status:                'open',
-      updatedAt:             serverTimestamp(),
-    });
-  } catch (e) {
-    toast('Ошибка при отправке сообщения', 'err');
-  }
-  if (btn) btn.disabled = false;
-  inp.focus();
+window.openSupport = function () {
+  if (!CU) return;
+  const ov  = document.getElementById('supsh-ov');
+  const sh  = document.getElementById('supsh');
+  if (!ov || !sh) return;
+  ov.classList.add('open');
+  sh.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _supChatId = CU.uid;
+  _listenSupportChatUser();
+  _loadSupportOrders();
 };
 
 window.closeSupport = function () {
-  document.getElementById('support-modal-bg')?.classList.remove('open');
-  if (supportUnsub)          { supportUnsub(); supportUnsub = null; }
-  if (supportTicketDocUnsub) { supportTicketDocUnsub(); supportTicketDocUnsub = null; }
-  supportTicketId = null;
-  supportMessages = [];
+  document.getElementById('supsh-ov')?.classList.remove('open');
+  document.getElementById('supsh')?.classList.remove('open');
+  document.body.style.overflow = '';
+  if (_unsubSupMsgs) { _unsubSupMsgs(); _unsubSupMsgs = null; }
 };
 
-// Глобальный бейдж непрочитанных — работает независимо от того, открыт ли модал
-function listenSupportBadge() {
-  if (supportBadgeUnsub) { supportBadgeUnsub(); supportBadgeUnsub = null; }
-  if (!CU) return;
+function _listenSupportChatUser() {
+  if (_unsubSupMsgs) _unsubSupMsgs();
+  if (!_supChatId) return;
   const q = query(
-    collection(db, 'supportTickets'),
-    where('clientId', '==', CU.uid),
-    where('status', 'in', ['open', 'in_progress']),
+    collection(db, 'supportChats', _supChatId, 'messages'),
+    orderBy('createdAt', 'asc')
   );
-  supportBadgeUnsub = onSnapshot(q, snap => {
-    let total = 0;
-    snap.forEach(d => { total += d.data().clientUnread || 0; });
-    updateSupportBadgeUI(total);
-  }, () => { /* индекс ещё не готов — тихо игнорируем */ });
+  _unsubSupMsgs = onSnapshot(q, snap => {
+    _renderSupportMsgsUser(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    updateDoc(doc(db, 'supportChats', _supChatId), { userUnread: 0 }).catch(() => {});
+  }, () => {});
 }
 
-function updateSupportBadgeUI(count) {
+function _renderSupportMsgsUser(msgs) {
+  const el = document.getElementById('supsh-msgs');
+  if (!el) return;
+  if (!msgs.length) {
+    el.innerHTML = `<div class="supsh-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <div class="supsh-empty-t">Нет сообщений</div>
+      <div class="supsh-empty-s">Напишите нам — ответим быстро</div>
+    </div>`;
+    return;
+  }
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.innerHTML = msgs.map(m => {
+    const isMe = m.senderRole === 'user';
+    const time = m.createdAt?.toDate
+      ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const nameHtml = !isMe && m.senderName
+      ? `<span class="supsh-msg-name">${esc(m.senderName)}</span>`
+      : '';
+    return `<div class="supsh-msg ${isMe ? 'supsh-msg-me' : 'supsh-msg-them'}">${nameHtml}${esc(m.text)}<span class="supsh-msg-time">${time}</span></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function _loadSupportOrders() {
+  if (!CU) return;
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'orders'), where('userId', '==', CU.uid), orderBy('createdAt', 'desc'), limit(10))
+    );
+    _supOrdersCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) { _supOrdersCache = []; }
+  _renderSupOrderPicker();
+}
+
+function _renderSupOrderPicker() {
+  const el = document.getElementById('supsh-order-picker');
+  if (!el) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const noSel = _supSelectedOrder === null;
+
+  let html = `<button class="supsh-order-item ${noSel ? 'selected' : ''}" onclick="selectSupportOrder(null,null)">
+    <div class="supsh-order-item-ico">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${noSel ? '#fff' : 'currentColor'}" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </div>
+    <div class="supsh-order-item-body">
+      <div class="supsh-order-item-num">Без заказа</div>
+      <div class="supsh-order-item-meta">Общий вопрос</div>
+    </div>
+    ${noSel ? '<svg class="supsh-order-item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+  </button>`;
+
+  _supOrdersCache.forEach(o => {
+    const sel = _supSelectedOrder === o.id;
+    const num = o.orderNumber || o.id.slice(-6).toUpperCase();
+    const date = o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })
+      : '';
+    html += `<button class="supsh-order-item ${sel ? 'selected' : ''}" onclick="selectSupportOrder('${o.id}','${esc(num)}')">
+      <div class="supsh-order-item-ico">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${sel ? '#fff' : 'currentColor'}" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <div class="supsh-order-item-body">
+        <div class="supsh-order-item-num">#${esc(num)}</div>
+        <div class="supsh-order-item-meta">${date}${o.totalPrice ? ' · ' + o.totalPrice + ' сом' : ''}</div>
+      </div>
+      ${sel ? '<svg class="supsh-order-item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    </button>`;
+  });
+  el.innerHTML = html;
+}
+
+window.toggleSupportOrderPicker = function () {
+  _supOrderPickerOpen = !_supOrderPickerOpen;
+  document.getElementById('supsh-order-picker')?.classList.toggle('open', _supOrderPickerOpen);
+  const btn = document.getElementById('supsh-order-btn');
+  if (btn) btn.textContent = _supOrderPickerOpen ? 'Закрыть' : 'Выбрать';
+};
+
+window.selectSupportOrder = function (orderId, orderNum) {
+  _supSelectedOrder = orderId;
+  const valEl = document.getElementById('supsh-order-val');
+  if (valEl) {
+    valEl.textContent = orderId ? `#${orderNum}` : 'Без заказа';
+    valEl.classList.toggle('has-order', !!orderId);
+  }
+  _renderSupOrderPicker();
+  if (_supOrderPickerOpen) toggleSupportOrderPicker();
+};
+
+window.sendSupportMsg = async function () {
+  if (!CU) return;
+  const inp = document.getElementById('supsh-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  _supChatId = CU.uid;
+  const chatRef = doc(db, 'supportChats', _supChatId);
+  const chatData = {
+    userId:   CU.uid,
+    userName: CU.displayName || 'Пользователь',
+    userPhone: CU.phoneNumber || '',
+    lastMessage: text.slice(0, 120),
+    lastMessageAt: serverTimestamp(),
+    lastMessageSenderRole: 'user',
+    adminUnread: increment(1),
+    userUnread: 0,
+    updatedAt: serverTimestamp(),
+  };
+  if (_supSelectedOrder) {
+    const order = _supOrdersCache.find(o => o.id === _supSelectedOrder);
+    if (order) {
+      chatData.orderId     = order.id;
+      chatData.orderNumber = order.orderNumber || order.id.slice(-6).toUpperCase();
+    }
+  }
+  try {
+    await setDoc(chatRef, chatData, { merge: true });
+    await addDoc(collection(db, 'supportChats', _supChatId, 'messages'), {
+      text,
+      senderId:   CU.uid,
+      senderRole: 'user',
+      senderName: CU.displayName || 'Пользователь',
+      createdAt:  serverTimestamp(),
+    });
+  } catch (e) {
+    if (window.toast) window.toast('Ошибка отправки', 'err');
+  }
+};
+
+function listenSupportBadge() {
+  if (_supBadgeUnsub) { _supBadgeUnsub(); _supBadgeUnsub = null; }
+  if (!CU) return;
+  _supBadgeUnsub = onSnapshot(
+    doc(db, 'supportChats', CU.uid),
+    snap => {
+      const count = snap.exists() ? (snap.data().userUnread || 0) : 0;
+      _updateSupportBadge(count);
+    },
+    () => {}
+  );
+}
+
+function _updateSupportBadge(count) {
   const has = count > 0;
-  const entryBadge = document.getElementById('support-entry-badge');
-  if (entryBadge) { entryBadge.style.display = has ? 'flex' : 'none'; entryBadge.textContent = count; }
-  const mobBadge = document.getElementById('mob-prof-b');
-  if (mobBadge) { mobBadge.style.display = has ? 'flex' : 'none'; mobBadge.textContent = count; }
-  const sbBadge = document.getElementById('support-nb');
-  if (sbBadge) { sbBadge.style.display = has ? 'flex' : 'none'; sbBadge.textContent = count; }
-  const profSupportBadge = document.getElementById('prof-support-nb');
-  if (profSupportBadge) { profSupportBadge.style.display = has ? 'flex' : 'none'; profSupportBadge.textContent = count; }
+  ['support-nb', 'prof-support-nb', 'support-entry-badge', 'mob-prof-b'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = has ? 'flex' : 'none'; el.textContent = count; }
+  });
 }
 
 // ─── Профиль ─────────────────────────────────────────────────
