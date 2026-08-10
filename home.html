@@ -1,86 +1,36 @@
 <!DOCTYPE html>
-<html lang="tg">
+<html lang="ru">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<!-- ── Primary SEO ── -->
 <title>dastdaroz — Доставка еды и продуктов в Душанбе</title>
-<meta name="description" content="dastdaroz — доставка продуктов и еды в Душанбе. Заказывайте онлайн: продукты, напитки, снеки — быстрая доставка на дом. Доставка продуктов на дом в Душанбе."/>
-<meta name="keywords" content="dastdaroz, доставка Душанбе, доставка еды Душанбе, доставка Душанбе, заказ продуктов Душанбе, доставка еды, delivery Dushanbe, Таджикистан доставка, Таджикистан доставка, интернет-магазин Душанбе, продукты питания, dastdaroz.shop"/>
+<meta name="description" content="dastdaroz — доставка продуктов и еды в Душанбе. Быстрая доставка на дом."/>
+<meta name="keywords" content="dastdaroz, доставка Душанбе, доставка еды, delivery Dushanbe"/>
 <meta name="author" content="dastdaroz"/>
 <meta name="robots" content="index, follow"/>
 <link rel="canonical" href="https://dastdaroz.shop/"/>
-
-<!-- ── Geo / Local ── -->
 <meta name="geo.region" content="TJ-DU"/>
-<meta name="geo.placename" content="Дushanbe, Tajikistan"/>
-<meta name="geo.position" content="38.559772;68.773945"/>
-<meta name="ICBM" content="38.559772, 68.773945"/>
-
-<!-- ── Favicon ── -->
-<link rel="icon" type="image/png" href="favicon.png" sizes="48x48"/>
-<link rel="shortcut icon" href="favicon.png"/>
-<link rel="apple-touch-icon" href="favicon.png"/>
-
-<!-- ── Open Graph (Facebook, Telegram, WhatsApp) ── -->
+<meta name="geo.placename" content="Dushanbe, Tajikistan"/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://dastdaroz.shop/"/>
-<meta property="og:site_name" content="dastdaroz"/>
-<meta property="og:title" content="dastdaroz - доставка заказов"/>
-<meta property="og:description" content="Доставка продуктов и еды на дом в Душанбе. Доставка продуктов на дом в Душанбе — быстро и удобно."/>
+<meta property="og:title" content="dastdaroz — доставка заказов"/>
+<meta property="og:description" content="Доставка продуктов и еды на дом в Душанбе."/>
 <meta property="og:image" content="https://dastdaroz.shop/dastdaroz.png"/>
-<meta property="og:image:width" content="512"/>
-<meta property="og:image:height" content="512"/>
-<meta property="og:locale" content="tg_TJ"/>
-<meta property="og:locale:alternate" content="ru_TJ"/>
-
-<!-- ── Twitter Card ── -->
+<meta property="og:locale" content="ru_TJ"/>
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Dastdaroz — Доставка в Душанбе"/>
-<meta name="twitter:description" content="Доставка продуктов и еды на дом в Душанбе."/>
 <meta name="twitter:image" content="https://dastdaroz.shop/dastdaroz.png"/>
-
-<!-- ── JSON-LD Structured Data ── -->
+<link rel="icon" type="image/png" href="favicon.png"/>
+<link rel="apple-touch-icon" href="favicon.png"/>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "Dastdaroz",
-  "description": "Доставка продуктов и еды на дом в Душанбе. Доставка продуктов и еды на дом в Душанбе.",
-  "url": "https://dastdaroz.shop",
-  "logo": "https://dastdaroz.shop/dastdaroz.png",
-  "image": "https://dastdaroz.shop/dastdaroz.png",
-  "telephone": "",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Dushanbe",
-    "addressCountry": "TJ"
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 38.559772,
-    "longitude": 68.773945
-  },
-  "areaServed": {
-    "@type": "City",
-    "name": "Dushanbe"
-  },
-  "servesCuisine": ["Продукты питания", "Напитки", "Снеки"],
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "Каталог доставки"
-  },
-  "sameAs": []
-}
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"Dastdaroz","description":"Доставка продуктов и еды на дом в Душанбе.","url":"https://dastdaroz.shop","logo":"https://dastdaroz.shop/dastdaroz.png","address":{"@type":"PostalAddress","addressLocality":"Dushanbe","addressCountry":"TJ"},"geo":{"@type":"GeoCoordinates","latitude":38.559772,"longitude":68.773945}}
 </script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"/>
-<!-- Leaflet — карта курьера на странице статуса -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPc=" crossorigin=""></script>
 <style>
@@ -322,7 +272,7 @@ a{color:inherit;text-decoration:none}
 
 /* ── CART ── */
 .cart-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-width:0}
-.ci{background:var(--s1);border:1.5px solid var(--b0);border-radius:13px;padding:10px 12px;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;align-items:center;gap:8px;margin-bottom:8px;transition:border-color var(--tf);box-shadow:var(--shadow);overflow:hidden;box-sizing:border-box;width:100%;max-width:100%}
+
 .ci:hover{border-color:var(--accg)}
 .ci-img{width:44px;height:44px;border-radius:9px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .ci-img img{width:100%;height:100%;object-fit:cover}
@@ -566,7 +516,7 @@ select.addr-inp{cursor:pointer}
 .wlt-tup-overlay.open{opacity:1;pointer-events:all}
 .wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 18px calc(var(--safe-b) + 20px);transform:translateY(100%);transition:transform .3s var(--ease)}
 .wlt-tup-sheet.open{transform:translateY(0)}
-.wlt-tup-handle{display:flex;justify-content:center;margin-bottom:14px}<div style="width:34px;height:4px;border-radius:99px;background:var(--b0)"></div>
+.wlt-tup-handle{display:flex;justify-content:center;margin-bottom:14px}
 .wlt-tup-title{font-size:.94rem;font-weight:700;color:var(--tx);margin-bottom:18px}
 .wlt-tup-lbl{font-size:.58rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
 /* ── Карточка метода оплаты ──────────────────────────────────── */
@@ -690,7 +640,7 @@ select.addr-inp{cursor:pointer}
   .mn-badge{position:absolute;top:7px;right:calc(50% - 16px);min-width:15px;height:15px;padding:0 3px;background:var(--acc);color:#fff;font-size:.46rem;font-weight:700;border-radius:99px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
   .toast-wrap{bottom:calc(var(--nb) + var(--safe-b) + 12px);right:14px}
   .cart-layout{grid-template-columns:1fr}
-  .ci{grid-template-columns:40px minmax(0,1fr) auto auto auto;gap:6px;padding:9px 10px}
+  
   .ci-img{width:40px;height:40px}
   .ci-total{min-width:36px;font-size:.75rem}
   .qty-btn{width:22px;height:28px;font-size:.8rem}
@@ -1214,10 +1164,134 @@ select.addr-inp{cursor:pointer}
 }
 .cart-note-area:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
 .cart-note-area::placeholder{color:var(--tx3);font-size:.78rem}
+
+/* ─── EXTRA ─── */
+.app-bar{
+  position:fixed;
+  bottom:calc(var(--nb,66px) + var(--safe-b,0px) + 10px);
+  left:12px;right:12px;z-index:500;
+  background:var(--s1,#fff);
+  border:1.5px solid var(--b0,#e5e7eb);
+  border-radius:14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.13);
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;
+  transform:translateY(calc(100% + 20px));opacity:0;
+  pointer-events:none;
+  transition:transform .38s cubic-bezier(.25,1.3,.5,1),opacity .28s ease;
+}
+.app-bar.show{transform:translateY(0);opacity:1;pointer-events:auto}
+@media(min-width:861px){.app-bar{bottom:20px;left:auto;right:24px;width:340px}}
+.app-bar-ico{width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--accd,#dcfce7)}
+.app-bar-ico img{width:100%;height:100%;object-fit:cover;display:block}
+.app-bar-name{flex:1;min-width:0;font-family:var(--fs,'Inter',sans-serif);font-weight:700;font-size:.78rem;color:var(--tx,#111);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-bar-btn{background:linear-gradient(135deg,var(--acc,#16a34a),var(--acc2,#22c55e));color:#fff;border:none;border-radius:9px;font-family:var(--fd,sans-serif);font-weight:800;font-size:.68rem;padding:7px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 2px 8px var(--acc-shadow,rgba(22,163,74,.28));transition:opacity .15s}
+.app-bar-btn:active{opacity:.82}
+.app-bar-close{width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--s2,#f3f4f6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3,#888);transition:background .15s}
+.app-bar-close:active{background:var(--b0,#e5e7eb)}
+
+
+.ptn-bg{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
+.ptn-bg.open{opacity:1;pointer-events:all}
+.ptn-sheet{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:94svh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
+.ptn-bg.open .ptn-sheet{transform:translateY(0)}
+.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0;touch-action:none}
+.ptn-head{display:flex;align-items:center;padding:4px 16px 14px;flex-shrink:0;border-bottom:1px solid var(--b0);gap:10px}
+.ptn-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);flex:1;letter-spacing:-.02em}
+.ptn-close{width:32px;height:32px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;transition:background .15s}
+.ptn-close:hover{background:var(--s3)}
+.ptn-body{flex:1;overflow-y:auto;padding:20px 16px 32px;-webkit-overflow-scrolling:touch}
+.pf-lbl{font-size:.74rem;color:var(--tx2);margin-bottom:7px;display:block;font-weight:500}
+.pf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
+.pf-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-inp::placeholder{color:var(--tx3)}
+.pf-phone-row{display:flex;align-items:stretch;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;margin-bottom:15px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.pf-phone-row:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-pfx{padding:13px 10px 13px 16px;color:var(--acc);font-weight:700;font-size:.92rem;flex-shrink:0;border-right:1.5px solid var(--b0)}
+.pf-tel{flex:1;background:none;border:none;outline:none;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px 13px 10px}
+.pf-tel::placeholder{color:var(--tx3)}
+.pf-ta{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;resize:none;min-height:96px;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
+.pf-ta:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.pf-ta::placeholder{color:var(--tx3)}
+.pf-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s;margin-top:4px}
+.pf-btn:disabled{opacity:.5;cursor:default}
+.pf-btn:active:not(:disabled){opacity:.86}
+/* ══ PROFILE ADDRESSES MODAL ══════════════════════════════════ */
+.paddr-bg{position:fixed;inset:0;z-index:650;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;box-sizing:border-box}
+.paddr-bg.open{opacity:1;pointer-events:all}
+.paddr-modal{background:var(--s1);border-radius:18px;width:100%;max-width:420px;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;transform:scale(.94) translateY(10px);transition:transform .28s var(--spring);box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.paddr-bg.open .paddr-modal{transform:none}
+.paddr-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.paddr-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
+.paddr-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
+.paddr-close:hover{background:var(--s3)}
+.paddr-list{overflow-y:auto;flex:1}
+.paddr-item{display:flex;align-items:center;gap:12px;padding:13px 18px;transition:background .13s}
+.paddr-item+.paddr-item{border-top:1px solid var(--b0)}
+.paddr-item:hover{background:var(--s2)}
+.paddr-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.paddr-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
+.paddr-item-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:5px;border-radius:7px;transition:all .13s;flex-shrink:0}
+.paddr-item-del:hover{color:var(--red);background:var(--redd)}
+.paddr-add-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;width:100%;background:none;border:none;border-top:1px solid var(--b0);cursor:pointer;transition:background .13s;font-family:var(--fs);text-align:left;flex-shrink:0}
+.paddr-add-btn:hover{background:var(--s2)}
+.paddr-add-ico{width:36px;height:36px;border-radius:10px;background:var(--s2);border:1.5px dashed var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .13s}
+.paddr-add-btn:hover .paddr-add-ico{border-color:var(--acc);color:var(--acc);background:var(--accd)}
+.paddr-add-lbl{font-size:.78rem;font-weight:600;color:var(--tx2)}
+.paddr-empty{padding:32px 20px;text-align:center;font-size:.76rem;color:var(--tx3)}
+
+/* ══ ADD ADDRESS SHEET ══════════════════════════════════════════ */
+.addaddr-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
+.addaddr-ov.open{opacity:1;pointer-events:all}
+.addaddr-sheet{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 20px calc(var(--safe-b) + 22px);transform:translateY(100%);transition:transform .32s var(--spring)}
+.addaddr-sheet.open{transform:translateY(0)}
+.addaddr-handle{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:0 auto 18px}
+.addaddr-title{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx);margin-bottom:16px}
+.addaddr-lbl{font-size:.48rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;display:block}
+.addaddr-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.84rem;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;resize:none}
+.addaddr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+.addaddr-inp::placeholder{color:var(--tx3)}
+.addaddr-save{width:100%;margin-top:14px;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;transition:opacity .13s}
+.addaddr-save:active{opacity:.85}
+.addaddr-save:disabled{opacity:.5;cursor:default}
+
+/* ══ CART ADDRESS SHEET ════════════════════════════════════════ */
+.caddrsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
+.caddrsh-ov.open{opacity:1;pointer-events:all}
+.caddrsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding-bottom:calc(var(--safe-b) + 8px);transform:translateY(100%);transition:transform .32s var(--spring);max-height:72vh;display:flex;flex-direction:column}
+.caddrsh.open{transform:translateY(0)}
+.caddrsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
+.caddrsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
+.caddrsh-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
+.caddrsh-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
+.caddrsh-close:hover{background:var(--s3)}
+.caddrsh-list{overflow-y:auto;flex:1}
+.caddrsh-item{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;transition:background .13s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
+.caddrsh-item+.caddrsh-item{border-top:1px solid var(--b0)}
+.caddrsh-item:hover{background:var(--s2)}
+.caddrsh-item.selected{background:var(--accd)}
+.caddrsh-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .13s}
+.caddrsh-item.selected .caddrsh-item-ico{background:var(--acc)}
+.caddrsh-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.4}
+.caddrsh-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
+.caddrsh-item.selected .caddrsh-item-check{opacity:1}
+.caddrsh-empty{padding:34px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
+.caddrsh-goto{margin-top:12px;padding:9px 18px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.74rem;font-weight:600;color:var(--tx);cursor:pointer;font-family:var(--fs);transition:all .13s}
+.caddrsh-goto:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ── Cart address picker row ── */
+.cart-addr-row{display:flex;align-items:center;gap:11px;padding:13px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;cursor:pointer;transition:border-color .15s,background .15s;width:100%;box-sizing:border-box;text-align:left;font-family:var(--fs)}
+.cart-addr-row:hover{border-color:var(--accg);background:var(--accd)}
+.cart-addr-row.filled{border-color:var(--accg);background:var(--accd)}
+.cart-addr-row-ico{width:34px;height:34px;border-radius:9px;background:var(--s1);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .15s}
+.cart-addr-row:hover .cart-addr-row-ico,.cart-addr-row.filled .cart-addr-row-ico{background:var(--acc);border-color:var(--acc);color:#fff}
+.cart-addr-row-body{flex:1;min-width:0;overflow:hidden}
+.cart-addr-row-lbl{font-size:.44rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.cart-addr-row-val{font-size:.76rem;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.cart-addr-row.filled .cart-addr-row-val{color:var(--tx);font-style:normal;font-weight:600}
+.cart-addr-row-arrow{color:var(--tx3);flex-shrink:0;transition:color .15s}
+.cart-addr-row:hover .cart-addr-row-arrow,.cart-addr-row.filled .cart-addr-row-arrow{color:var(--acc)}
 </style>
-
-
-
 </head>
 <body>
 <div class="toast-wrap" id="toast-wrap"></div>
@@ -1768,16 +1842,7 @@ select.addr-inp{cursor:pointer}
 
       </div><!-- /prof-settings-body -->
       </div><!-- /prof-user-section -->
-
-      <script>
-      window.toggleProfEdit = function(id, btn) {
-        const panel = document.getElementById(id);
-        const chevron = document.getElementById(id + '-chevron');
-        const isOpen = panel.classList.toggle('open');
-        if (chevron) chevron.style.transform = isOpen ? 'rotate(90deg)' : '';
-      };
-      </script>
-    </div>
+</div>
 
   </div><!-- /pages -->
 </div><!-- /main -->
@@ -1899,32 +1964,6 @@ select.addr-inp{cursor:pointer}
 
 <!-- ADDRESS MAP MODAL -->
 <!-- ══ APP INSTALL BANNER ══ -->
-<style>
-.app-bar{
-  position:fixed;
-  bottom:calc(var(--nb,66px) + var(--safe-b,0px) + 10px);
-  left:12px;right:12px;z-index:500;
-  background:var(--s1,#fff);
-  border:1.5px solid var(--b0,#e5e7eb);
-  border-radius:14px;
-  box-shadow:0 6px 24px rgba(0,0,0,.13);
-  display:flex;align-items:center;gap:10px;
-  padding:9px 10px;
-  transform:translateY(calc(100% + 20px));opacity:0;
-  pointer-events:none;
-  transition:transform .38s cubic-bezier(.25,1.3,.5,1),opacity .28s ease;
-}
-.app-bar.show{transform:translateY(0);opacity:1;pointer-events:auto}
-@media(min-width:861px){.app-bar{bottom:20px;left:auto;right:24px;width:340px}}
-.app-bar-ico{width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;background:var(--accd,#dcfce7)}
-.app-bar-ico img{width:100%;height:100%;object-fit:cover;display:block}
-.app-bar-name{flex:1;min-width:0;font-family:var(--fs,'Inter',sans-serif);font-weight:700;font-size:.78rem;color:var(--tx,#111);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.app-bar-btn{background:linear-gradient(135deg,var(--acc,#16a34a),var(--acc2,#22c55e));color:#fff;border:none;border-radius:9px;font-family:var(--fd,sans-serif);font-weight:800;font-size:.68rem;padding:7px 12px;cursor:pointer;white-space:nowrap;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;box-shadow:0 2px 8px var(--acc-shadow,rgba(22,163,74,.28));transition:opacity .15s}
-.app-bar-btn:active{opacity:.82}
-.app-bar-close{width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--s2,#f3f4f6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3,#888);transition:background .15s}
-.app-bar-close:active{background:var(--b0,#e5e7eb)}
-</style>
-
 <div class="app-bar" id="app-bar">
   <div class="app-bar-ico"><img src="mini_dastdaroz.png" alt="dastdaroz"/></div>
   <div class="app-bar-name">В приложении удобнее</div>
@@ -1933,118 +1972,7 @@ select.addr-inp{cursor:pointer}
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
   </button>
 </div>
-<script>
-// Не показываем баннер скачивания если страница открыта в нативном приложении
-if (!/DastdarozApp/i.test(navigator.userAgent)) {
-  setTimeout(function(){document.getElementById('app-bar').classList.add('show')}, 800);
-}
-</script>
-
 <!-- ══ PARTNER SHEET ══ -->
-<style>
-.ptn-bg{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
-.ptn-bg.open{opacity:1;pointer-events:all}
-.ptn-sheet{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:94svh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
-.ptn-bg.open .ptn-sheet{transform:translateY(0)}
-.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0;touch-action:none}
-.ptn-head{display:flex;align-items:center;padding:4px 16px 14px;flex-shrink:0;border-bottom:1px solid var(--b0);gap:10px}
-.ptn-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);flex:1;letter-spacing:-.02em}
-.ptn-close{width:32px;height:32px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;transition:background .15s}
-.ptn-close:hover{background:var(--s3)}
-.ptn-body{flex:1;overflow-y:auto;padding:20px 16px 32px;-webkit-overflow-scrolling:touch}
-.pf-lbl{font-size:.74rem;color:var(--tx2);margin-bottom:7px;display:block;font-weight:500}
-.pf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
-.pf-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.pf-inp::placeholder{color:var(--tx3)}
-.pf-phone-row{display:flex;align-items:stretch;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;margin-bottom:15px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
-.pf-phone-row:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.pf-pfx{padding:13px 10px 13px 16px;color:var(--acc);font-weight:700;font-size:.92rem;flex-shrink:0;border-right:1.5px solid var(--b0)}
-.pf-tel{flex:1;background:none;border:none;outline:none;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px 13px 10px}
-.pf-tel::placeholder{color:var(--tx3)}
-.pf-ta{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;resize:none;min-height:96px;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
-.pf-ta:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.pf-ta::placeholder{color:var(--tx3)}
-.pf-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s;margin-top:4px}
-.pf-btn:disabled{opacity:.5;cursor:default}
-.pf-btn:active:not(:disabled){opacity:.86}
-/* ══ PROFILE ADDRESSES MODAL ══════════════════════════════════ */
-.paddr-bg{position:fixed;inset:0;z-index:650;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;box-sizing:border-box}
-.paddr-bg.open{opacity:1;pointer-events:all}
-.paddr-modal{background:var(--s1);border-radius:18px;width:100%;max-width:420px;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;transform:scale(.94) translateY(10px);transition:transform .28s var(--spring);box-shadow:0 20px 60px rgba(0,0,0,.22)}
-.paddr-bg.open .paddr-modal{transform:none}
-.paddr-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--b0);flex-shrink:0}
-.paddr-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
-.paddr-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
-.paddr-close:hover{background:var(--s3)}
-.paddr-list{overflow-y:auto;flex:1}
-.paddr-item{display:flex;align-items:center;gap:12px;padding:13px 18px;transition:background .13s}
-.paddr-item+.paddr-item{border-top:1px solid var(--b0)}
-.paddr-item:hover{background:var(--s2)}
-.paddr-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.paddr-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
-.paddr-item-del{background:none;border:none;cursor:pointer;color:var(--tx3);padding:5px;border-radius:7px;transition:all .13s;flex-shrink:0}
-.paddr-item-del:hover{color:var(--red);background:var(--redd)}
-.paddr-add-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;width:100%;background:none;border:none;border-top:1px solid var(--b0);cursor:pointer;transition:background .13s;font-family:var(--fs);text-align:left;flex-shrink:0}
-.paddr-add-btn:hover{background:var(--s2)}
-.paddr-add-ico{width:36px;height:36px;border-radius:10px;background:var(--s2);border:1.5px dashed var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .13s}
-.paddr-add-btn:hover .paddr-add-ico{border-color:var(--acc);color:var(--acc);background:var(--accd)}
-.paddr-add-lbl{font-size:.78rem;font-weight:600;color:var(--tx2)}
-.paddr-empty{padding:32px 20px;text-align:center;font-size:.76rem;color:var(--tx3)}
-
-/* ══ ADD ADDRESS SHEET ══════════════════════════════════════════ */
-.addaddr-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
-.addaddr-ov.open{opacity:1;pointer-events:all}
-.addaddr-sheet{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 20px calc(var(--safe-b) + 22px);transform:translateY(100%);transition:transform .32s var(--spring)}
-.addaddr-sheet.open{transform:translateY(0)}
-.addaddr-handle{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:0 auto 18px}
-.addaddr-title{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx);margin-bottom:16px}
-.addaddr-lbl{font-size:.48rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;display:block}
-.addaddr-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.84rem;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;resize:none}
-.addaddr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
-.addaddr-inp::placeholder{color:var(--tx3)}
-.addaddr-save{width:100%;margin-top:14px;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;transition:opacity .13s}
-.addaddr-save:active{opacity:.85}
-.addaddr-save:disabled{opacity:.5;cursor:default}
-
-/* ══ CART ADDRESS SHEET ════════════════════════════════════════ */
-.caddrsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .22s}
-.caddrsh-ov.open{opacity:1;pointer-events:all}
-.caddrsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:20px 20px 0 0;padding-bottom:calc(var(--safe-b) + 8px);transform:translateY(100%);transition:transform .32s var(--spring);max-height:72vh;display:flex;flex-direction:column}
-.caddrsh.open{transform:translateY(0)}
-.caddrsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
-.caddrsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
-.caddrsh-title{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx)}
-.caddrsh-close{background:var(--s2);border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s}
-.caddrsh-close:hover{background:var(--s3)}
-.caddrsh-list{overflow-y:auto;flex:1}
-.caddrsh-item{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;transition:background .13s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
-.caddrsh-item+.caddrsh-item{border-top:1px solid var(--b0)}
-.caddrsh-item:hover{background:var(--s2)}
-.caddrsh-item.selected{background:var(--accd)}
-.caddrsh-item-ico{width:36px;height:36px;border-radius:10px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .13s}
-.caddrsh-item.selected .caddrsh-item-ico{background:var(--acc)}
-.caddrsh-item-text{flex:1;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.4}
-.caddrsh-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
-.caddrsh-item.selected .caddrsh-item-check{opacity:1}
-.caddrsh-empty{padding:34px 20px;text-align:center;font-size:.76rem;color:var(--tx3);line-height:1.7}
-.caddrsh-goto{margin-top:12px;padding:9px 18px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.74rem;font-weight:600;color:var(--tx);cursor:pointer;font-family:var(--fs);transition:all .13s}
-.caddrsh-goto:hover{border-color:var(--acc);color:var(--acc)}
-
-/* ── Cart address picker row ── */
-.cart-addr-row{display:flex;align-items:center;gap:11px;padding:13px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;cursor:pointer;transition:border-color .15s,background .15s;width:100%;box-sizing:border-box;text-align:left;font-family:var(--fs)}
-.cart-addr-row:hover{border-color:var(--accg);background:var(--accd)}
-.cart-addr-row.filled{border-color:var(--accg);background:var(--accd)}
-.cart-addr-row-ico{width:34px;height:34px;border-radius:9px;background:var(--s1);border:1px solid var(--b0);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--tx3);transition:all .15s}
-.cart-addr-row:hover .cart-addr-row-ico,.cart-addr-row.filled .cart-addr-row-ico{background:var(--acc);border-color:var(--acc);color:#fff}
-.cart-addr-row-body{flex:1;min-width:0;overflow:hidden}
-.cart-addr-row-lbl{font-size:.44rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
-.cart-addr-row-val{font-size:.76rem;font-weight:600;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
-.cart-addr-row.filled .cart-addr-row-val{color:var(--tx);font-style:normal;font-weight:600}
-.cart-addr-row-arrow{color:var(--tx3);flex-shrink:0;transition:color .15s}
-.cart-addr-row:hover .cart-addr-row-arrow,.cart-addr-row.filled .cart-addr-row-arrow{color:var(--acc)}
-
-</style>
-
 <div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
   <div class="ptn-sheet" id="ptn-sheet">
     <div id="ptn-drag-handle" style="padding:4px 0 0;cursor:grab;flex-shrink:0"><div class="ptn-drag"></div></div>
@@ -2080,88 +2008,8 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
     </div>
   </div>
 </div>
-
-<script>
-window.openPartnerSheet = function() {
-  document.getElementById('ptn-bg').classList.add('open');
-};
-window.closePartnerSheet = function() {
-  document.getElementById('ptn-bg').classList.remove('open');
-};
-window.submitPartnerForm = async function() {
-  const company  = (document.getElementById('pf-company').value   || '').trim();
-  const restaurant=(document.getElementById('pf-restaurant').value|| '').trim();
-  const address  = (document.getElementById('pf-address').value   || '').trim();
-  const phoneRaw = (document.getElementById('pf-phone').value     || '').trim();
-  const phone2Raw= (document.getElementById('pf-phone2').value    || '').trim();
-  const comment  = (document.getElementById('pf-comment').value   || '').trim();
-  const T = window.toast || function(m){alert(m);};
-  if (!company)    { T('Укажите название компании','err'); return; }
-  if (!restaurant) { T('Укажите название ресторана','err'); return; }
-  if (!address)    { T('Укажите адрес','err'); return; }
-  if (!phoneRaw)   { T('Укажите телефон менеджера','err'); return; }
-  const btn = document.getElementById('pf-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<div style="width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .7s linear infinite;flex-shrink:0"></div> Отправка…';
-  try {
-    if (typeof window._submitPartnerApp === 'function') {
-      await window._submitPartnerApp({
-        company, restaurant, address,
-        phone:  '+992' + phoneRaw,
-        phone2: phone2Raw ? '+992' + phone2Raw : '',
-        comment,
-      });
-    }
-    ['pf-company','pf-restaurant','pf-address','pf-phone','pf-phone2','pf-comment']
-      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    closePartnerSheet();
-    T('Заявка отправлена! Мы свяжемся с вами ✓', 'ok');
-  } catch(e) {
-    T('Ошибка отправки. Попробуйте снова.', 'err');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Отправить';
-  }
-};
-</script>
-
 <!-- ══ CART: PAYMENT METHOD SELECTOR ══ -->
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
-<script>
-(function(){
-  const banner = document.getElementById('addr-banner');
-
-  function showBanner(){
-    if(!banner) return;
-    banner.style.display = 'flex';
-    banner.style.opacity = '1';
-    banner.style.transition = '';
-  }
-
-  window.hideAddrBanner = function(){
-    if(!banner) return;
-    banner.style.transition = 'opacity .2s';
-    banner.style.opacity = '0';
-    setTimeout(function(){
-      banner.style.display = 'none';
-      banner.style.opacity = '';
-      banner.style.transition = '';
-    }, 200);
-  };
-
-  // Слушаем onSnapshot из checkAddressBanner() в app.js
-  window.addEventListener('appDataLoaded', function(e){
-    if(!banner) return;
-    if(e.detail && e.detail.hasAddress) {
-      hideAddrBanner();
-    } else {
-      showBanner();
-    }
-  });
-})();
-</script>
-
-
 <!-- ══ WALLET BOTTOM SHEET ══════════════════════════════════ -->
 <div class="wlt-overlay" id="wlt-overlay" onclick="closeWallet()"></div>
 <div class="wlt-sheet" id="wlt-sheet">
@@ -2324,6 +2172,103 @@ window.submitPartnerForm = async function() {
     <div class="citysh-empty">Загружаем города…</div>
   </div>
 </div>
+
+
+<script>
+// ─── Вспомогательные функции (ранее разбросаны по HTML) ──────
+window.toggleProfEdit = function(id, btn) {
+        const panel = document.getElementById(id);
+        const chevron = document.getElementById(id + '-chevron');
+        const isOpen = panel.classList.toggle('open');
+        if (chevron) chevron.style.transform = isOpen ? 'rotate(90deg)' : '';
+      };
+
+// Не показываем баннер скачивания если страница открыта в нативном приложении
+if (!/DastdarozApp/i.test(navigator.userAgent)) {
+  setTimeout(function(){document.getElementById('app-bar').classList.add('show')}, 800);
+}
+
+window.openPartnerSheet = function() {
+  document.getElementById('ptn-bg').classList.add('open');
+};
+window.closePartnerSheet = function() {
+  document.getElementById('ptn-bg').classList.remove('open');
+};
+window.submitPartnerForm = async function() {
+  const company  = (document.getElementById('pf-company').value   || '').trim();
+  const restaurant=(document.getElementById('pf-restaurant').value|| '').trim();
+  const address  = (document.getElementById('pf-address').value   || '').trim();
+  const phoneRaw = (document.getElementById('pf-phone').value     || '').trim();
+  const phone2Raw= (document.getElementById('pf-phone2').value    || '').trim();
+  const comment  = (document.getElementById('pf-comment').value   || '').trim();
+  const T = window.toast || function(m){alert(m);};
+  if (!company)    { T('Укажите название компании','err'); return; }
+  if (!restaurant) { T('Укажите название ресторана','err'); return; }
+  if (!address)    { T('Укажите адрес','err'); return; }
+  if (!phoneRaw)   { T('Укажите телефон менеджера','err'); return; }
+  const btn = document.getElementById('pf-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .7s linear infinite;flex-shrink:0"></div> Отправка…';
+  try {
+    if (typeof window._submitPartnerApp === 'function') {
+      await window._submitPartnerApp({
+        company, restaurant, address,
+        phone:  '+992' + phoneRaw,
+        phone2: phone2Raw ? '+992' + phone2Raw : '',
+        comment,
+      });
+    }
+    ['pf-company','pf-restaurant','pf-address','pf-phone','pf-phone2','pf-comment']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    closePartnerSheet();
+    T('Заявка отправлена! Мы свяжемся с вами ✓', 'ok');
+  } catch(e) {
+    T('Ошибка отправки. Попробуйте снова.', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Отправить';
+  }
+};
+
+(function(){
+  const banner = document.getElementById('addr-banner');
+
+  function showBanner(){
+    if(!banner) return;
+    banner.style.display = 'flex';
+    banner.style.opacity = '1';
+    banner.style.transition = '';
+  }
+
+  window.hideAddrBanner = function(){
+    if(!banner) return;
+    banner.style.transition = 'opacity .2s';
+    banner.style.opacity = '0';
+    setTimeout(function(){
+      banner.style.display = 'none';
+      banner.style.opacity = '';
+      banner.style.transition = '';
+    }, 200);
+  };
+
+  // Слушаем onSnapshot из checkAddressBanner() в app.js
+  window.addEventListener('appDataLoaded', function(e){
+    if(!banner) return;
+    if(e.detail && e.detail.hasAddress) {
+      hideAddrBanner();
+    } else {
+      showBanner();
+    }
+  });
+})();
+
+// ─── Адрес баннер: алиас для совместимости ────────────────────
+window.openProfAddrModal = function() {
+  if (typeof window.openProfileAddrs === 'function') {
+    window.openProfileAddrs();
+  }
+};
+</script>
 
 </body>
 </html>
