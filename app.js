@@ -485,11 +485,18 @@ function removeGuestBanner() {
 
 // ─── 8. Общие категории ───────────────────────────────────────
 async function loadGenCats() {
+  // Сразу показываем скелетоны — сбрасываем старые данные до ответа Firestore
+  showGenCatsSkeleton();
+
   try {
     const snap = await getDocs(query(collection(db, 'generalCatalogs'), orderBy('order', 'asc')));
     if (!snap.empty) {
       const all = snap.docs.map(d => {
         const data = d.data();
+        const raw = data.cityIds;
+        const cityIds = Array.isArray(raw)
+          ? raw.filter(Boolean)
+          : (typeof raw === 'string' && raw.trim() ? [raw.trim()] : []);
         return {
           id:      d.id,
           nameRu:  data.nameRu || data.name || d.id,
@@ -497,7 +504,7 @@ async function loadGenCats() {
           icon:    data.icon   || `storage/general-catalogs/${d.id}.png`,
           order:   data.order  ?? 0,
           active:  data.active,
-          cityIds: data.cityIds || [],
+          cityIds,
         };
       }).filter(c => c.active !== false);
 
@@ -514,9 +521,27 @@ async function loadGenCats() {
   renderCatalogGenCats();
 }
 
+// Сбрасывает контент и возвращает скелетоны в оба контейнера
+function showGenCatsSkeleton() {
+  genCats = [];
+  const row = document.getElementById('gen-cats-row');
+  if (row) {
+    row.innerHTML = Array(8).fill(
+      '<div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>'
+    ).join('');
+  }
+  const grid = document.getElementById('gen-cat-grid');
+  if (grid) {
+    grid.innerHTML = Array(9).fill(
+      '<div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>'
+    ).join('');
+  }
+}
+
 function renderGenCats() {
   const el = document.getElementById('gen-cats-row');
-  if (!el || !genCats.length) return;
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
   el.innerHTML = genCats.map(c => `
     <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
       <div class="gen-cat-img-wrap">
@@ -528,7 +553,8 @@ function renderGenCats() {
 
 function renderCatalogGenCats() {
   const el = document.getElementById('gen-cat-grid');
-  if (!el || !genCats.length) return;
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
   el.innerHTML = genCats.map(c => `
     <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
       <div class="gcat-img-wrap">
