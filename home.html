@@ -1693,7 +1693,7 @@ select.addr-inp{cursor:pointer}
             </div>
             <div class="prof-row-body">
               <div class="prof-row-title">Личные данные</div>
-              <div class="prof-row-sub">Имя, адрес и GPS</div>
+              <div class="prof-row-sub">Имя и телефон</div>
             </div>
             <svg class="prof-row-arrow" id="pf-personal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s"><path d="M9 18l6-6-6-6"/></svg>
           </button>
@@ -1707,16 +1707,6 @@ select.addr-inp{cursor:pointer}
               </div>
             </div>
             <div style="font-size:.6rem;color:var(--tx3);margin:-6px 0 12px;line-height:1.55">Номер телефона — идентификатор вашего аккаунта, изменить невозможно</div>
-            <div class="ff" style="margin-bottom:10px">
-              <label class="fl">Адрес доставки по умолчанию</label>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input class="fi" type="text" id="pf-addr" placeholder="ул. Рудаки, д. 1, кв. 1" style="flex:1"/>
-                <button onclick="openProfAddrModal()" title="Добавить адрес" style="height:38px;padding:0 12px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);cursor:pointer;display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;white-space:nowrap;font-family:var(--fs);flex-shrink:0">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>GPS
-                </button>
-              </div>
-              <div id="pf-addr-coords" style="font-size:.58rem;color:var(--acc);margin-top:4px;display:none"></div>
-            </div>
             <button class="btn-primary" onclick="saveProfile()" style="margin-top:2px">Сохранить изменения</button>
           </div>
 

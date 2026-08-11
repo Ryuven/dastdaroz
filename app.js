@@ -2123,7 +2123,6 @@ function renderProfile() {
 
   document.getElementById('pf-name')  && (document.getElementById('pf-name').value  = name);
   document.getElementById('pf-phone') && (document.getElementById('pf-phone').value = phone);
-  document.getElementById('pf-addr')  && (document.getElementById('pf-addr').value  = UD?.address || '');
 
   const _wbFmt = _fmtBal(UD?.walletBalance || 0);
   document.querySelectorAll('.prof-wallet-bal').forEach(el => {
@@ -2165,15 +2164,10 @@ function renderGuestProfile() {
 
 window.saveProfile = async function () {
   const name = document.getElementById('pf-name')?.value.trim();
-  const addr = document.getElementById('pf-addr')?.value.trim();
   try {
-    const addrChanged = addr !== UD?.address;
-    const saveData    = {
+    const saveData = {
       displayName: name,
-      address:     addr,
       updatedAt:   serverTimestamp(),
-      lat:         addrChanged ? null : (UD?.lat || null),
-      lng:         addrChanged ? null : (UD?.lng || null),
     };
     await setDoc(doc(db, 'users', CU.uid), saveData, { merge: true });
     UD = { ...UD, ...saveData };
