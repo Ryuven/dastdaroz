@@ -27,6 +27,7 @@
 
 // ─── 1. Импорты ──────────────────────────────────────────────
 import { auth, db, storage, ORDER_STATUS } from './firebase.js';
+import { Sheet } from './sheet.js';
 
 import {
   onAuthStateChanged,
@@ -249,6 +250,39 @@ function initSwipeToClose(sheetEl, closeFn, handleEl) {
 }
 
 
+// ─── 5. Инициализация sheets (sheet.js) ──────────────────────
+function _initSheets() {
+
+  // ── City selector ──────────────────────────────────────────
+  Sheet.define({ id: 'city', title: 'Выбор города', zIndex: 700, onOpen: _loadCities });
+  Sheet.body('city').innerHTML = `
+    <p class="citysh-subtitle">Все магазины и доставка будут показаны для выбранного города</p>
+    <div class="citysh-list" id="citysh-list">
+      <div class="citysh-empty">Загружаем города…</div>
+    </div>`;
+
+  // ── Cart address picker ────────────────────────────────────
+  Sheet.define({ id: 'caddr', title: 'Адрес доставки', zIndex: 700 });
+  Sheet.body('caddr').innerHTML = `
+    <div class="caddrsh-list" id="caddrsh-list">
+      <div class="caddrsh-empty">Адреса загружаются…</div>
+    </div>`;
+
+  // ── Add new address ────────────────────────────────────────
+  Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710 });
+  const addaddrBody = Sheet.body('addaddr');
+  addaddrBody.style.cssText = 'padding:0 20px';
+  addaddrBody.innerHTML = `
+    <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
+    <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
+      placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
+    <button class="addaddr-save" id="addaddr-save-btn" onclick="saveProfileAddr()">
+      Сохранить
+    </button>`;
+}
+
+_initSheets();
+
 // ─── 5. Auth / Инициализация ──────────────────────────────────
 onAuthStateChanged(auth, async u => {
   if (!u) {
@@ -344,9 +378,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ptn-drag-handle')
   );
   initSwipeToClose(
-    document.getElementById('citysh'),
+    document.getElementById('bs-city'),
     () => closeCitySheet(),
-    document.getElementById('citysh-drag')
+    document.querySelector('#bs-city .bs-drag')
   );
 
   const _tbCityEl = document.getElementById('tb-city-name');
@@ -1333,10 +1367,9 @@ async function _submitToMavsimi(data) {
   });
 }
 
-// Шит выбора адреса в корзине
+// Шит выбора адреса в корзине — структура через sheet.js (Sheet 'caddr')
 window.openCartAddrSheet = async function () {
-  document.getElementById('caddrsh-ov')?.classList.add('open');
-  document.getElementById('caddrsh')?.classList.add('open');
+  Sheet.open('caddr');
 
   const list = document.getElementById('caddrsh-list');
   if (!list) return;
@@ -1357,10 +1390,7 @@ window.openCartAddrSheet = async function () {
   }
 };
 
-window.closeCartAddrSheet = function () {
-  document.getElementById('caddrsh-ov')?.classList.remove('open');
-  document.getElementById('caddrsh')?.classList.remove('open');
-};
+window.closeCartAddrSheet = () => Sheet.close('caddr');
 
 function _renderCartAddrList(addrs) {
   const list    = document.getElementById('caddrsh-list');
@@ -2217,18 +2247,15 @@ function _renderProfAddrs() {
   }
 }
 
+// addaddr — структура через sheet.js (Sheet 'addaddr')
 window.openAddAddrSheet = function () {
   const inp = document.getElementById('addaddr-inp');
   if (inp) inp.value = '';
-  document.getElementById('addaddr-ov')?.classList.add('open');
-  document.getElementById('addaddr-sheet')?.classList.add('open');
+  Sheet.open('addaddr');
   setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 320);
 };
 
-window.closeAddAddrSheet = function () {
-  document.getElementById('addaddr-ov')?.classList.remove('open');
-  document.getElementById('addaddr-sheet')?.classList.remove('open');
-};
+window.closeAddAddrSheet = () => Sheet.close('addaddr');
 
 window.saveProfileAddr = async function () {
   if (!CU) return;
@@ -2377,15 +2404,9 @@ window.doTopUp = function () {
 
 
 // ─── 22. Выбор города ─────────────────────────────────────────
-window.openCitySheet  = async function () {
-  document.getElementById('citysh-ov')?.classList.add('open');
-  document.getElementById('citysh')?.classList.add('open');
-  await _loadCities();
-};
-window.closeCitySheet = function () {
-  document.getElementById('citysh-ov')?.classList.remove('open');
-  document.getElementById('citysh')?.classList.remove('open');
-};
+// DOM-структура и open/close управляются через sheet.js (Sheet 'city')
+window.openCitySheet  = () => Sheet.open('city');
+window.closeCitySheet = () => Sheet.close('city');
 
 async function _loadCities() {
   const list = document.getElementById('citysh-list');
