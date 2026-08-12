@@ -686,9 +686,96 @@ window.openRetailer = async function (sid) {
   jsonProdsMap   = {};
   if (!activeStore) return;
   goPage('store');
+  // Сбросить кнопку назад на «Главная»
+  const backBtn = document.querySelector('.store-cat-back');
+  if (backBtn) {
+    backBtn.onclick = () => goPage('home');
+    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Главная страница`;
+  }
   renderRetailerPage(activeStore);
 };
 window.openStore = window.openRetailer; // алиас для совместимости
+
+// Открыть каталог конкретной точки ритейлера
+window.openRetailerCatalog = async function (rid, locId, locAddr) {
+  storeCatFilter = 'all';
+  jsonMenuData   = null;
+  jsonProdsMap   = {};
+
+  const prodsEl = document.getElementById('store-prods');
+  const catsEl  = document.getElementById('store-cats');
+  const hdrEl   = document.getElementById('store-header');
+
+  // Кнопка назад → возврат к списку точек
+  const backBtn = document.querySelector('.store-cat-back');
+  if (backBtn) {
+    backBtn.onclick = () => openRetailer(rid);
+    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> К точкам магазина`;
+  }
+
+  // Заголовок: баннер ритейлера + адрес точки
+  if (hdrEl && activeStore) {
+    const imgUrl = activeStore.imageUrl || '';
+    hdrEl.innerHTML = `
+      <div class="store-cat-header">
+        ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
+        <div class="store-cat-header-overlay"></div>
+        <div class="store-cat-header-body">
+          <div class="store-cat-header-tag">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+          </div>
+          <div class="store-cat-header-name">${activeStore.name}</div>
+          ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // Скелетон при загрузке
+  if (catsEl)  catsEl.innerHTML = '';
+  if (prodsEl) prodsEl.innerHTML = Array(6).fill(0).map(() =>
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
+      <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
+      <div class="skl-block" style="height:10px;width:82%"></div>
+      <div class="skl-block" style="height:7px;width:40%;margin-top:6px"></div>
+      <div class="pc-footer" style="margin-top:auto">
+        <div class="skl-block" style="height:11px;width:38%"></div>
+        <div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div>
+      </div>
+    </div></div>`
+  ).join('');
+
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'retailers', rid, 'catalog'), where('available', '==', true))
+    );
+    const allProds = snap.docs.map(d => ({ id: d.id, ...d.data(), storeId: rid }));
+
+    // Категории из уникальных categoryId продуктов
+    const catMap = {};
+    allProds.forEach(p => {
+      if (p.categoryId && !catMap[p.categoryId]) {
+        catMap[p.categoryId] = { id: p.categoryId, name: p.categoryId };
+      }
+    });
+    const categories = Object.values(catMap).sort((a, b) =>
+      a.name.localeCompare(b.name, 'ru')
+    );
+
+    jsonMenuData = { categories, products: allProds };
+    allProds.forEach(p => { jsonProdsMap[p.id] = p; });
+
+    renderStoreCatPills();
+    renderStoreProds();
+  } catch (e) {
+    console.error('openRetailerCatalog:', e);
+    if (prodsEl) prodsEl.innerHTML = `
+      <div class="store-cat-empty" style="grid-column:1/-1">
+        <span class="store-cat-empty-ico">⚠️</span>
+        <div class="store-cat-empty-t">Ошибка загрузки каталога</div>
+        <div class="store-cat-empty-s">${e.message}</div>
+      </div>`;
+  }
+};
 
 async function renderRetailerPage(retailer) {
   const hdrEl   = document.getElementById('store-header');
@@ -739,9 +826,11 @@ async function renderRetailerPage(retailer) {
     }
 
     listEl.innerHTML = locations.map(loc => {
-      const mapsUrl = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
+      const mapsUrl  = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
+      const safeAddr = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `
-      <div class="retailer-loc-card">
+      <div class="retailer-loc-card" style="cursor:pointer"
+           onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
         <div class="retailer-loc-ico">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
@@ -749,10 +838,11 @@ async function renderRetailerPage(retailer) {
           <div class="retailer-loc-addr">${loc.address || '—'}</div>
           ${loc.lat && loc.lng ? `<div class="retailer-loc-coords">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}</div>` : ''}
         </div>
-        ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener">
+        ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener"
+            onclick="event.stopPropagation()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
           Карта
-        </a>` : ''}
+        </a>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" style="flex-shrink:0;opacity:.6"><path d="M9 18l6-6-6-6"/></svg>`}
       </div>`;
     }).join('');
   } catch (e) {
