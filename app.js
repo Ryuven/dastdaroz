@@ -1375,7 +1375,6 @@ window.doCheckout = async function () {
   try {
     const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
     const oNum          = nextOrderNum();
-    const confirmCode   = Math.floor(1000 + Math.random() * 9000).toString();
     const payMethod     = document.getElementById('cart-pay')?.value || 'cash';
     const reservedUntil = new Date(Date.now() + BOOKING_DURATION_MS);
 
@@ -1383,7 +1382,6 @@ window.doCheckout = async function () {
       clientId:        CU.uid,
       clientName:      UD?.displayName || '',
       orderNumber:     oNum,
-      confirmCode,
       items:           cart.map(c => ({
         productId: c.productId,
         name:      c.name,
@@ -2177,12 +2175,6 @@ function renderStatusPage() {
     </div>
     ${['pending','confirmed'].includes(o.status) ? `
     <div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Отменить заказ</button></div>` : ''}
-    ${o.confirmCode && o.status !== 'cancelled' ? `
-    <div style="margin-top:18px;background:rgba(26,158,74,.06);border:2px solid rgba(26,158,74,.18);border-radius:18px;padding:20px;text-align:center">
-      <div style="font-size:.55rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:10px">Код подтверждения</div>
-      <div style="font-family:var(--fd);font-weight:900;font-size:3.4rem;color:var(--tx);letter-spacing:.22em">${o.confirmCode}</div>
-      <div style="font-size:.62rem;color:var(--tx3);margin-top:10px">Скажите этот код курьеру при получении</div>
-    </div>` : ''}
   </div>`;
 }
 
