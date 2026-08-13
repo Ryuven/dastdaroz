@@ -450,79 +450,8 @@ select.addr-inp{cursor:pointer}
 .store-unavail-overlay span{color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(0,0,0,.32);padding:5px 13px;border-radius:99px;border:1px solid rgba(255,255,255,.22);white-space:nowrap}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* ══════════════════════════════════════════
-   WALLET BOTTOM SHEET
-══════════════════════════════════════════ */
-.wlt-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
-.wlt-overlay.open{opacity:1;pointer-events:all}
-.wlt-sheet{position:fixed;left:0;right:0;bottom:0;z-index:401;background:var(--s1);border-radius:22px 22px 0 0;height:100svh;transform:translateY(100%);transition:transform .38s var(--ease);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-b) + 28px);will-change:transform;display:flex;flex-direction:column}
-.wlt-sheet.open{transform:translateY(0)}
-/* ── Зелёная шапка ─────────────────────────────────────────── */
-.wlt-header{background:linear-gradient(150deg,#1a9e4a 0%,#0d7a36 100%);border-radius:22px 22px 0 0;padding-bottom:8px}
-.wlt-handle-wrap{display:flex;justify-content:center;padding:10px 0 4px;cursor:grab;flex-shrink:0;touch-action:none}
-.wlt-handle{width:38px;height:4px;border-radius:99px;background:rgba(255,255,255,.32)}
-.wlt-top{display:flex;align-items:center;gap:8px;padding:6px 18px 12px}
-.wlt-av{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fs);font-size:.72rem;font-weight:700;overflow:hidden;flex-shrink:0}
-.wlt-av img{width:100%;height:100%;object-fit:cover}
-.wlt-icon-btn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;transition:background .13s;flex-shrink:0}
-.wlt-icon-btn:active{background:rgba(255,255,255,.3)}
-.wlt-bal-section{padding:4px 22px 28px}
-.wlt-bal-label{font-size:.68rem;color:rgba(255,255,255,.62);margin-bottom:8px;font-weight:500}
-.wlt-bal-wrap{display:flex;align-items:flex-end;gap:8px;margin-bottom:16px;line-height:1}
-.wlt-bal-num{font-family:var(--fd);font-weight:900;font-size:2.85rem;color:#fff;letter-spacing:-.03em}
-.wlt-bal-cents{font-size:1.6rem}
-.wlt-bal-cur{font-size:1.05rem;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:4px;letter-spacing:.02em}
-.wlt-acc-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:7px 14px;font-size:.72rem;font-weight:600;font-family:var(--fs);color:#fff;cursor:pointer;transition:background .13s}
-.wlt-acc-btn:active{background:rgba(255,255,255,.3)}
-/* ── Кнопки действий ───────────────────────────────────────── */
-.wlt-actions{display:flex;gap:4px;justify-content:center;padding:20px 16px 22px}
-.wlt-act{display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
-.wlt-act-ico{width:58px;height:58px;border-radius:50%;background:var(--accd);display:flex;align-items:center;justify-content:center;color:var(--acc2);transition:transform .12s,background .12s}
-.wlt-act:active .wlt-act-ico{transform:scale(.88);background:var(--accg)}
-.wlt-act-ico--prim{background:var(--acc);color:#fff;box-shadow:0 4px 14px var(--acc-shadow)}
-.wlt-act:active .wlt-act-ico--prim{background:#0f7a33;box-shadow:none}
-.wlt-act-lbl{font-size:.64rem;color:var(--tx2);font-weight:500;text-align:center;white-space:nowrap}
-/* ── Транзакции ─────────────────────────────────────────────── */
-.wlt-txs-panel{background:var(--s2);border-radius:20px 20px 0 0;border-top:1.5px solid var(--b0);flex:1;min-height:200px}
-.wlt-txs-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}
-.wlt-txs-ttl{font-size:.88rem;font-weight:700;color:var(--tx)}
-.wlt-see-all{background:none;border:none;font-size:.7rem;color:var(--tx3);cursor:pointer;font-family:var(--fs);padding:4px}
-.wlt-tx-item{display:flex;align-items:center;gap:14px;padding:13px 20px}
-.wlt-tx-item+.wlt-tx-item{border-top:1px solid var(--b0)}
-.wlt-tx-ico{width:44px;height:44px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
-.wlt-tx-body{flex:1;min-width:0}
-.wlt-tx-name{font-size:.78rem;font-weight:600;color:var(--tx);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wlt-tx-sub{font-size:.6rem;color:var(--tx3)}
-.wlt-tx-right{text-align:right;flex-shrink:0}
-.wlt-tx-amt{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
-.wlt-tx-amt.pos{color:#16a34a}
-.wlt-tx-acc{font-size:.57rem;color:var(--tx3)}
-.wlt-tx-empty{text-align:center;padding:40px 20px;font-size:.76rem;color:var(--tx3)}
-.wlt-tx-skl{padding:13px 20px;display:flex;align-items:center;gap:14px}
-.wlt-tx-skl-ico{width:44px;height:44px;border-radius:50%;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0}
-.wlt-tx-skl-body{flex:1;display:flex;flex-direction:column;gap:7px}
-.wlt-tx-skl-n{height:10px;width:50%;border-radius:6px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-.wlt-tx-skl-s{height:7px;width:34%;border-radius:4px;background:linear-gradient(90deg,var(--s3) 25%,var(--s2) 50%,var(--s3) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-.wlt-tup-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .22s}
-.wlt-tup-overlay.open{opacity:1;pointer-events:all}
-.wlt-tup-sheet{position:fixed;left:0;right:0;bottom:0;z-index:501;background:var(--s1);border-radius:20px 20px 0 0;padding:20px 18px calc(var(--safe-b) + 20px);transform:translateY(100%);transition:transform .3s var(--ease)}
-.wlt-tup-sheet.open{transform:translateY(0)}
-.wlt-tup-handle{display:flex;justify-content:center;margin-bottom:14px}
-.wlt-tup-title{font-size:.94rem;font-weight:700;color:var(--tx);margin-bottom:18px}
-.wlt-tup-lbl{font-size:.58rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
-/* ── Карточка метода оплаты ──────────────────────────────────── */
-.wlt-pay-method{display:flex;align-items:center;gap:13px;padding:13px 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:14px;-webkit-tap-highlight-color:transparent;user-select:none}
-.wlt-pay-method:hover{border-color:var(--acc);background:var(--accd)}
-.wlt-pay-method:active{transform:scale(.98)}
-.wlt-pay-logo{width:42px;height:42px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid var(--b0)}
-.wlt-pay-logo-fb{width:42px;height:42px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:800;color:var(--tx3);flex-shrink:0;letter-spacing:.04em}
-.wlt-pay-info{flex:1;min-width:0}
-.wlt-pay-name{font-size:.78rem;font-weight:700;color:var(--tx);line-height:1.3}
-.wlt-pay-sub{font-size:.59rem;color:var(--tx3);margin-top:2px}
-.wlt-pay-chevron{color:var(--tx3);flex-shrink:0}
-/* ── Кнопка отмены ───────────────────────────────────────────── */
-.wlt-tup-cancel{width:100%;padding:14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;font-size:.78rem;font-weight:600;font-family:var(--fs);color:var(--tx2);cursor:pointer;transition:background .13s}
-.wlt-tup-cancel:hover{background:var(--s3)}
+
+
 
 /* ── GENERAL CATALOG (single-row horizontal scroll) ── */
 .gen-cats-section{margin-bottom:10px}
@@ -998,15 +927,7 @@ select.addr-inp{cursor:pointer}
 .prof-row-title{font-size:.8rem;font-weight:600;color:var(--tx);margin-bottom:1px}
 .prof-row-sub{font-size:.62rem;color:var(--tx3)}
 .prof-row-arrow{color:var(--tx3);flex-shrink:0;opacity:.4}
-/* Wallet card */
-.prof-wallet-card{background:linear-gradient(135deg,var(--accd) 0%,var(--s1) 100%);border:1.5px solid var(--accg);border-radius:13px;overflow:hidden}
-.prof-wallet-inner{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;transition:background .15s;width:100%;background:none;border:none;font-family:var(--fs);text-align:left}
-.prof-wallet-inner:hover{background:rgba(26,158,74,.06)}
-.prof-wallet-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:var(--acc);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--acc-shadow)}
-.prof-wallet-body{flex:1;min-width:0}
-.prof-wallet-title{font-size:.8rem;font-weight:700;color:var(--tx);margin-bottom:1px}
-.prof-wallet-sub{font-size:.62rem;color:var(--tx3)}
-.prof-wallet-bal{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--acc);margin-right:4px}
+
 /* Edit panel (personal info inline) */
 .prof-edit-panel{display:none;flex-direction:column;border-top:1.5px solid var(--b0);background:var(--s2);padding:16px;gap:0}
 .prof-edit-panel.open{display:flex}
@@ -1088,39 +1009,7 @@ select.addr-inp{cursor:pointer}
   white-space:nowrap;
 }
 
-/* ── CART PAYMENT METHOD TABS ────────────────────────────────── */
-/* Карточка кошелька как метод оплаты (точная копия профиля) */
-.pay-wallet-tab{
-  display:flex;align-items:center;gap:14px;
-  padding:13px 14px;margin-top:7px;
-  background:linear-gradient(135deg,var(--accd) 0%,rgba(34,197,94,.03) 100%);
-  border:1.5px solid var(--accg);border-radius:13px;
-  cursor:pointer;
-  transition:border-color .15s,background .15s,box-shadow .15s;
-  -webkit-tap-highlight-color:transparent;user-select:none;
-}
-.pay-wallet-tab:hover{
-  border-color:var(--acc);
-  background:linear-gradient(135deg,rgba(26,158,74,.14) 0%,rgba(34,197,94,.05) 100%);
-}
-.pay-wallet-tab.active{
-  border-color:var(--acc);
-  background:var(--accd);
-}
-/* Состояние радио внутри wallet-tab */
-.pay-wallet-tab .dtab-radio{
-  width:16px;height:16px;border-radius:50%;
-  border:1.5px solid var(--b1);background:var(--s1);
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  transition:all var(--tf);
-}
-.pay-wallet-tab.active .dtab-radio{
-  border-color:var(--acc);background:var(--acc);
-}
-.pay-wallet-tab.active .dtab-radio::after{
-  content:'';width:5px;height:5px;
-  background:#fff;border-radius:50%;display:block;
-}
+
 
 /* ── Квадратное лого 1:1 (Мавсими Расон) ── */
 .dtab-logo-sq{
@@ -1484,7 +1373,7 @@ select.addr-inp{cursor:pointer}
             <textarea class="cart-note-area" id="cart-comment" rows="3"
               placeholder="Например: код домофона, этаж 3, станция метро…"></textarea>
 
-            <!-- Хидмати расонидан — над кошелком -->
+
             <label class="addr-lbl">Хидмати расонидан</label>
             <div class="delivery-tabs" id="delivery-tabs">
               <div class="dtab" data-svc="mavsimi" style="cursor:default;pointer-events:none">
@@ -1496,20 +1385,6 @@ select.addr-inp{cursor:pointer}
                   <div class="dtab-sub">Хидмати расонидан</div>
                 </div>
               </div>
-            </div>
-
-            <!-- Оплата — только кошелёк -->
-            <label class="addr-lbl">Пардохт</label>
-            <input type="hidden" id="cart-pay" value="wallet">
-            <div class="pay-wallet-tab" style="cursor:default;pointer-events:none">
-              <div class="prof-wallet-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
-              </div>
-              <div class="prof-wallet-body">
-                <div class="prof-wallet-title">Кошелек</div>
-                <div class="prof-wallet-sub">Ваш личный счёт</div>
-              </div>
-              <span class="prof-wallet-bal" style="font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--acc);margin-left:auto">0 см</span>
             </div>
 
             <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
@@ -1637,7 +1512,7 @@ select.addr-inp{cursor:pointer}
           </div>
         </div>
 
-        <!-- ── Skeleton: кошелек + секции (убирается в renderProfile / renderGuestProfile) ── -->
+        <!-- ── Skeleton: секции (убирается в renderProfile / renderGuestProfile) ── -->
         <div id="prof-content-loading">
           <div class="skl-block" style="height:7px;width:48px;border-radius:5px;margin-bottom:9px"></div>
           <div class="prof-skl-section" style="border-radius:13px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -1665,22 +1540,6 @@ select.addr-inp{cursor:pointer}
 
         <!-- Реальный контент — скрыт пока скелетон активен -->
         <div id="prof-real-content" style="display:none">
-
-        <!-- ── Кошелек ────────────────────────────────────── -->
-        <div class="prof-section-lbl">Кошелек</div>
-        <div class="prof-wallet-card">
-          <button class="prof-wallet-inner" onclick="openWallet()" title="Кошелёк — скоро появится">
-            <div class="prof-wallet-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M16 14h.01" stroke-linecap="round" stroke-width="2.2"/></svg>
-            </div>
-            <div class="prof-wallet-body">
-              <div class="prof-wallet-title">Кошелек</div>
-              <div class="prof-wallet-sub">Ваш личный счёт</div>
-            </div>
-            <span class="prof-wallet-bal">0 см</span>
-            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
 
         <!-- ── Маълумот ──────────────────────────────────── -->
         <div class="prof-section-lbl">Маълумот</div>
@@ -1976,97 +1835,6 @@ select.addr-inp{cursor:pointer}
 </div>
 <!-- ══ CART: PAYMENT METHOD SELECTOR ══ -->
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
-<!-- ══ WALLET BOTTOM SHEET ══════════════════════════════════ -->
-<div class="wlt-overlay" id="wlt-overlay" onclick="closeWallet()"></div>
-<div class="wlt-sheet" id="wlt-sheet">
-  <div class="wlt-header">
-    <div class="wlt-handle-wrap" id="wlt-drag-handle"><div class="wlt-handle"></div></div>
-    <div class="wlt-top">
-      <div class="wlt-av" id="wlt-av">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
-      </div>
-      <div style="flex:1"></div>
-      <button class="wlt-icon-btn" title="Поиск">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      </button>
-      <button class="wlt-icon-btn" title="Уведомление">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      </button>
-    </div>
-    <div class="wlt-bal-section">
-      <div class="wlt-bal-label">Личные · Все счета</div>
-      <div class="wlt-bal-wrap">
-        <div class="wlt-bal-num" id="wlt-bal-num">0<span class="wlt-bal-cents" id="wlt-bal-cents">.00</span></div>
-        <div class="wlt-bal-cur">см</div>
-      </div>
-      <button class="wlt-acc-btn">
-        Счета
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-    </div>
-  </div>
-  <div class="wlt-actions">
-    <div class="wlt-act" onclick="openTopUp()">
-      <div class="wlt-act-ico wlt-act-ico--prim">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </div>
-      <div class="wlt-act-lbl">Пополнить</div>
-    </div>
-    <div class="wlt-act">
-      <div class="wlt-act-ico">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4 4 4M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
-      </div>
-      <div class="wlt-act-lbl">Перевод</div>
-    </div>
-    <div class="wlt-act">
-      <div class="wlt-act-ico">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </div>
-      <div class="wlt-act-lbl">Платить</div>
-    </div>
-    <div class="wlt-act">
-      <div class="wlt-act-ico">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/><circle cx="5" cy="12" r="1.2"/></svg>
-      </div>
-      <div class="wlt-act-lbl">Ещё</div>
-    </div>
-  </div>
-  <div class="wlt-txs-panel">
-    <div class="wlt-txs-head">
-      <div class="wlt-txs-ttl" id="wlt-txs-ttl">Сегодня</div>
-      <button class="wlt-see-all" onclick="loadAllWalletTxs()">Все</button>
-    </div>
-    <div id="wlt-txs-list">
-      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
-      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
-      <div class="wlt-tx-skl"><div class="wlt-tx-skl-ico"></div><div class="wlt-tx-skl-body"><div class="wlt-tx-skl-n"></div><div class="wlt-tx-skl-s"></div></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ TOP-UP SHEET ══════════════════════════════════════════ -->
-<div class="wlt-tup-overlay" id="wlt-tup-overlay" onclick="closeTopUp()"></div>
-<div class="wlt-tup-sheet" id="wlt-tup-sheet">
-  <div style="display:flex;justify-content:center;margin-bottom:14px">
-    <div style="width:34px;height:4px;border-radius:99px;background:var(--b0)"></div>
-  </div>
-  <div class="wlt-tup-title">Пополнить кошелек</div>
-  <div class="wlt-tup-lbl">Способ оплаты</div>
-
-  <!-- Dushanbe City -->
-  <div class="wlt-pay-method" onclick="window.open('https://dc.tj','_blank');closeTopUp()">
-    <img class="wlt-pay-logo" src="/storage/others/dushanbe_city.png" alt="Dushanbe City"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div class="wlt-pay-logo-fb" style="display:none">DC</div>
-    <div class="wlt-pay-info">
-      <div class="wlt-pay-name">Dushanbe City</div>
-      <div class="wlt-pay-sub">Пополнение через dc.tj</div>
-    </div>
-    <svg class="wlt-pay-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-  </div>
-
-  <button class="wlt-tup-cancel" onclick="closeTopUp()">Бекор кардан</button>
-</div>
 
 
 <!-- ══ PROFILE ADDRESSES MODAL ══════════════════════════════════ -->
