@@ -79,6 +79,7 @@ const DFEE = 7; // стоимость доставки (сомони)
 
 // Лейблы статусов заказа
 const SL = {
+  reserved:   'Забронирован',
   pending:    'Ожидание',
   confirmed:  'Подтверждён',
   preparing:  'Готовится',
@@ -89,6 +90,7 @@ const SL = {
 
 // Цвета статусов
 const SC = {
+  reserved:   'var(--teal)',
   pending:    'var(--amber)',
   confirmed:  'var(--blue)',
   preparing:  'var(--purple)',
@@ -96,6 +98,10 @@ const SC = {
   delivered:  'var(--acc)',
   cancelled:  'var(--red)',
 };
+
+// Длительность бронирования
+const BOOKING_DURATION_MS = 10 * 60 * 1000; // 10 минут
+let _bookingTimerInterval = null; // счётчик обратного отсчёта
 
 const STEPS = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered'];
 
@@ -1364,15 +1370,16 @@ window.doCheckout = async function () {
 
   const btn = document.getElementById('checkout-btn');
   btn.disabled  = true;
-  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Оформляем…';
+  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Бронируем…';
 
   try {
-    const sub         = cart.reduce((s, c) => s + c.price * c.quantity, 0);
-    const oNum        = nextOrderNum();
-    const confirmCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const payMethod   = document.getElementById('cart-pay')?.value || 'cash';
+    const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+    const oNum          = nextOrderNum();
+    const confirmCode   = Math.floor(1000 + Math.random() * 9000).toString();
+    const payMethod     = document.getElementById('cart-pay')?.value || 'cash';
+    const reservedUntil = new Date(Date.now() + BOOKING_DURATION_MS);
 
-    const ref = await addDoc(collection(db, 'orders'), {
+    const orderData = {
       clientId:        CU.uid,
       clientName:      UD?.displayName || '',
       orderNumber:     oNum,
@@ -1392,26 +1399,15 @@ window.doCheckout = async function () {
       comment:         document.getElementById('cart-comment')?.value.trim() || '',
       paymentMethod:   payMethod,
       deliveryService,
-      status:          'pending',
+      status:          'reserved',
+      reservedUntil,
       courierId:       null,
       courierName:     null,
       createdAt:       serverTimestamp(),
       updatedAt:       serverTimestamp(),
-    });
+    };
 
-    activeOid = ref.id;
-
-    if (deliveryService === 'mavsimi') {
-      _submitToMavsimi({
-        orderId: ref.id, orderNumber: oNum,
-        clientName: UD?.displayName || '', clientPhone: UD?.phone || '',
-        items: cart.map(c => ({ name: c.name, price: c.price, quantity: c.quantity })),
-        subtotal: sub, deliveryFee: DFEE, total: sub + DFEE,
-        address: addr, lat, lng,
-        comment: document.getElementById('cart-comment')?.value.trim() || '',
-        paymentMethod: payMethod,
-      }).catch(e => console.warn('[Mavsimi]', e));
-    }
+    const ref = await addDoc(collection(db, 'orders'), orderData);
 
     // Очистка корзины
     const b = writeBatch(db);
@@ -1420,9 +1416,28 @@ window.doCheckout = async function () {
     cart = [];
     renderCart(); updateBadges();
 
-    toast('Заказ №' + oNum + ' принят! ✅', 'ok');
-    await loadOrders();
-    setTimeout(() => { goPage('status'); }, 420);
+    // Добавляем новый заказ локально, чтобы сразу открыть модалку
+    const newOrder = {
+      id: ref.id,
+      ...orderData,
+      createdAt: { toDate: () => new Date() }, // псевдо-timestamp для fmtDate
+      reservedUntil,
+    };
+    orders.unshift(newOrder);
+    activeOid = ref.id;
+
+    renderOrders(); renderOrdersBadge(); renderLiveBanner();
+
+    toast('Заказ забронирован! 🔒 У вас 10 минут', 'ok');
+
+    // Переходим на страницу заказов и открываем модалку бронирования
+    setTimeout(() => {
+      goPage('orders');
+      setTimeout(() => openOrderModal(ref.id), 200);
+    }, 350);
+
+    // Параллельно обновляем из Firestore
+    loadOrders().catch(() => {});
 
   } catch (e) {
     toast('Ошибка: ' + e.message, 'err');
@@ -1430,6 +1445,92 @@ window.doCheckout = async function () {
     btn.innerHTML = 'Оформить заказ';
   }
 };
+
+/** Подтверждение бронирования → статус pending */
+window.confirmReservation = async function (oid) {
+  const btn = document.getElementById('booking-confirm-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:13px;height:13px"></div> Подтверждаем…'; }
+  try {
+    await updateDoc(doc(db, 'orders', oid), {
+      status: 'pending',
+      updatedAt: serverTimestamp(),
+    });
+    // Обновляем в памяти
+    const o = orders.find(x => x.id === oid);
+    if (o) o.status = 'pending';
+
+    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+    closeOrderModal();
+    await loadOrders();
+    toast('Заказ подтверждён! ✅ Ожидайте курьера', 'ok');
+    setTimeout(() => { activeOid = oid; goPage('status'); renderStatusPage(); }, 350);
+  } catch (e) {
+    toast('Ошибка подтверждения', 'err');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Подтвердить заказ'; }
+  }
+};
+
+/** Отмена бронирования */
+window.cancelReservation = async function (oid) {
+  if (!confirm('Отменить бронирование?')) return;
+  try {
+    await updateDoc(doc(db, 'orders', oid), {
+      status: 'cancelled',
+      updatedAt: serverTimestamp(),
+    });
+    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+    closeOrderModal();
+    await loadOrders();
+    toast('Бронирование отменено', 'ok');
+  } catch { toast('Ошибка отмены', 'err'); }
+};
+
+/** Запуск обратного отсчёта бронирования */
+function _startBookingCountdown(reservedUntil) {
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+
+  const endMs = reservedUntil instanceof Date
+    ? reservedUntil.getTime()
+    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
+
+  const tick = () => {
+    const el = document.getElementById('booking-timer-display');
+    if (!el) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; return; }
+
+    const rem = endMs - Date.now();
+    if (rem <= 0) {
+      el.textContent = '0:00';
+      el.closest?.('.booking-timer-ring')?.classList.add('expired');
+      clearInterval(_bookingTimerInterval);
+      _bookingTimerInterval = null;
+      // авто-показ истечения
+      const expiredEl = document.getElementById('booking-expired-note');
+      if (expiredEl) expiredEl.style.display = 'flex';
+      const confirmBtn = document.getElementById('booking-confirm-btn');
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; }
+      return;
+    }
+
+    const mins = Math.floor(rem / 60000);
+    const secs = Math.floor((rem % 60000) / 1000);
+    el.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    // меняем цвет когда < 2 минуты
+    const ringEl = document.getElementById('booking-timer-ring');
+    if (ringEl) {
+      if (rem < 120000) {
+        ringEl.classList.add('warning');
+        ringEl.classList.remove('normal');
+      } else {
+        ringEl.classList.add('normal');
+        ringEl.classList.remove('warning');
+      }
+    }
+  };
+
+  tick();
+  _bookingTimerInterval = setInterval(tick, 1000);
+}
 
 /** Маvsimi — добавляем в очередь (TODO: подключить API) */
 async function _submitToMavsimi(data) {
@@ -1519,8 +1620,8 @@ async function loadOrders() {
     } catch { orders = []; }
   }
 
-  const live = orders.find(o => ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
-  if (live) { activeOid = live.id; if (!unsubLive) listenLive(live.id); }
+  const live = orders.find(o => ['reserved','pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
+  if (live) { activeOid = live.id; if (!unsubLive && live.status !== 'reserved') listenLive(live.id); }
 
   renderOrders();
   renderOrdersBadge();
@@ -1556,7 +1657,7 @@ window.setOTab = function (tab, btn) {
 };
 
 function filterOrders() {
-  if (currentOTab === 'active')    return orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
+  if (currentOTab === 'active')    return orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
   if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
   if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
   return orders;
@@ -1594,7 +1695,7 @@ function renderOrders() {
 }
 
 function renderOrdersBadge() {
-  const act = orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status)).length;
+  const act = orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status)).length;
   ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
@@ -1605,6 +1706,9 @@ window.openOrderModal = function (oid) {
   const o = orders.find(x => x.id === oid);
   if (!o) return;
 
+  // Очищаем предыдущий таймер перед открытием
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+
   const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
   const c        = SC[o.status] || '#888';
   const l        = SL[o.status] || o.status;
@@ -1613,6 +1717,130 @@ window.openOrderModal = function (oid) {
   const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
   const sub      = (o.items || []).reduce((s, i) => s + i.price * i.quantity, 0);
   const delivery = o.total - sub;
+
+  // ════ БРОНИРОВАНИЕ — специальный UI ════
+  if (o.status === 'reserved') {
+    document.getElementById('order-modal-title').textContent = `Бронь заказа ${num}`;
+
+    const itemsHtml = (o.items || []).map(i =>
+      `<div class="receipt-row">
+        <span class="receipt-row-name">${escHtml(i.name)}</span>
+        <span class="receipt-row-qty">×${i.quantity}</span>
+        <span class="receipt-row-price">${i.price * i.quantity} см</span>
+      </div>`
+    ).join('');
+
+    document.getElementById('order-modal-body').innerHTML = `
+      <!-- ── Герой-блок бронирования ── -->
+      <div class="booking-hero">
+        <div class="booking-hero-glow"></div>
+        <div class="booking-icon-wrap">
+          <div class="booking-icon-ring">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="booking-hero-title">Заказ забронирован!</div>
+        <div class="booking-hero-sub">Подтвердите заказ до истечения времени</div>
+
+        <!-- Таймер обратного отсчёта -->
+        <div class="booking-timer-ring normal" id="booking-timer-ring">
+          <svg class="booking-timer-svg" viewBox="0 0 120 120" fill="none">
+            <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
+            <circle class="booking-timer-progress" id="booking-timer-progress"
+              cx="60" cy="60" r="52"
+              stroke="#fff" stroke-width="6"
+              stroke-linecap="round"
+              stroke-dasharray="326.7"
+              stroke-dashoffset="0"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="booking-timer-inner">
+            <div class="booking-timer-label">осталось</div>
+            <div class="booking-timer-display" id="booking-timer-display">10:00</div>
+            <div class="booking-timer-unit">мин</div>
+          </div>
+        </div>
+
+        <!-- Предупреждение об истечении -->
+        <div class="booking-expired-note" id="booking-expired-note" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Время бронирования истекло
+        </div>
+      </div>
+
+      <!-- ── Детали заказа ── -->
+      <div class="booking-order-card">
+        <div class="booking-order-header">
+          <div class="booking-order-num">Заказ ${num}</div>
+          <div class="booking-order-total">${o.total} см</div>
+        </div>
+
+        <div class="booking-items">
+          ${(o.items || []).map(i => `
+            <div class="booking-item">
+              <div class="booking-item-name">${escHtml(i.name)}</div>
+              <div class="booking-item-right">
+                <span class="booking-item-qty">×${i.quantity}</span>
+                <span class="booking-item-price">${i.price * i.quantity} см</span>
+              </div>
+            </div>`).join('')}
+        </div>
+
+        <div class="booking-totals">
+          <div class="booking-total-row">
+            <span>Товары</span>
+            <span>${sub} см</span>
+          </div>
+          <div class="booking-total-row">
+            <span>Доставка</span>
+            <span>${o.total - sub > 0 ? o.total - sub : DFEE} см</span>
+          </div>
+          <div class="booking-total-row booking-total-final">
+            <span>Итого</span>
+            <span>${o.total} см</span>
+          </div>
+        </div>
+
+        <div class="booking-info-grid">
+          <div class="booking-info-item">
+            <div class="booking-info-ico">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="booking-info-val">${escHtml(o.address || '—')}</div>
+          </div>
+          <div class="booking-info-item">
+            <div class="booking-info-ico">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="booking-info-val">${pay}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Кнопки действий ── -->
+      <div class="booking-actions">
+        <button class="booking-btn-confirm" id="booking-confirm-btn" onclick="confirmReservation('${o.id}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Подтвердить заказ
+        </button>
+        <button class="booking-btn-cancel" onclick="cancelReservation('${o.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Отменить бронь
+        </button>
+      </div>`;
+
+    document.getElementById('order-modal-bg').classList.add('open');
+
+    // Запускаем таймер
+    const reservedUntil = o.reservedUntil instanceof Date
+      ? o.reservedUntil
+      : (o.reservedUntil?.toDate?.() ?? new Date(Date.now() + BOOKING_DURATION_MS));
+    _startBookingCountdown(reservedUntil);
+    _startTimerProgressAnimation(reservedUntil);
+    return; // выходим — не показываем обычный UI
+  }
 
   const stepIcons = ['⏳','✅','👨‍🍳','🛵','🎉'];
   const stepSubs  = ['Заказ принят','Подтверждение','Повар готовит','Курьер в пути','Доставлен'];
@@ -1695,8 +1923,35 @@ window.openOrderModal = function (oid) {
 
 window.closeOrderModal = function (e) {
   if (e && e.target !== document.getElementById('order-modal-bg')) return;
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
   document.getElementById('order-modal-bg').classList.remove('open');
 };
+
+/** Анимация прогресса круговой шкалы таймера */
+function _startTimerProgressAnimation(reservedUntil) {
+  const endMs   = reservedUntil instanceof Date
+    ? reservedUntil.getTime()
+    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
+  const startMs = endMs - BOOKING_DURATION_MS;
+  const total   = endMs - startMs;
+  const circ    = 326.7; // 2 * π * 52
+
+  const animTick = () => {
+    const el = document.getElementById('booking-timer-progress');
+    if (!el) return;
+    const rem  = Math.max(0, endMs - Date.now());
+    const frac = rem / total;
+    el.style.strokeDashoffset = String(circ * (1 - frac));
+  };
+  animTick();
+  // обновляем каждые 200мс для плавной анимации
+  const animId = setInterval(() => {
+    const el = document.getElementById('booking-timer-progress');
+    if (!el) { clearInterval(animId); return; }
+    animTick();
+    if (endMs - Date.now() <= 0) clearInterval(animId);
+  }, 200);
+}
 
 window.viewOrderStatus = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
 window.trackO          = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
@@ -1713,9 +1968,22 @@ window.cancelO = async function (id) {
 function renderLiveBanner() {
   const wrap = document.getElementById('live-wrap');
   if (!wrap) return;
-  const live = orders.find(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
+  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
   if (!live) { wrap.innerHTML = ''; return; }
   const num = live.orderNumber ? '#' + live.orderNumber : '#' + live.id.slice(-6);
+
+  if (live.status === 'reserved') {
+    wrap.innerHTML = `<div class="live-banner live-banner-booking" onclick="openOrderModal('${live.id}')">
+      <div class="live-booking-ico">🔒</div>
+      <div class="live-info">
+        <div class="live-lbl" style="color:var(--teal)">Бронь активна</div>
+        <div class="live-txt">Заказ ${num} · ${live.total} см · нажмите для подтверждения</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+    return;
+  }
+
   wrap.innerHTML = `<div class="live-banner" onclick="trackO('${live.id}')">
     <div class="live-pulse"></div>
     <div class="live-info">
