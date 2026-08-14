@@ -2324,12 +2324,31 @@ function _renderSupportMsgsUser(msgs) {
 
 async function _loadSupportOrders() {
   if (!CU) return;
+
+  // ── Быстрый путь: используем уже загруженный массив orders ──
+  if (orders.length > 0) {
+    _supOrdersCache = orders.slice(0, 10);
+    _renderSupOrderPicker();
+    return;
+  }
+
+  // ── Fallback: прямой запрос в Firestore (если orders ещё пуст) ──
   try {
+    // Попытка 1: с orderBy (требует composite index)
     const snap = await getDocs(
       query(collection(db, 'orders'), where('clientId', '==', CU.uid), orderBy('createdAt', 'desc'), limit(10))
     );
     _supOrdersCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch { _supOrdersCache = []; }
+  } catch {
+    try {
+      // Попытка 2: без orderBy (работает без индекса), сортируем вручную
+      const snap2 = await getDocs(
+        query(collection(db, 'orders'), where('clientId', '==', CU.uid), limit(10))
+      );
+      _supOrdersCache = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+      _supOrdersCache.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+    } catch { _supOrdersCache = []; }
+  }
   _renderSupOrderPicker();
 }
 
