@@ -62,8 +62,7 @@
 ║  --tx    #171f1a  — основной текст                               ║
 ║  --tx2   #3d5244  — второстепенный                               ║
 ║  --tx3   #7a9882  — подписи / плейсхолдеры                       ║
-║  --b0    rgba(0,0,0,.07)  — бордер                               ║
-║  --fd    'Nunito'  — заголовки (font-weight 700-900)             ║
+║  --fd    'Unbounded' — заголовки (font-weight 700-900)           ║
 ║  --fs    'Inter'   — текст                                       ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
@@ -74,10 +73,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>dastdaroz — Справка</title>
+<title>Зона покрытия — dastdaroz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
@@ -343,71 +344,170 @@ a{color:inherit;text-decoration:none}
 }
 .sheet-logout:active{background:rgba(220,38,38,.15)}
 
-/* ── NAV (help page) ── */
-.nav{padding:6px 0;margin:-20px}
-.nav-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 20px;cursor:pointer;
-  transition:background .1s;
-  text-decoration:none;color:inherit;position:relative;
-  -webkit-tap-highlight-color:transparent;
+/* ═══════════════════════════════════════════════════════════════
+   COVERAGE PAGE — дополнительные стили
+   Всё ниже относится только к этой странице
+═══════════════════════════════════════════════════════════════ */
+
+/* Убираем общий padding у .content — управляем отступами внутри */
+.content{padding:0}
+
+/* ── Compact header ───────────────────────────────────────────── */
+.cov-head{
+  padding:16px 20px 14px;
+  border-bottom:1px solid var(--b0);
+  background:var(--s1);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.nav-item:active{background:var(--s2)}
-.nav-item-left{display:flex;align-items:center;flex:1;min-width:0}
-.nav-item-text{font-family:var(--fd);font-weight:800;font-size:1.1rem;color:var(--tx);letter-spacing:-.01em}
-.nav-item-arrow{color:var(--txd);flex-shrink:0;transition:transform .15s,color .12s}
-.nav-item:not(.disabled):hover .nav-item-arrow{transform:translateX(2px);color:var(--tx3)}
-.nav-item.disabled{cursor:default;pointer-events:none}
-.nav-item.disabled .nav-item-text{color:var(--txd)}
-.nav-item.disabled .nav-item-arrow{color:rgba(0,0,0,.1)}
-.soon-badge{
-  font-size:.48rem;font-weight:700;letter-spacing:.06em;
-  color:var(--txd);background:var(--s2);border:1px solid var(--b0);
-  padding:2px 7px;border-radius:99px;font-family:var(--fd);margin-left:8px;flex-shrink:0;
+.cov-head-left{flex:1;min-width:0}
+.cov-head-title{
+  font-family:var(--fd);font-weight:900;font-size:1rem;
+  color:var(--tx);
 }
-.nav-accordion-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 20px;cursor:pointer;transition:background .1s;
+.cov-head-sub{
+  font-size:.78rem;color:var(--tx3);font-weight:500;
+  margin-top:3px;
+  min-height:1.1em;
 }
-.nav-accordion-head:active{background:var(--s2)}
-.acc-arrow{color:var(--txd);flex-shrink:0;transition:transform .22s}
-.nav-accordion.open .acc-arrow{transform:rotate(90deg)}
-.nav-accordion-body{overflow:hidden;max-height:0;transition:max-height .28s ease;background:var(--s2)}
-.nav-accordion.open .nav-accordion-body{max-height:400px}
-.acc-sub-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 20px 10px 28px;
-  font-size:.82rem;color:var(--tx2);font-weight:500;
+.cov-head-flag{
+  height:28px;width:auto;
+  border-radius:5px;
+  object-fit:cover;
+  flex-shrink:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.12);
+}
+
+/* ── City body ────────────────────────────────────────────────── */
+.cov-body{
+  padding:16px 16px 28px;
+  display:flex;flex-direction:column;gap:20px;
+}
+.cov-section{}
+.cov-region-lbl{
+  font-family:var(--fd);font-weight:900;font-size:.6rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tx3);margin-bottom:10px;
+}
+.cov-rows{
+  display:flex;flex-direction:column;gap:8px;
+}
+
+/* ── City row (полноширокий) ──────────────────────────────────── */
+.city-row{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;
+  border-radius:14px;
+  background:var(--s1);
+  border:1.5px solid var(--b0);
+  width:100%;
+  user-select:none;
+}
+.city-row.active-row{
+  cursor:pointer;
+  transition:background .13s,border-color .13s;
+}
+.city-row.active-row:active{background:var(--accd);border-color:var(--acc)}
+.city-row.inactive-row{opacity:.38;cursor:default;pointer-events:none}
+
+.city-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--acc);flex-shrink:0;
+}
+.city-nm{
+  font-family:var(--fd);font-weight:800;font-size:.8rem;
+  color:var(--tx2);flex:1;
+}
+.city-row.inactive-row .city-nm{color:var(--tx3)}
+.city-soon{
+  font-size:.62rem;font-weight:600;font-family:var(--fs);
+  color:var(--tx3);background:var(--s2);
+  padding:3px 8px;border-radius:6px;
+  letter-spacing:.04em;white-space:nowrap;
+}
+
+/* ── Skeleton loading ─────────────────────────────────────────── */
+@keyframes cov-shimmer{
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+.skel{
+  background:linear-gradient(90deg,var(--s2) 25%,rgba(255,255,255,.7) 50%,var(--s2) 75%);
+  background-size:200% 100%;
+  animation:cov-shimmer 1.4s infinite;
+  flex-shrink:0;
+}
+.skel-row{height:50px;border-radius:14px;width:100%}
+
+/* ── Error state ──────────────────────────────────────────────── */
+.cov-err{
+  padding:52px 20px 28px;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;gap:10px;
+}
+.cov-err-ico{color:var(--txd)}
+.cov-err-title{
+  font-family:var(--fd);font-weight:900;font-size:.92rem;
+  color:var(--tx2);
+}
+.cov-err-sub{font-size:.78rem;color:var(--tx3);line-height:1.5}
+
+/* ── City detail sheet ────────────────────────────────────────── */
+/* Переопределяем .bs-body для sheet'а с картой */
+#bs-body-city-detail{
+  padding:0!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.city-det-map{
+  flex:1;min-height:0;
+  width:100%;
+}
+/* Подавляем чёрную рамку Leaflet-фокуса */
+.city-det-map .leaflet-container:focus{outline:none}
+.city-det-foot{
+  background:var(--s1);
   border-top:1px solid var(--b0);
-  text-decoration:none;
+  padding:12px 18px calc(12px + var(--safe-b));
+  flex-shrink:0;
+  display:flex;align-items:center;gap:10px;
 }
-.acc-sub-item[href]{cursor:pointer;transition:background .1s}
-.acc-sub-item[href]:active{background:rgba(26,158,74,.06);color:var(--acc)}
-.acc-sub-dot{width:5px;height:5px;border-radius:50%;background:var(--accg);flex-shrink:0}
+.city-det-region{
+  font-family:var(--fd);font-size:.58rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tx3);
+}
+.city-det-coords{
+  font-size:.7rem;color:var(--txd);
+  font-family:monospace;
+  margin-left:auto;
+}
+/* Стрелка у активного города */
+.city-row-arr{
+  color:var(--txd);
+  flex-shrink:0;
+  display:flex;align-items:center;
+}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER — НЕ ТРОГАТЬ (логотип + аватар, одинаковы на всех страницах) ── -->
+<!-- ── HEADER — НЕ ТРОГАТЬ ── -->
 <div class="header">
   <div class="logo">
     <img src="dastdaroz.png" alt="dastdaroz"/>
   </div>
   <div class="header-right">
-    <!-- Кнопка поиска -->
     <button class="search-btn" id="search-btn" aria-label="Поиск">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
       </svg>
     </button>
-    <!-- Кнопка аватарки: если не авторизован → login.html, если да → модалка -->
     <button class="avatar-btn" id="avatar-btn" aria-label="Профиль">
-      <!-- Иконка по умолчанию (не авторизован) -->
       <svg id="ava-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
-      <!-- Инициалы (авторизован) -->
       <span id="ava-initials" style="display:none"></span>
     </button>
   </div>
@@ -433,11 +533,6 @@ a{color:inherit;text-decoration:none}
   <div class="search-results" id="search-results"></div>
 </div>
 
-<!-- ──────────────────────────────────────────────────────────────
-     SCROLL AREA — просто обёртка. Скролл идёт по всей странице.
-     .content растёт вниз по длине контента — без ограничений.
-     НЕ ставь overflow:auto/scroll сюда или на .content!
-─────────────────────────────────────────────────────────────── -->
 <div class="scroll">
   <div class="content">
 
@@ -445,100 +540,29 @@ a{color:inherit;text-decoration:none}
          ▼▼▼  КОНТЕНТ START  ▼▼▼
     ════════════════════════════════════════════════════════════ -->
 
-    <nav class="nav">
-
-      <!-- Сделать заказ — активный -->
-      <a href="home.html" class="nav-item">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Сделать заказ</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </a>
-
-      <!-- Новости — активный -->
-      <a href="/news.html" class="nav-item">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Новости</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </a>
-
-      <!-- Акции — неактивный -->
-      <div class="nav-item disabled">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Акции</span>
-          <span class="soon-badge">Скоро</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+    <!-- Compact header -->
+    <div class="cov-head">
+      <div class="cov-head-left">
+        <div class="cov-head-title">Зона покрытия</div>
+        <div class="cov-head-sub" id="cov-sub">Загрузка…</div>
       </div>
+      <img class="cov-head-flag" src="https://dastdaroz.shop/storage/flags/flag_tj_96x64.png" alt="Таджикистан"/>
+    </div>
 
-      <!-- Правила и условия — раскрывающийся -->
-      <div class="nav-accordion" id="rules-acc">
-        <div class="nav-accordion-head" onclick="toggleAcc('rules-acc')">
-          <span class="nav-item-text">Правила и условия</span>
-          <svg class="acc-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-        <div class="nav-accordion-body">
-          <a href="help/payment.html" class="acc-sub-item"><div class="acc-sub-dot"></div>Условия оплаты<svg style="margin-left:auto;flex-shrink:0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>
-          <a href="help/delivery.html" class="acc-sub-item"><div class="acc-sub-dot"></div>Условия доставки<svg style="margin-left:auto;flex-shrink:0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>
-          <a href="help/returns.html" class="acc-sub-item"><div class="acc-sub-dot"></div>Возврат товара<svg style="margin-left:auto;flex-shrink:0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>
-          <a href="help/privacy.pdf" class="acc-sub-item"><div class="acc-sub-dot"></div>Политика конфиденциальности<svg style="margin-left:auto;flex-shrink:0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>
-          <a href="help/terms.pdf" class="acc-sub-item"><div class="acc-sub-dot"></div>Пользовательское соглашение<svg style="margin-left:auto;flex-shrink:0" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--txd)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></a>
+    <!-- City list — заполняется из Firestore -->
+    <div id="cov-body">
+      <!-- Skeleton rows -->
+      <div class="cov-body">
+        <div class="cov-rows">
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
         </div>
       </div>
-
-      <!-- Аккаунт — неактивный -->
-      <div class="nav-item disabled">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Аккаунт</span>
-          <span class="soon-badge">Скоро</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-
-      <!-- Наши партнеры — неактивный -->
-      <div class="nav-item disabled">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Наши партнеры</span>
-          <span class="soon-badge">Скоро</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-
-      <!-- О нас — неактивный -->
-      <div class="nav-item disabled">
-        <div class="nav-item-left">
-          <span class="nav-item-text">О нас</span>
-          <span class="soon-badge">Скоро</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-
-      <!-- Форум — активный -->
-      <a href="/forum.html" class="nav-item">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Форум</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </a>
-
-      <!-- Вакансии — активный -->
-      <a href="/hr.html" class="nav-item">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Вакансии</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </a>
-
-      <!-- Зона покрытия — активный -->
-      <a href="/coverage.html" class="nav-item">
-        <div class="nav-item-left">
-          <span class="nav-item-text">Зона покрытия</span>
-        </div>
-        <svg class="nav-item-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
-      </a>
-
-    </nav>
+    </div>
 
     <!-- ▲▲▲  КОНТЕНТ END  ▲▲▲
     ══════════════════════════════════════════════════════════════ -->
@@ -546,11 +570,7 @@ a{color:inherit;text-decoration:none}
   </div>
 </div>
 
-<!-- ──────────────────────────────────────────────────────────────
-     FOOTER — скроллится вместе со страницей, виден в конце.
-     НЕ делай position:fixed — он должен скроллиться!
-     НЕ ТРОГАТЬ — контакты и соцсети одинаковы на всех страницах.
-─────────────────────────────────────────────────────────────── -->
+<!-- ── FOOTER — НЕ ТРОГАТЬ ── -->
 <div class="footer">
 
   <div class="divider"></div>
@@ -592,7 +612,7 @@ a{color:inherit;text-decoration:none}
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
       <div class="ci-body">
-        <div class="ci-val">info@galelium.com</div>
+        <div class="ci-val">info@dastdaroz.shop</div>
       </div>
     </a>
 
@@ -627,13 +647,12 @@ a{color:inherit;text-decoration:none}
 
 </div>
 
-<!-- ── PROFILE BOTTOM SHEET — НЕ ТРОГАТЬ (Firebase auth, одинаков на всех страницах) ── -->
+<!-- ── PROFILE BOTTOM SHEET — НЕ ТРОГАТЬ ── -->
 <div class="overlay" id="overlay">
   <div class="sheet" id="sheet">
 
     <div class="sheet-handle"></div>
 
-    <!-- Шапка с данными пользователя -->
     <div class="sheet-head">
       <div class="sheet-ava" id="sheet-ava">?</div>
       <div class="sheet-info">
@@ -642,7 +661,6 @@ a{color:inherit;text-decoration:none}
       </div>
     </div>
 
-    <!-- Доп. строки (можешь добавить свои) -->
     <div class="sheet-row" onclick="window.location.href='orders.html'">
       <div class="sheet-row-ico">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -655,7 +673,6 @@ a{color:inherit;text-decoration:none}
       <svg class="sheet-row-arr" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
     </div>
 
-    <!-- Кнопка выхода -->
     <button class="sheet-logout" id="btn-logout">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
@@ -671,16 +688,11 @@ a{color:inherit;text-decoration:none}
 <script>
 // ════════════════════════════════════════════════════════════════
 // ПОИСК — НАСТРОЙКА СТРАНИЦ
-// Добавляй/убирай страницы в массиве ниже.
-// Формат каждой записи: { title: 'Название', path: 'файл.html' }
 // ════════════════════════════════════════════════════════════════
 const SEARCH_PAGES = [
   // { title: 'Главная',        path: 'index.html'   },
-  // { title: 'Каталог',        path: 'catalog.html' },
-  // { title: 'О нас',          path: 'about.html'   },
-  // { title: 'Заказы',          path: 'orders.html'  },
+  // { title: 'Зона покрытия',  path: 'coverage.html'},
 ];
-// ════════════════════════════════════════════════════════════════
 
 (function(){
   const searchBtn     = document.getElementById('search-btn');
@@ -689,11 +701,10 @@ const SEARCH_PAGES = [
   const searchClear   = document.getElementById('search-clear');
   const searchResults = document.getElementById('search-results');
 
-  let index    = null;   // null = ещё не загружен
+  let index    = null;
   let loading  = false;
   let timer    = null;
 
-  /* ── Открыть/закрыть ── */
   function open() {
     searchPanel.classList.add('open');
     searchBtn.classList.add('active');
@@ -721,7 +732,6 @@ const SEARCH_PAGES = [
     if (e.key === 'Escape' && searchPanel.classList.contains('open')) close();
   });
 
-  /* ── Индексация ── */
   async function buildIndex() {
     if (!SEARCH_PAGES.length) { index = []; return; }
     loading = true;
@@ -737,7 +747,7 @@ const SEARCH_PAGES = [
         const el   = doc.querySelector('.content');
         const text = (el ? el.textContent : '').replace(/\s+/g,' ').trim();
         index.push({ title: page.title, path: page.path, text });
-      } catch(e) { /* пропустить недоступные */ }
+      } catch(e) {}
     }));
     loading = false;
     searchResults.innerHTML = '';
@@ -745,7 +755,6 @@ const SEARCH_PAGES = [
     if (q.length >= 2) doSearch(q);
   }
 
-  /* ── Поиск ── */
   searchInput.addEventListener('input', () => {
     const q = searchInput.value.trim();
     searchClear.classList.toggle('visible', q.length > 0);
@@ -771,15 +780,12 @@ const SEARCH_PAGES = [
       searchResults.innerHTML = '<div class="search-status">Страницы для поиска не добавлены</div>';
       return;
     }
-
     const low  = q.toLowerCase();
     const hits = [];
-
     for (const page of index) {
       const ti = page.title.toLowerCase().indexOf(low);
       const tx = page.text.toLowerCase().indexOf(low);
       if (ti === -1 && tx === -1) continue;
-
       let snippet = '';
       if (tx !== -1) {
         const s = Math.max(0, tx - 45);
@@ -790,12 +796,10 @@ const SEARCH_PAGES = [
       }
       hits.push({ page, snippet });
     }
-
     if (!hits.length) {
       searchResults.innerHTML = `<div class="search-status">«${esc(q)}» не найдено</div>`;
       return;
     }
-
     searchResults.innerHTML = hits.map(({page, snippet}) => `
       <a href="${esc(page.path)}" class="search-result-item">
         <div class="sri-title">${hi(page.title, q)}</div>
@@ -807,14 +811,13 @@ const SEARCH_PAGES = [
 </script>
 
 <script type="module">
-// ═══ НЕ ТРОГАТЬ — Firebase auth логика, одинакова на всех страницах ════════
+// ═══ НЕ ТРОГАТЬ — Firebase auth логика ════════════════════════
 import { auth } from './firebase.js';
 import {
   onAuthStateChanged,
   signOut,
 } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
 
-// ═══ Элементы ════════════════════════════════════════════════════
 const avatarBtn   = document.getElementById('avatar-btn');
 const avaIcon     = document.getElementById('ava-icon');
 const avaInitials = document.getElementById('ava-initials');
@@ -826,9 +829,6 @@ const btnLogout   = document.getElementById('btn-logout');
 
 let currentUser = null;
 
-// ═══ Хелперы ═════════════════════════════════════════════════════
-
-/** Первые буквы имени: "Фируз Мирзоев" → "ФМ" */
 function initials(name) {
   if (!name) return '?';
   const p = name.trim().split(/\s+/);
@@ -837,7 +837,6 @@ function initials(name) {
     : p[0][0].toUpperCase();
 }
 
-/** email вида 992901234567@phone.dastdaroz.id → "+992 90 123 45 67" */
 function emailToPhone(email) {
   if (!email) return '—';
   const m = email.match(/^992(\d{9})@/);
@@ -846,56 +845,260 @@ function emailToPhone(email) {
   return '+992 ' + d.slice(0,2) + ' ' + d.slice(2,5) + ' ' + d.slice(5,7) + ' ' + d.slice(7,9);
 }
 
-// ═══ Состояние auth ══════════════════════════════════════════════
 onAuthStateChanged(auth, user => {
   currentUser = user;
-
   if (user) {
-    // Авторизован — показываем инициалы на аватарке
     const ini = initials(user.displayName);
     avaIcon.style.display     = 'none';
     avaInitials.style.display = '';
     avaInitials.textContent   = ini;
     avatarBtn.classList.add('authed');
-
-    // Заполняем bottom sheet
     sheetAva.textContent   = ini;
     sheetName.textContent  = user.displayName || 'Пользователь';
     sheetPhone.textContent = emailToPhone(user.email);
   } else {
-    // Не авторизован — обычная иконка
     avaIcon.style.display     = '';
     avaInitials.style.display = 'none';
     avatarBtn.classList.remove('authed');
   }
 });
 
-// ═══ Клик по аватарке ════════════════════════════════════════════
 avatarBtn.addEventListener('click', () => {
   if (currentUser) {
-    overlay.classList.add('open');        // показать bottom sheet
+    overlay.classList.add('open');
   } else {
-    window.location.href = 'login.html'; // перейти на логин
+    window.location.href = 'login.html';
   }
 });
 
-// ═══ Закрытие sheet по тапу на фон ══════════════════════════════
 overlay.addEventListener('click', e => {
   if (e.target === overlay) overlay.classList.remove('open');
 });
 
-// ═══ Выход ═══════════════════════════════════════════════════════
 btnLogout.addEventListener('click', async () => {
   await signOut(auth);
   overlay.classList.remove('open');
-  // currentUser обнулится через onAuthStateChanged автоматически
 });
 </script>
 
-<script>
-function toggleAcc(id) {
-  document.getElementById(id).classList.toggle('open');
+<!-- ═══════════════════════════════════════════════════════════════
+     COVERAGE PAGE — логика загрузки городов
+     Требует: firebase.js должен экспортировать `db` (Firestore)
+     Пример: export const db = getFirestore(app);
+═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { db } from './firebase.js';
+import { Sheet } from './sheet.js';
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+// ── Вспомогательные функции ────────────────────────────────────
+
+/** Склонение: 1 город / 2 города / 5 городов */
+function pluralCity(n) {
+  const m  = n % 100;
+  const m2 = n % 10;
+  if (m >= 11 && m <= 14) return 'городов';
+  if (m2 === 1) return 'город';
+  if (m2 >= 2 && m2 <= 4) return 'города';
+  return 'городов';
 }
+
+// ── DOM-ссылки ─────────────────────────────────────────────────
+const subEl  = document.getElementById('cov-sub');
+const bodyEl = document.getElementById('cov-body');
+
+// ── Состояние ─────────────────────────────────────────────────
+let regionMap = new Map(); // region → City[]
+
+// ═══════════════════════════════════════════════════════════════
+//  CITY DETAIL SHEET — инициализация
+// ═══════════════════════════════════════════════════════════════
+
+let _map    = null; // Leaflet map
+let _marker = null; // текущий маркер
+
+// 1. Регистрируем sheet
+Sheet.define({
+  id:     'city-detail',
+  title:  '—',
+  zIndex: 800,
+  onOpen() {
+    // Leaflet не знает реальный размер, пока sheet скрыт (transform).
+    // Инвалидируем после окончания CSS-перехода (0.38s в sheet.js).
+    setTimeout(() => _map?.invalidateSize(), 400);
+  },
+});
+
+// 2. Наполняем тело sheet'а
+Sheet.body('city-detail').innerHTML = `
+  <div class="city-det-map" id="city-det-map"></div>
+  <div class="city-det-foot">
+    <div class="city-det-region" id="city-det-region"></div>
+    <div class="city-det-coords" id="city-det-coords"></div>
+  </div>
+`;
+
+// 3. Инициализируем Leaflet (центр Таджикистана по умолчанию)
+_map = L.map('city-det-map', {
+  zoomControl: true,
+  attributionControl: true,
+}).setView([38.86, 71.28], 6);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+}).addTo(_map);
+
+/** Открыть sheet с картой конкретного города */
+function openCityDetail(city) {
+  const lat = typeof city.lat === 'number' ? city.lat : null;
+  const lng = typeof city.lng === 'number' ? city.lng : null;
+
+  // Обновляем заголовок и футер
+  Sheet.setTitle('city-detail', city.name);
+  document.getElementById('city-det-region').textContent = city.region || '';
+  document.getElementById('city-det-coords').textContent =
+    lat !== null ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '';
+
+  Sheet.open('city-detail');
+
+  // Даём sheet чуть-чуть появиться, потом двигаем карту
+  setTimeout(() => {
+    _map.invalidateSize();
+    if (lat !== null) {
+      _map.setView([lat, lng], 12, { animate: false });
+      _marker?.remove();
+      _marker = L.marker([lat, lng]).addTo(_map);
+    } else {
+      // Координаты не указаны — показываем весь Таджикистан
+      _map.setView([38.86, 71.28], 6, { animate: false });
+      _marker?.remove();
+      _marker = null;
+    }
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  РЕНДЕР СПИСКА ГОРОДОВ
+// ═══════════════════════════════════════════════════════════════
+
+function renderCities() {
+  bodyEl.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'cov-body';
+
+  [...regionMap.entries()].forEach(([region, cities]) => {
+    const sec = document.createElement('div');
+    sec.className = 'cov-section';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'cov-region-lbl';
+    lbl.textContent = region;
+
+    const rows = document.createElement('div');
+    rows.className = 'cov-rows';
+    cities.forEach(city => rows.appendChild(makeRow(city)));
+
+    sec.appendChild(lbl);
+    sec.appendChild(rows);
+    wrap.appendChild(sec);
+  });
+
+  bodyEl.appendChild(wrap);
+}
+
+// ── Создать строку города ──────────────────────────────────────
+function makeRow(city) {
+  const row = document.createElement('div');
+  row.className = 'city-row ' + (city.active ? 'active-row' : 'inactive-row');
+
+  if (city.active) {
+    const dot = document.createElement('span');
+    dot.className = 'city-dot';
+    row.appendChild(dot);
+  }
+
+  const nm = document.createElement('span');
+  nm.className = 'city-nm';
+  nm.textContent = city.name;
+  row.appendChild(nm);
+
+  if (city.active) {
+    // Стрелка → кликабельный город
+    const arr = document.createElement('span');
+    arr.className = 'city-row-arr';
+    arr.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+    row.appendChild(arr);
+
+    row.addEventListener('click', () => openCityDetail(city));
+  } else {
+    const soon = document.createElement('span');
+    soon.className = 'city-soon';
+    soon.textContent = 'Скоро';
+    row.appendChild(soon);
+  }
+
+  return row;
+}
+
+// ── Показать ошибку ────────────────────────────────────────────
+function showError(msg) {
+  subEl.textContent = 'Ошибка загрузки';
+  bodyEl.innerHTML  = `
+    <div class="cov-err">
+      <div class="cov-err-ico">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="cov-err-title">Не удалось загрузить</div>
+      <div class="cov-err-sub">${msg || 'Проверьте подключение и попробуйте снова'}</div>
+    </div>
+  `;
+}
+
+// ── Основная загрузка ──────────────────────────────────────────
+async function loadCoverage() {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'cities'), orderBy('order'))
+    );
+
+    const cities = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (!cities.length) {
+      subEl.textContent = 'Нет данных';
+      bodyEl.innerHTML  = '';
+      return;
+    }
+
+    const activeCount = cities.filter(c => c.active).length;
+    subEl.textContent = `Доставляем в ${activeCount} ${pluralCity(activeCount)}`;
+
+    regionMap = new Map();
+    cities.forEach(city => {
+      const r = city.region || 'Другие';
+      if (!regionMap.has(r)) regionMap.set(r, []);
+      regionMap.get(r).push(city);
+    });
+
+    renderCities();
+
+  } catch (err) {
+    console.error('[coverage] Firestore error:', err);
+    showError(err.message);
+  }
+}
+
+loadCoverage();
 </script>
 
 </body>
