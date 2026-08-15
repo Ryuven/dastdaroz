@@ -1,21 +1,33 @@
-/**
- * app.js — Dastdaroz Admin Panel
- *
- * Firebase импортируется из firebase.js (без дублирования конфига).
- * Все секции помечены для удобного поиска и будущего рефакторинга
- * на собственный бэкенд (api.dastdaroz.shop).
- *
- * TODO (переход на api.dastdaroz.shop):
- *   - Заменить getDocs / onSnapshot → fetch('/api/...')
- *   - Заменить auth.onAuthStateChanged → проверку JWT-токена
- *   - Оставить auth только для signOut
- */
+// ============================================================
+//  app.js — Клиентская логика dastdaroz
+//  Используется в: home.html
+//
+//  Разделы:
+//    1. Импорты
+//    2. Состояние приложения
+//    3. Константы и данные
+//    4. Утилиты
+//    5. Auth / инициализация
+//    6. Навигация
+//    7. Сайдбар
+//    8. Каталог общих категорий
+//    9. Магазины / Ритейлеры
+//   10. Товары
+//   11. Корзина
+//   12. Оформление заказа
+//   13. Заказы
+//   14. Статус заказа + карта
+//   15. Чат с курьером
+//   16. Поддержка
+//   17. Профиль
+//   18. Адреса
+//   19. Кошелёк (я удалил кошелек)
+//   20. Выбор города
+// ============================================================
 
-// ══════════════════════════════════════════════════════════════
-// IMPORTS
-// ══════════════════════════════════════════════════════════════
-
-import { auth, db } from './firebase.js';
+// ─── 1. Импорты ──────────────────────────────────────────────
+import { auth, db, storage, ORDER_STATUS } from './firebase.js';
+import { Sheet } from './sheet.js';
 
 import {
   onAuthStateChanged,
@@ -24,3465 +36,2780 @@ import {
 
 import {
   doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
-  getDocs, collection, query, where, orderBy, onSnapshot,
-  serverTimestamp, limit, increment, arrayUnion, arrayRemove, writeBatch,
+  collection, getDocs, query, where, orderBy, limit,
+  onSnapshot, serverTimestamp, increment, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
 
-// ══════════════════════════════════════════════════════════════
-// CONSTANTS
-// ══════════════════════════════════════════════════════════════
+import {
+  ref as sRef, uploadBytes, getDownloadURL,
+} from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-storage.js';
 
-// Статусы заказов
+
+// ─── 2. Состояние приложения ──────────────────────────────────
+let CU               = null;   // текущий пользователь Firebase Auth
+let UD               = null;   // документ пользователя из Firestore
+let GUEST            = false;  // режим гостя
+
+let cart             = [];
+let prods            = [];
+let cats             = [];
+let orders           = [];
+let stores           = [];
+let genCats          = [];
+
+let catFilter        = 'all';
+let searchQ          = '';
+let homeSearchQ      = '';
+let activeOid        = null;
+let unsubLive        = null;
+let currentOTab      = 'all';
+let activeStore      = null;
+let storeCatFilter   = 'all';
+let jsonMenuData     = null;
+let jsonProdsMap     = {};
+let deliveryService  = 'mavsimi';
+let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
+let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'mavsimiOrders'
+
+let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
+let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
+let _addrBannerUnsub  = null;
+
+
+// ─── 3. Константы и статические данные ───────────────────────
+const DFEE = 7; // стоимость доставки (сомони)
+
+// Лейблы статусов заказа
 const SL = {
-  reserved:  'Забронирован',
-  pending:   'Ожидает',
-  confirmed: 'Подтверждён',
-  preparing: 'Готовится',
-  delivering:'В пути',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
+  reserved:   'Забронирован',
+  pending:    'Ожидание',
+  confirmed:  'Подтверждён',
+  preparing:  'Готовится',
+  delivering: 'В пути',
+  delivered:  'Доставлен',
+  cancelled:  'Отменён',
 };
 
-// Цвета статусов заказов
+// Цвета статусов
 const SC = {
-  reserved:  'var(--yellow)',
-  pending:   'var(--yellow)',
-  confirmed: 'var(--acc)',
-  preparing: '#a855f7',
-  delivering:'var(--cyan)',
-  delivered: 'var(--green)',
-  cancelled: 'var(--red)',
+  reserved:   'var(--teal)',
+  pending:    'var(--amber)',
+  confirmed:  'var(--blue)',
+  preparing:  'var(--purple)',
+  delivering: 'var(--acc)',
+  delivered:  'var(--acc)',
+  cancelled:  'var(--red)',
 };
 
-// Категории новостей
-const NEWS_CAT_LABELS = {
-  'актуали':   'Актуалӣ',
-  'ҷомеа':     'Ҷомеа',
-  'иқтисод':   'Иқтисод',
-  'варзиш':    'Варзиш',
-  'технология':'Технология',
-};
-const NEWS_CAT_EMOJI = {
-  'актуали':   '🔥',
-  'ҷомеа':     '👥',
-  'иқтисод':   '💼',
-  'варзиш':    '⚽',
-  'технология':'💻',
+// Длительность бронирования
+const BOOKING_DURATION_MS = 10 * 60 * 1000; // 10 минут
+let _bookingTimerInterval = null; // счётчик обратного отсчёта
+
+const STEPS = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered'];
+
+// SVG-иконки категорий продуктов
+const CAT_SVG = {
+  vegetables: { color: '#16a34a', bg: 'rgba(22,163,74,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M16 6 Q10 10 10 20 Q10 26 16 28 Q22 26 22 20 Q22 10 16 6Z" fill="#16a34a" opacity=".85"/><path d="M16 6 Q14 14 15 22" stroke="#15803d" stroke-width="1.5" fill="none"/><path d="M16 6 Q18 14 17 22" stroke="#15803d" stroke-width="1.5" fill="none"/></svg>` },
+  fruits:     { color: '#ef4444', bg: 'rgba(239,68,68,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="18" r="10" fill="#ef4444" opacity=".85"/><path d="M16 8 Q18 4 22 5" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="#fff" opacity=".3"/></svg>` },
+  drinks:     { color: '#06b6d4', bg: 'rgba(6,182,212,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M10 8 L12 26 L20 26 L22 8 Z" fill="#06b6d4" opacity=".85"/><rect x="9" y="6" width="14" height="3" rx="1.5" fill="#0891b2"/></svg>` },
+  chocolate:  { color: '#92400e', bg: 'rgba(146,64,14,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="5" y="9" width="22" height="16" rx="3" fill="#92400e" opacity=".85"/><line x1="12" y1="9" x2="12" y2="25" stroke="#7c2d12" stroke-width="1"/><line x1="19" y1="9" x2="19" y2="25" stroke="#7c2d12" stroke-width="1"/><line x1="5" y1="17" x2="27" y2="17" stroke="#7c2d12" stroke-width="1"/></svg>` },
+  bread:      { color: '#d97706', bg: 'rgba(217,119,6,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M6 14 Q6 8 16 8 Q26 8 26 14 L26 24 Q26 26 24 26 L8 26 Q6 26 6 24 Z" fill="#d97706" opacity=".85"/><ellipse cx="16" cy="14" rx="10" ry="5" fill="#f59e0b" opacity=".4"/></svg>` },
+  dairy:      { color: '#0ea5e9', bg: 'rgba(14,165,233,.1)',  svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="9" y="8" width="14" height="18" rx="3" fill="#0ea5e9" opacity=".85"/><circle cx="14" cy="19" r="2" fill="#fff" opacity=".5"/></svg>` },
+  snacks:     { color: '#f97316', bg: 'rgba(249,115,22,.1)',  svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="5" y="12" width="22" height="12" rx="3" fill="#f97316" opacity=".85"/><rect x="8" y="10" width="16" height="4" rx="2" fill="#ea580c"/></svg>` },
+  meat:       { color: '#dc2626', bg: 'rgba(220,38,38,.1)',   svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M8 22 Q6 18 10 14 Q14 10 18 12 L22 8 Q24 6 26 8 Q28 10 26 12 L22 16 Q24 20 20 22 Q16 24 12 22 Q10 24 8 22Z" fill="#dc2626" opacity=".85"/><circle cx="22" cy="10" r="3" fill="#fca5a5" opacity=".6"/></svg>` },
+  default:    { color: '#64748b', bg: 'rgba(100,116,139,.1)', svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill="#64748b" opacity=".15"/><circle cx="16" cy="16" r="6" fill="#64748b" opacity=".5"/></svg>` },
 };
 
-// Роли сотрудников
-const ROLES = {
-  admin:    '👑 Администратор',
-  support:  '🎧 Поддержка',
-  moderator:'🛡️ Модератор',
-};
-
-// Дефолтный список общего каталога (51 категория)
-const GC_DEFAULTS = [
-  {slug:'american',      name:'Американская'},
-  {slug:'asian',         name:'Азиатская'},
-  {slug:'baby',          name:'Детское'},
-  {slug:'bakery',        name:'Выпечка'},
-  {slug:'bbq',           name:'BBQ'},
-  {slug:'beauty',        name:'Красота'},
-  {slug:'box-catering',  name:'Кейтеринг'},
-  {slug:'breakfast',     name:'Завтраки'},
-  {slug:'bubble-tea',    name:'Чай с пузырьками'},
-  {slug:'burgers',       name:'Бургеры'},
-  {slug:'caribbean',     name:'Карибская'},
-  {slug:'chinese',       name:'Китайская'},
-  {slug:'coffee',        name:'Кофе'},
-  {slug:'comfort-food',  name:'Домашняя'},
-  {slug:'desserts',      name:'Десерты'},
-  {slug:'electronics',   name:'Электроника'},
-  {slug:'fast-food',     name:'Фастфуд'},
-  {slug:'flowers',       name:'Цветы'},
-  {slug:'gifts',         name:'Подарки'},
-  {slug:'greek',         name:'Греческая'},
-  {slug:'halal',         name:'Халяль'},
-  {slug:'hawaiin',       name:'Гавайская'},
-  {slug:'healthy',       name:'Здоровое'},
-  {slug:'ice-cream',     name:'Мороженое'},
-  {slug:'indian',        name:'Индийская'},
-  {slug:'italian',       name:'Итальянская'},
-  {slug:'japanese',      name:'Японская'},
-  {slug:'korean',        name:'Корейская'},
-  {slug:'kosher',        name:'Кошерное'},
-  {slug:'mexican',       name:'Мексиканская'},
-  {slug:'personal-care', name:'Уход'},
-  {slug:'pet-supplies',  name:'Зоотовары'},
-  {slug:'pharmacy',      name:'Аптека'},
-  {slug:'pizza',         name:'Пицца'},
-  {slug:'poke',          name:'Поке'},
-  {slug:'retail',        name:'Ритейл'},
-  {slug:'salads',        name:'Салаты'},
-  {slug:'sandwiches',    name:'Сэндвичи'},
-  {slug:'seafood',       name:'Морепродукты'},
-  {slug:'smoothies',     name:'Смузи'},
-  {slug:'soul-food',     name:'Соул-фуд'},
-  {slug:'soup',          name:'Супы'},
-  {slug:'specialty',     name:'Особое'},
-  {slug:'street-food',   name:'Уличная еда'},
-  {slug:'sushi',         name:'Суши'},
-  {slug:'sweets',        name:'Сладости'},
-  {slug:'taiwanese',     name:'Тайваньская'},
-  {slug:'thai',          name:'Тайская'},
-  {slug:'vegan',         name:'Веган'},
-  {slug:'vietnamese',    name:'Вьетнамская'},
-  {slug:'wings',         name:'Крылья'},
+// Fallback-данные категорий (Firestore имеет приоритет)
+const GENERAL_CATS = [
+  { id: 'american',      nameRu: 'Американская',  nameTj: 'Амрикоӣ',      icon: 'storage/general-catalogs/american.png',      order: 1  },
+  { id: 'asian',         nameRu: 'Азиатская',     nameTj: 'Осиёӣ',        icon: 'storage/general-catalogs/asian.png',         order: 2  },
+  { id: 'baby',          nameRu: 'Детское',       nameTj: 'Барои кӯдак',  icon: 'storage/general-catalogs/baby.png',          order: 3  },
+  { id: 'bakery',        nameRu: 'Выпечка',       nameTj: 'Нонвойӣ',      icon: 'storage/general-catalogs/bakery.png',        order: 4  },
+  { id: 'bbq',           nameRu: 'Барбекю',       nameTj: 'Барбекю',      icon: 'storage/general-catalogs/bbq.png',           order: 5  },
+  { id: 'beauty',        nameRu: 'Красота',       nameTj: 'Зебоӣ',        icon: 'storage/general-catalogs/beauty.png',        order: 6  },
+  { id: 'breakfast',     nameRu: 'Завтрак',       nameTj: 'Наҳорӣ',       icon: 'storage/general-catalogs/breakfast.png',     order: 7  },
+  { id: 'bubble-tea',    nameRu: 'Бабл-ти',       nameTj: 'Бабл-ти',      icon: 'storage/general-catalogs/bubble-tea.png',    order: 8  },
+  { id: 'burgers',       nameRu: 'Бургеры',       nameTj: 'Бургер',       icon: 'storage/general-catalogs/burgers.png',       order: 9  },
+  { id: 'coffee',        nameRu: 'Кофе',          nameTj: 'Қаҳва',        icon: 'storage/general-catalogs/coffee.png',        order: 10 },
+  { id: 'desserts',      nameRu: 'Десерты',       nameTj: 'Десерт',       icon: 'storage/general-catalogs/desserts.png',      order: 11 },
+  { id: 'fast-food',     nameRu: 'Фастфуд',       nameTj: 'Фастфуд',      icon: 'storage/general-catalogs/fast-food.png',     order: 12 },
+  { id: 'flowers',       nameRu: 'Цветы',         nameTj: 'Гулҳо',        icon: 'storage/general-catalogs/flowers.png',       order: 13 },
+  { id: 'gifts',         nameRu: 'Подарки',       nameTj: 'Тӯҳфаҳо',      icon: 'storage/general-catalogs/gifts.png',         order: 14 },
+  { id: 'halal',         nameRu: 'Халяль',        nameTj: 'Ҳалол',        icon: 'storage/general-catalogs/halal.png',         order: 15 },
+  { id: 'healthy',       nameRu: 'Здоровое',      nameTj: 'Солим',        icon: 'storage/general-catalogs/healthy.png',       order: 16 },
+  { id: 'ice-cream',     nameRu: 'Мороженое',     nameTj: 'Яхмос',        icon: 'storage/general-catalogs/ice-cream.png',     order: 17 },
+  { id: 'italian',       nameRu: 'Итальянская',   nameTj: 'Италиявӣ',     icon: 'storage/general-catalogs/italian.png',       order: 18 },
+  { id: 'japanese',      nameRu: 'Японская',      nameTj: 'Японӣ',        icon: 'storage/general-catalogs/japanese.png',      order: 19 },
+  { id: 'korean',        nameRu: 'Корейская',     nameTj: 'Кореягӣ',      icon: 'storage/general-catalogs/korean.png',        order: 20 },
+  { id: 'mexican',       nameRu: 'Мексиканская',  nameTj: 'Мексикагӣ',    icon: 'storage/general-catalogs/mexican.png',       order: 21 },
+  { id: 'pharmacy',      nameRu: 'Аптека',        nameTj: 'Дорухона',     icon: 'storage/general-catalogs/pharmacy.png',      order: 22 },
+  { id: 'pizza',         nameRu: 'Пицца',         nameTj: 'Питса',        icon: 'storage/general-catalogs/pizza.png',         order: 23 },
+  { id: 'retail',        nameRu: 'Магазины',      nameTj: 'Мағозаҳо',     icon: 'storage/general-catalogs/retail.png',        order: 24 },
+  { id: 'salads',        nameRu: 'Салаты',        nameTj: 'Салатҳо',      icon: 'storage/general-catalogs/salads.png',        order: 25 },
+  { id: 'seafood',       nameRu: 'Морепродукты',  nameTj: 'Мевои баҳр',   icon: 'storage/general-catalogs/seafood.png',       order: 26 },
+  { id: 'soup',          nameRu: 'Супы',          nameTj: 'Шӯрбо',        icon: 'storage/general-catalogs/soup.png',          order: 27 },
+  { id: 'street-food',   nameRu: 'Уличная еда',   nameTj: 'Хӯроки кӯча',  icon: 'storage/general-catalogs/street-food.png',   order: 28 },
+  { id: 'sushi',         nameRu: 'Суши',          nameTj: 'Суши',         icon: 'storage/general-catalogs/sushi.png',         order: 29 },
+  { id: 'sweets',        nameRu: 'Сладости',      nameTj: 'Ширинӣ',       icon: 'storage/general-catalogs/sweets.png',        order: 30 },
+  { id: 'vegan',         nameRu: 'Веганское',     nameTj: 'Веган',        icon: 'storage/general-catalogs/vegan.png',         order: 31 },
+  { id: 'wings',         nameRu: 'Крылышки',      nameTj: 'Болҳо',        icon: 'storage/general-catalogs/wings.png',         order: 32 },
 ];
 
-// ══════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════
 
-// Текущий пользователь
-let CU = null; // Firebase User
-let AD = null; // Данные из Firestore (users/{uid})
+// ─── 4. Утилиты ───────────────────────────────────────────────
 
-// Основные коллекции
-let allOrders    = [];  // объединяет bookedOrders + dastdarozOrders + mavsimiOrders
-let allCouriers  = [];
-let allClients   = [];
-let allProducts  = [];
-let allStaff     = [];
-let allGenCatalogs = [];
-let allNews      = [];
-let allVacancies = [];
-let allPartnerApps = [];
-
-// Курьерские службы
-let allDeliveryServices = [];
-let _dsEditId = null;
-
-// Ритейлеры (Firestore: retailers/)
-let _retailers   = [];
-let _retCities   = []; // кэш городов для <select>
-let _editRetId   = null;
-let _editLocId   = null;
-let _editLocRid  = null;
-
-// Legacy: старая коллекция stores/ (не отображается в дашборде)
-let allStores = [];
-
-// Города доставки
-let allCities   = [];
-let _cityFilter = 'all';
-let _cityEditId = null;
-
-// Живые заказы (onSnapshot)
-let liveOrders = [];
-
-// Состояние фильтров
-let ordFilt   = 'all';
-let curFilt   = 'all';
-let verifFilt = 'all';
-let tktFilt   = 'all';
-let newsFilt  = 'all';
-let hrFilt    = 'all';
-let partnerFilt = 'all';
-
-// Редактирование
-let assignOid      = null;
-let assignCol      = null;  // коллекция заказа при назначении курьера
-let editingNewsId  = null;
-let editingVacId   = null;
-
-// Unsubscribe refs для onSnapshot
-let unsubOrders   = null;  // bookedOrders listener
-let unsubDast     = null;  // dastdarozOrders listener
-let unsubMav      = null;  // mavsimiOrders listener (активные)
-let unsubCouriers = null;
-
-// Лента активности
-const actLog = [];
-
-// Поддержка (admin side)
-let CHATS          = [];
-let unsubChats     = null;
-let currentChatId  = null;
-let unsubChatMsgs  = null;
-
-// ══════════════════════════════════════════════════════════════
-// UTILITIES
-// ══════════════════════════════════════════════════════════════
-
-/** Экранирует HTML-спецсимволы */
+/** Экранирование HTML (защита от XSS) */
 function escHtml(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-/** Устанавливает textContent элемента по id */
-function set(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
+/** Форматирование даты из Firestore Timestamp */
+function fmtDate(ts) {
+  if (!ts?.toDate) return '—';
+  const d = ts.toDate();
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })
+    + ', '
+    + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** Возвращает метку категории новостей */
-function newsCatLabel(c) {
-  return NEWS_CAT_LABELS[(c || '').toLowerCase()] || (c || '—');
+/** Генерация случайного 8-значного номера заказа */
+function nextOrderNum() {
+  return Math.floor(10_000_000 + Math.random() * 90_000_000).toString();
 }
 
-/** Возвращает эмодзи категории новостей */
-function newsCatEmoji(c) {
-  return NEWS_CAT_EMOJI[(c || '').toLowerCase()] || '📰';
+/** Определение ключа иконки категории по id/названию */
+function catIconKey(id, name) {
+  const n = (name || id || '').toLowerCase();
+  if (/сабзав|овощ|vegeta/i.test(n)) return 'vegetables';
+  if (/мева|фрукт|fruit/i.test(n))   return 'fruits';
+  if (/нӯшок|напит|drink/i.test(n))  return 'drinks';
+  if (/шокол|choco/i.test(n))        return 'chocolate';
+  if (/нон|хлеб|bread/i.test(n))     return 'bread';
+  if (/лаб|молок|dairy|шир/i.test(n))return 'dairy';
+  if (/гӯшт|мясо|meat/i.test(n))     return 'meat';
+  if (/снек|перек|snack/i.test(n))   return 'snacks';
+  return id in CAT_SVG ? id : 'default';
 }
 
-/** Генерирует массив случайных чисел для спарклайнов */
-function genData(n) {
-  return Array.from({ length: n }, () => Math.floor(15 + Math.random() * 85));
+const catIcon = (id, name) => CAT_SVG[catIconKey(id, name)] || CAT_SVG.default;
+const catName = id => (cats.find(c => c.id === id) || {}).name || id || '';
+const getCartQty = pid => (cart.find(c => c.productId === pid) || {}).quantity || 0;
+
+/** Извлечение телефона из псевдо-email dastdaroz ID */
+function phoneFromPseudoEmail(email) {
+  const m = /^992(\d{9})@phone\.dastdaroz\.id$/.exec(email || '');
+  return m ? '+992' + m[1] : '';
 }
 
-// ══════════════════════════════════════════════════════════════
-// CLOCK
-// ══════════════════════════════════════════════════════════════
 
-setInterval(() => {
-  const el = document.getElementById('tb-time');
-  if (el) el.textContent = new Date().toLocaleTimeString('ru-RU');
-}, 1000);
-
-// ══════════════════════════════════════════════════════════════
-// AUTH
-// ══════════════════════════════════════════════════════════════
-
-onAuthStateChanged(auth, async (u) => {
-  if (!u) { location.href = 'admin-login.html'; return; }
-
-  CU = u;
-  try {
-    const snap = await getDoc(doc(db, 'users', CU.uid));
-    if (!snap.exists() || !['admin','support','moderator'].includes(snap.data().role)) {
-      await signOut(auth);
-      location.href = 'admin-login.html';
-      return;
-    }
-    AD = snap.data();
-  } catch {
-    AD = { displayName: CU.email, role: 'admin' };
-  }
-
-  renderSB();
-  startListeners();
-  loadAll();
-});
-
-// ══════════════════════════════════════════════════════════════
-// SIDEBAR
-// ══════════════════════════════════════════════════════════════
-
-function renderSB() {
-  const name  = AD?.displayName || CU.email || 'Admin';
-  const init  = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'A';
-  set('sb-name', name);
-  set('sb-role', ROLES[AD?.role] || AD?.role || '—');
-  const av = document.getElementById('sb-av');
-  if (av) {
-    av.innerHTML = AD?.avatarUrl
-      ? `<img src="${AD.avatarUrl}" alt=""/>`
-      : init;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// REALTIME LISTENERS
-// ══════════════════════════════════════════════════════════════
-
-function startListeners() {
-  // ── bookedOrders (статус reserved) ──────────────────────────
-  if (unsubOrders) unsubOrders();
-  const qBooked = query(
-    collection(db, 'bookedOrders'),
-    where('status', '==', 'reserved')
-  );
-  let firstBooked = true;
-  unsubOrders = onSnapshot(qBooked, (sn) => {
-    const booked = sn.docs.map(d => ({ id: d.id, ...d.data(), _col: 'bookedOrders' }));
-    // Мержим: заменяем bookedOrders в liveOrders, сохраняем dastdaroz/mavsimi
-    liveOrders = [
-      ...booked,
-      ...liveOrders.filter(o => o._col !== 'bookedOrders'),
-    ];
-    renderLiveOrders();
-    updateKPI();
-    renderDonut();
-    if (!firstBooked) {
-      sn.docChanges().forEach((ch) => {
-        const o = ch.doc.data();
-        if (ch.type === 'added') {
-          pushAct(`Новая бронь <strong>#${ch.doc.id.slice(-6).toUpperCase()}</strong> от ${o.clientName || 'клиента'}`, 'reserved');
-          toast('🔒 Новая бронь: #' + ch.doc.id.slice(-6).toUpperCase(), 'info');
-        }
-      });
-    }
-    firstBooked = false;
-    updateOrdBadge();
-  });
-
-  // ── dastdarozOrders (активные) ──────────────────────────────
-  if (unsubDast) unsubDast();
-  const qDast = query(
-    collection(db, 'dastdarozOrders'),
-    where('status', 'in', ['pending', 'confirmed', 'preparing', 'delivering'])
-  );
-  let firstDast = true;
-  unsubDast = onSnapshot(qDast, (sn) => {
-    const dast = sn.docs.map(d => ({ id: d.id, ...d.data(), _col: 'dastdarozOrders' }));
-    liveOrders = [
-      ...liveOrders.filter(o => o._col !== 'dastdarozOrders'),
-      ...dast,
-    ];
-    renderLiveOrders();
-    updateKPI();
-    renderDonut();
-    if (!firstDast) {
-      sn.docChanges().forEach((ch) => {
-        const o = ch.doc.data();
-        if (ch.type === 'added') {
-          pushAct(`Заказ dastdaroz <strong>#${ch.doc.id.slice(-6).toUpperCase()}</strong> — ${o.clientName || 'клиент'}`, o.status);
-          toast('📦 Dastdaroz заказ: #' + ch.doc.id.slice(-6).toUpperCase(), 'info');
-        }
-        if (ch.type === 'modified') {
-          pushAct(`Dastdaroz #${ch.doc.id.slice(-6).toUpperCase()} → ${SL[o.status] || o.status}`, o.status);
-        }
-      });
-    }
-    firstDast = false;
-    updateOrdBadge();
-  });
-
-  // ── mavsimiOrders (активные — только pending, дальше через бэкенд) ──
-  if (unsubMav) unsubMav();
-  const qMav = query(
-    collection(db, 'mavsimiOrders'),
-    where('status', '==', 'pending')
-  );
-  let firstMav = true;
-  unsubMav = onSnapshot(qMav, (sn) => {
-    const mav = sn.docs.map(d => ({ id: d.id, ...d.data(), _col: 'mavsimiOrders' }));
-    liveOrders = [
-      ...liveOrders.filter(o => o._col !== 'mavsimiOrders'),
-      ...mav,
-    ];
-    renderLiveOrders();
-    updateKPI();
-    if (!firstMav) {
-      sn.docChanges().forEach((ch) => {
-        if (ch.type === 'added') {
-          pushAct(`Заказ Мавсими <strong>#${ch.doc.id.slice(-6).toUpperCase()}</strong>`, 'pending');
-          toast('🚚 Mavsimi заказ: #' + ch.doc.id.slice(-6).toUpperCase(), 'info');
-        }
-      });
-    }
-    firstMav = false;
-    updateOrdBadge();
-  });
-
-  // ── Couriers ────────────────────────────────────────────────
-  if (unsubCouriers) unsubCouriers();
-  unsubCouriers = onSnapshot(query(collection(db, 'couriers')), (sn) => {
-    allCouriers = sn.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderOnlineCouriers();
-    updateCurKPI();
-    if (document.getElementById('page-couriers').classList.contains('active')) {
-      renderCouriersPage();
-    }
-  });
-
-  // Слушаем чаты поддержки
-  listenSupportChats();
-}
-
-// ══════════════════════════════════════════════════════════════
-// LOAD ALL DATA
-// ══════════════════════════════════════════════════════════════
-
-async function loadAll() {
-  await Promise.all([
-    loadOrders(),
-    loadClients(),
-    loadProducts(),
-    loadStaff(),
-    loadNewsAdmin(),
-    loadVacancies(),
-    loadStores(),       // Legacy: коллекция stores/ (не отображается в дашборде)
-    loadGenCatalogs(),
-    loadPartnerApps(),
-    loadDeliveryServices(),
-  ]);
-  renderKPI();
-  renderAnalytics();
-  renderSupportChats();
-  listenTgChats();
-}
-
-async function loadOrders() {
-  try {
-    const safeGet = async (col) => {
-      try {
-        const q = query(collection(db, col), orderBy('createdAt', 'desc'), limit(300));
-        const s = await getDocs(q);
-        return s.docs.map(d => ({ id: d.id, ...d.data(), _col: col }));
-      } catch { return []; }
-    };
-
-    const [booked, dast, mav] = await Promise.all([
-      safeGet('bookedOrders'),
-      safeGet('dastdarozOrders'),
-      safeGet('mavsimiOrders'),
-    ]);
-
-    allOrders = [...booked, ...dast, ...mav].sort(
-      (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
-    );
-    renderAllOrders();
-  } catch (e) { console.error('Orders:', e); }
-}
-
-async function loadClients() {
-  try {
-    const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'client')));
-    allClients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderClients();
-  } catch (e) { console.error('Clients:', e); }
-}
-
-async function loadProducts() {
-  try {
-    const snap = await getDocs(collection(db, 'products'));
-    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderCatalog();
-  } catch (e) { console.error('Products:', e); }
-}
-
-async function loadStaff() {
-  try {
-    const snap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['admin','support','moderator'])));
-    allStaff   = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderStaff();
-  } catch (e) { console.error('Staff:', e); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// KPI
-// ══════════════════════════════════════════════════════════════
-
-function renderKPI() {
-  const total    = allOrders.length;
-  const done     = allOrders.filter(o => o.status === 'delivered').length;
-  const can      = allOrders.filter(o => o.status === 'cancelled').length;
-  const active   = allOrders.filter(o => ['preparing','delivering'].includes(o.status)).length;
-  const rev      = allOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
-  const pend     = allOrders.filter(o => ['pending','confirmed'].includes(o.status)).length;
-  const reserved = allOrders.filter(o => o.status === 'reserved').length;
-
-  set('kv-ord',      total);
-  set('kv-rev',      rev.toLocaleString('ru-RU') + ' ₽');
-  set('kv-cli',      allClients.length);
-  set('kv-can',      can);
-  set('kv-pend',     pend);
-  set('kv-done',     done);
-  set('kv-active',   active);
-  set('kv-reserved', reserved);
-  set('kt-can',      total ? Math.round(can / total * 100) + '%' : '0%');
-
-  renderSpark('sp-ord', genData(7));
-  renderSpark('sp-rev', genData(7), 'g');
-  updateOrdBadge();
-}
-
-function updateKPI() {
-  const pend     = liveOrders.filter(o => ['pending','confirmed'].includes(o.status)).length;
-  const active   = liveOrders.filter(o => ['preparing','delivering'].includes(o.status)).length;
-  const reserved = liveOrders.filter(o => o.status === 'reserved').length;
-  set('kv-pend',     pend);
-  set('kv-active',   active);
-  set('kv-reserved', reserved);
-  updateOrdBadge();
-}
-
-function updateCurKPI() {
-  const online = allCouriers.filter(c => c.isOnline).length;
-  set('kv-cur',    online);
-  set('kv-curtot', allCouriers.length);
-  const b = document.getElementById('sb-cur-b');
-  if (b) { b.style.display = online > 0 ? '' : 'none'; b.textContent = online; }
-}
-
-function updateOrdBadge() {
-  const pend = liveOrders.filter(o => ['pending','confirmed'].includes(o.status)).length;
-  const b    = document.getElementById('sb-ord-b');
-  if (b) { b.style.display = pend > 0 ? '' : 'none'; b.textContent = pend; }
-}
-
-// ══════════════════════════════════════════════════════════════
-// SPARKLINES
-// ══════════════════════════════════════════════════════════════
-
-function renderSpark(id, data, cls = '') {
-  const el = document.getElementById(id); if (!el) return;
-  const mx = Math.max(...data) || 1;
-  el.innerHTML = data.map(v =>
-    `<div class="bar${cls ? ' ' + cls : ''}" style="height:${Math.round(v / mx * 100)}%;flex:1" title="${v}"></div>`
-  ).join('');
-}
-
-// ══════════════════════════════════════════════════════════════
-// DONUT CHART
-// ══════════════════════════════════════════════════════════════
-
-function renderDonut() {
-  const R = 33;
-  const C = 2 * Math.PI * R;
-  const cnt = { pending: 0, active: 0, done: 0, cancelled: 0 };
-
-  liveOrders.forEach(o => {
-    if (['pending','confirmed'].includes(o.status))  cnt.pending++;
-    else if (['preparing','delivering'].includes(o.status)) cnt.active++;
-  });
-  cnt.done      = allOrders.filter(o => o.status === 'delivered').length;
-  cnt.cancelled = allOrders.filter(o => o.status === 'cancelled').length;
-
-  const total = cnt.pending + cnt.active + cnt.done + cnt.cancelled || 1;
-  set('d-tot', total);
-
-  const segs = [
-    { id: 'd-acc', v: cnt.pending,   c: 'var(--acc)' },
-    { id: 'd-grn', v: cnt.done,      c: 'var(--green)' },
-    { id: 'd-yel', v: cnt.active,    c: 'var(--yellow)' },
-    { id: 'd-red', v: cnt.cancelled, c: 'var(--red)' },
-  ];
-  let offset = 0;
-  segs.forEach(s => {
-    const dash = (s.v / total) * C;
-    const el   = document.getElementById(s.id);
-    if (el) { el.setAttribute('stroke-dasharray', `${dash} ${C - dash}`); el.setAttribute('stroke-dashoffset', -offset); }
-    offset += dash;
-  });
-
-  const leg = document.getElementById('d-legend');
-  if (leg) leg.innerHTML = [
-    { l: 'Ожидают',   v: cnt.pending,   c: 'var(--acc)' },
-    { l: 'В пути',    v: cnt.active,    c: 'var(--yellow)' },
-    { l: 'Доставлено',v: cnt.done,      c: 'var(--green)' },
-    { l: 'Отменено',  v: cnt.cancelled, c: 'var(--red)' },
-  ].map(i =>
-    `<div class="dl"><div class="dl-dot" style="background:${i.c}"></div><span style="color:var(--text2);flex:1">${i.l}</span><span style="font-family:var(--fm);font-size:.62rem;color:var(--text3)">${i.v}</span></div>`
-  ).join('');
-}
-
-// ══════════════════════════════════════════════════════════════
-// ACTIVITY FEED
-// ══════════════════════════════════════════════════════════════
-
-function pushAct(text, status) {
-  actLog.unshift({
-    text, status,
-    time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-  });
-  if (actLog.length > 25) actLog.pop();
-  renderAct();
-}
-
-function renderAct() {
-  const el = document.getElementById('act-feed'); if (!el) return;
-  if (!actLog.length) {
-    el.innerHTML = '<div style="padding:18px;text-align:center;font-size:.7rem;color:var(--text3)">Ожидаем активность…</div>';
-    return;
-  }
-  const ico = { pending:'⏳', confirmed:'✅', preparing:'👨‍🍳', delivering:'🚴', delivered:'🎉', cancelled:'❌' };
-  const bc  = { pending:'var(--yellowd)', confirmed:'var(--accd)', preparing:'rgba(168,85,247,.1)', delivering:'var(--cyand)', delivered:'var(--greend)', cancelled:'var(--redd)' };
-  el.innerHTML = actLog.slice(0, 8).map(a =>
-    `<div class="af">
-      <div class="af-ico" style="background:${bc[a.status] || 'var(--s2)'}">${ico[a.status] || '📋'}</div>
-      <div><div class="af-txt">${a.text}</div><div class="af-time">${a.time}</div></div>
-    </div>`
-  ).join('');
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE ORDERS (обзор — активные заказы)
-// ══════════════════════════════════════════════════════════════
-
-function renderLiveOrders() {
-  const body = document.getElementById('live-ob'); if (!body) return;
-  const sorted = [...liveOrders].sort((a, b) =>
-    (a.createdAt?.toDate?.().getTime() || 0) - (b.createdAt?.toDate?.().getTime() || 0)
-  );
-  if (!sorted.length) {
-    body.innerHTML = '<tr><td colspan="6"><div class="er"><div class="er-ico">📭</div>Нет активных заказов</div></td></tr>';
-    return;
-  }
-  body.innerHTML = sorted.map(o => oRow(o, true)).join('');
-}
-
-/** Строка таблицы заказа. live=true → без колонки «Курьер» */
-function oRow(o, live = false) {
-  const c   = SC[o.status] || '#888';
-  const l   = SL[o.status] || o.status;
-  const svcLabel = o._col === 'bookedOrders'   ? '<span style="font-size:.5rem;padding:1px 4px;background:#f0b44220;color:#f0b442;border:1px solid #f0b44230;border-radius:3px">🔒 Бронь</span>'
-                 : o._col === 'mavsimiOrders'   ? '<span style="font-size:.5rem;padding:1px 4px;background:#3b82f620;color:#3b82f6;border:1px solid #3b82f630;border-radius:3px">МР</span>'
-                 : '<span style="font-size:.5rem;padding:1px 4px;background:var(--acc)20;color:var(--acc);border:1px solid var(--acc)30;border-radius:3px">DD</span>';
-  const canAssign = !o.courierId && ['pending','confirmed'].includes(o.status) && o._col === 'dastdarozOrders';
-  const courierCol = live
-    ? ''
-    : `<td>${o.courierName || '<span style="color:var(--text3)">—</span>'}</td>`;
-  return `<tr>
-    <td><span class="mono">#${o.id.slice(-6).toUpperCase()}</span> ${svcLabel}</td>
-    <td style="color:var(--text);font-weight:500">${o.clientName || '—'}</td>
-    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${o.address || '—'}</td>
-    ${courierCol}
-    <td><span class="ostatus" style="color:${c};border-color:${c}30;background:${c}10"><span class="osdot"></span>${l}</span></td>
-    <td><span style="font-family:var(--fm)">${o.total || 0} ₽</span></td>
-    <td><div class="oact">
-      <button class="btn btn-secondary btn-sm" onclick="openOrderModal('${o.id}')">Детали</button>
-      ${canAssign ? `<button class="btn btn-success btn-sm" onclick="openAssign('${o.id}','${o._col}')">Назначить</button>` : ''}
-      ${['pending','confirmed'].includes(o.status) && o._col !== 'mavsimiOrders'
-        ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}','${o._col}')">✕</button>` : ''}
-    </div></td>
-  </tr>`;
-}
-
-// ══════════════════════════════════════════════════════════════
-// ALL ORDERS (таблица заказов)
-// ══════════════════════════════════════════════════════════════
-
-function renderAllOrders() {
-  const body = document.getElementById('all-ob'); if (!body) return;
-  let list = [...allOrders];
-  if (ordFilt !== 'all') list = list.filter(o => o.status === ordFilt);
-
-  if (!list.length) {
-    body.innerHTML = '<tr><td colspan="8"><div class="er"><div class="er-ico">📭</div>Нет заказов</div></td></tr>';
-    return;
-  }
-  body.innerHTML = list.map(o => {
-    const date = o.createdAt?.toDate
-      ? o.createdAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-      : '—';
-    const c   = SC[o.status] || '#888';
-    const l   = SL[o.status] || o.status;
-    const svcLabel = o._col === 'bookedOrders'
-      ? '<span style="font-size:.5rem;padding:1px 4px;background:#f0b44220;color:#f0b442;border:1px solid #f0b44230;border-radius:3px">Бронь</span>'
-      : o._col === 'mavsimiOrders'
-      ? '<span style="font-size:.5rem;padding:1px 4px;background:#3b82f620;color:#3b82f6;border:1px solid #3b82f630;border-radius:3px">МР</span>'
-      : '<span style="font-size:.5rem;padding:1px 4px;background:var(--acc)20;color:var(--acc);border:1px solid var(--acc)30;border-radius:3px">DD</span>';
-    const canAssign = !o.courierId && ['pending','confirmed'].includes(o.status) && o._col === 'dastdarozOrders';
-    return `<tr>
-      <td><span class="mono">#${o.id.slice(-6).toUpperCase()}</span> ${svcLabel}</td>
-      <td style="color:var(--text);font-weight:500">${o.clientName || '—'}</td>
-      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.address || '—'}</td>
-      <td style="color:var(--text2)">${o.courierName || '—'}</td>
-      <td><span class="ostatus" style="color:${c};border-color:${c}30;background:${c}10"><span class="osdot"></span>${l}</span></td>
-      <td><span style="font-family:var(--fm);color:var(--text2)">${o.total || 0} ₽</span></td>
-      <td><span class="mono">${date}</span></td>
-      <td><div class="oact">
-        <button class="btn btn-secondary btn-sm" onclick="openOrderModal('${o.id}')">Детали</button>
-        ${canAssign ? `<button class="btn btn-success btn-sm" onclick="openAssign('${o.id}','${o._col}')">+Курьер</button>` : ''}
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-window.fOrders = function (f, btn) {
-  ordFilt = f;
-  document.querySelectorAll('#page-orders .tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  renderAllOrders();
-};
-
-// ══════════════════════════════════════════════════════════════
-// ORDER MODAL
-// ══════════════════════════════════════════════════════════════
-
-window.openOrderModal = async function (oid) {
-  let o = allOrders.find(x => x.id === oid) || liveOrders.find(x => x.id === oid);
-  if (!o) {
-    // Ищем последовательно во всех коллекциях
-    for (const col of ['bookedOrders', 'dastdarozOrders', 'mavsimiOrders', 'orders']) {
-      try {
-        const snap = await getDoc(doc(db, col, oid));
-        if (snap.exists()) { o = { id: snap.id, ...snap.data(), _col: col }; break; }
-      } catch {}
-    }
-  }
-  if (!o) { toast('Заказ не найден', 'err'); return; }
-
-  const date = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString('ru-RU') : '—';
-  const pay  = o.paymentMethod === 'cash' ? '💵 Наличными' : o.paymentMethod === 'card' ? '💳 Картой' : '🌐 Онлайн';
-  const c    = SC[o.status] || '#888';
-  const l    = SL[o.status] || o.status;
-  const svcName = o._col === 'mavsimiOrders' ? '🚚 Мавсими Расон'
-                : o._col === 'bookedOrders'  ? '🔒 Не подтверждён'
-                : '📦 Dastdaroz Delivery';
-  const canAssign = !o.courierId && ['pending','confirmed'].includes(o.status) && o._col === 'dastdarozOrders';
-
-  document.getElementById('m-order-title').innerHTML =
-    `Заказ <span style="font-family:var(--fm);color:var(--acc2)">#${o.id.slice(-6).toUpperCase()}</span>`;
-
-  document.getElementById('m-order-body').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <span class="ostatus" style="color:${c};border-color:${c}30;background:${c}10"><span class="osdot"></span>${l}</span>
-      <span style="font-size:.55rem;color:var(--text3)">${svcName}</span>
-      <span class="mono" style="font-size:.6rem;color:var(--text3)">${date}</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
-      <div><div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Клиент</div><div style="font-size:.76rem;color:var(--text)">${o.clientName || '—'}</div></div>
-      <div><div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Курьер</div><div style="font-size:.76rem;color:var(--text)">${o.courierName || 'Не назначен'}</div></div>
-      <div style="grid-column:1/-1"><div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Адрес</div><div style="font-size:.76rem;color:var(--text)">${o.address || '—'}</div></div>
-      <div><div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Оплата</div><div style="font-size:.76rem;color:var(--text)">${pay}</div></div>
-      <div><div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Комментарий</div><div style="font-size:.76rem;color:var(--text)">${o.comment || 'Нет'}</div></div>
-    </div>
-    <div style="font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px">Состав заказа</div>
-    <div style="background:var(--s2);border:1px solid var(--b);border-radius:7px;overflow:hidden;margin-bottom:12px">
-      ${(o.items || []).map(i =>
-        `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 11px;border-bottom:1px solid var(--b);font-size:.72rem">
-          <span style="color:var(--text)">${i.name}</span>
-          <span style="color:var(--text3);font-family:var(--fm)">×${i.quantity}</span>
-          <span style="color:var(--green);font-family:var(--fm)">${i.price * i.quantity} ₽</span>
-        </div>`
-      ).join('')}
-      <div style="display:flex;justify-content:space-between;padding:9px 11px;font-weight:600;font-size:.78rem">
-        <span style="color:var(--text2)">Итого</span>
-        <span style="font-family:var(--fm);color:var(--text)">${o.total} ₽</span>
-      </div>
-    </div>
-    ${o._col !== 'bookedOrders' ? `
-    <div class="mf">
-      <label class="ml">Изменить статус</label>
-      <select class="mi" id="m-status-sel">
-        ${['pending','confirmed','preparing','delivering','delivered','cancelled'].map(s =>
-          `<option value="${s}"${o.status === s ? ' selected' : ''}>${SL[s]}</option>`
-        ).join('')}
-      </select>
-    </div>` : `
-    <div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px 12px;font-size:.65rem;color:var(--text3)">
-      ⏳ Ожидает подтверждения клиентом. Статус изменится после подтверждения.
-    </div>`}`;
-
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Закрыть</button>
-    ${canAssign ? `<button class="btn btn-success" onclick="closeMo('order-modal');openAssign('${o.id}','${o._col}')">+ Курьер</button>` : ''}
-    ${o._col !== 'bookedOrders' ? `<button class="btn btn-primary" onclick="saveOrderStatus('${o.id}','${o._col}')">Сохранить →</button>` : ''}`;
-
-  openMo('order-modal');
-};
-
-window.saveOrderStatus = async function (oid, col) {
-  const sel = document.getElementById('m-status-sel'); if (!sel) return;
-  // Определяем коллекцию: приоритет параметру, затем ищем в памяти
-  const targetCol = col
-    || allOrders.find(x => x.id === oid)?._col
-    || liveOrders.find(x => x.id === oid)?._col
-    || 'dastdarozOrders';
-  try {
-    await updateDoc(doc(db, targetCol, oid), { status: sel.value, updatedAt: serverTimestamp() });
-    toast('Статус: ' + SL[sel.value], 'ok');
-    closeMo('order-modal');
-    await loadOrders();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.cancelOrder = async function (oid, col) {
-  if (!confirm('Отменить заказ #' + oid.slice(-6).toUpperCase() + '?')) return;
-  const targetCol = col
-    || allOrders.find(x => x.id === oid)?._col
-    || liveOrders.find(x => x.id === oid)?._col
-    || 'dastdarozOrders';
-  try {
-    await updateDoc(doc(db, targetCol, oid), { status: 'cancelled', updatedAt: serverTimestamp() });
-    toast('Заказ отменён', 'ok');
-  } catch { toast('Ошибка', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// ASSIGN COURIER  (только для dastdarozOrders)
-// ══════════════════════════════════════════════════════════════
-
-window.openAssign = function (oid, col) {
-  assignOid = oid;
-  assignCol = col || 'dastdarozOrders';
-  const sel  = document.getElementById('assign-sel');
-  const free = allCouriers.filter(c => c.isOnline && !c.currentOrderId);
-  sel.innerHTML = free.length
-    ? `<option value="">— Выберите курьера —</option>` + free.map(c =>
-        `<option value="${c.id}">${c.displayName || c.id} · ${c.totalDeliveries || 0} доставок</option>`
-      ).join('')
-    : '<option value="">Нет свободных курьеров</option>';
-  document.getElementById('assign-comment').value = '';
-  openMo('assign-modal');
-};
-
-window.doAssign = async function () {
-  const cid = document.getElementById('assign-sel')?.value;
-  if (!cid || !assignOid) { toast('Выберите курьера', 'warn'); return; }
-  if (assignCol !== 'dastdarozOrders') {
-    toast('Назначение курьера доступно только для Dastdaroz Delivery', 'warn');
-    return;
-  }
-  const courier = allCouriers.find(c => c.id === cid);
-  try {
-    await updateDoc(doc(db, 'dastdarozOrders', assignOid), {
-      courierId:   cid,
-      courierName: courier?.displayName || '',
-      status:      'delivering',
-      updatedAt:   serverTimestamp(),
-    });
-    await setDoc(doc(db, 'couriers', cid), {
-      currentOrderId: assignOid,
-      isActive:       true,
-      updatedAt:      serverTimestamp(),
-    }, { merge: true });
-    toast('Курьер назначен: ' + (courier?.displayName || cid), 'ok');
-    closeMo('assign-modal');
-  } catch { toast('Ошибка назначения', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// COURIERS
-// ══════════════════════════════════════════════════════════════
-
-function renderCouriersPage() {
-  const g = document.getElementById('couriers-grid'); if (!g) return;
-  let list = [...allCouriers];
-  if (curFilt   === 'online')  list = list.filter(c => c.isOnline);
-  if (curFilt   === 'busy')    list = list.filter(c => c.currentOrderId);
-  if (curFilt   === 'offline') list = list.filter(c => !c.isOnline);
-  if (verifFilt !== 'all')     list = list.filter(c => (c.verificationStatus || 'pending') === verifFilt);
-
-  if (!list.length) {
-    g.innerHTML = '<div class="er" style="grid-column:1/-1"><div class="er-ico">🚴</div>Нет курьеров</div>';
-    return;
-  }
-
-  const VS = {
-    verified: { label:'Верифицирован', color:'var(--green)',  bg:'var(--greend)',  border:'var(--greeng)' },
-    pending:  { label:'На проверке',   color:'var(--yellow)', bg:'var(--yellowd)', border:'rgba(245,158,11,.25)' },
-    blocked:  { label:'Заблокирован',  color:'var(--red)',    bg:'var(--redd)',    border:'rgba(244,63,94,.25)' },
-  };
-
-  g.innerHTML = list.map(c => {
-    const init = (c.displayName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const st   = c.currentOrderId ? 'В доставке' : c.isOnline ? 'Онлайн' : 'Офлайн';
-    const sc   = c.currentOrderId ? 'var(--yellow)' : c.isOnline ? 'var(--green)' : 'var(--text3)';
-    const vs   = VS[c.verificationStatus || 'pending'] || VS.pending;
-    return `<div class="panel" style="overflow:hidden">
-      <div style="padding:14px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--acc2);flex-shrink:0;overflow:hidden">
-          ${c.avatarUrl ? `<img src="${c.avatarUrl}" style="width:100%;height:100%;object-fit:cover">` : `<span>${init}</span>`}
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.78rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.displayName || '—'}</div>
-          <div style="font-size:.62rem;color:var(--text3);margin-top:2px">${c.phone || c.email || '—'}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-          <div style="display:flex;align-items:center;gap:4px;font-size:.58rem;font-weight:600;color:${sc}">
-            <div style="width:5px;height:5px;border-radius:50%;background:${sc}"></div>${st}
-          </div>
-          <span style="font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:99px;background:${vs.bg};color:${vs.color};border:1px solid ${vs.border};letter-spacing:.04em">${vs.label}</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b)">
-        <div style="background:var(--s2);padding:9px;text-align:center"><div style="font-family:var(--fd);font-weight:800;font-size:.95rem;color:var(--acc2)">${c.totalDeliveries || 0}</div><div style="font-size:.42rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Доставок</div></div>
-        <div style="background:var(--s2);padding:9px;text-align:center"><div style="font-family:var(--fd);font-weight:800;font-size:.95rem;color:var(--green)">${c.earnings || 0}₽</div><div style="font-size:.42rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Заработок</div></div>
-        <div style="background:var(--s2);padding:9px;text-align:center"><div style="font-size:.85rem">${{ bicycle:'🚴', scooter:'🛵', car:'🚗', foot:'🚶' }[c.vehicle || 'foot'] || '🚴'}</div><div style="font-size:.42rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Транспорт</div></div>
-      </div>
-      <div style="padding:9px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-        ${c.currentOrderId ? `<button class="btn btn-secondary btn-sm" onclick="openOrderModal('${c.currentOrderId}')">Заказ</button>` : ''}
-        <button class="btn btn-${c.isOnline ? 'danger' : 'success'} btn-sm" onclick="toggleCOnline('${c.id}',${!c.isOnline})">${c.isOnline ? 'Офлайн' : 'Онлайн'}</button>
-        <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="openVerifModal('${c.id}','${c.verificationStatus || 'pending'}','${(c.displayName || '').replace(/'/g, '')}')">Статус ▾</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderOnlineCouriers() {
-  const el   = document.getElementById('online-clist'); if (!el) return;
-  const list = allCouriers.filter(c => c.isOnline).slice(0, 5);
-  if (!list.length) {
-    el.innerHTML = '<div style="padding:14px;text-align:center;font-size:.7rem;color:var(--text3)">Нет курьеров онлайн</div>';
-    return;
-  }
-  el.innerHTML = list.map(c => {
-    const init = (c.displayName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const st   = c.currentOrderId ? 'В доставке' : 'Свободен';
-    const sc   = c.currentOrderId ? 'var(--yellow)' : 'var(--green)';
-    return `<div class="cc">
-      <div class="cav">${c.avatarUrl ? `<img src="${c.avatarUrl}" alt="">` : `<span>${init}</span>`}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.72rem;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.displayName || '—'}</div>
-        <div style="font-size:.6rem;color:var(--text3);margin-top:1px">${c.totalDeliveries || 0} доставок</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:.58rem;font-weight:600;color:${sc};flex-shrink:0">
-        <div style="width:5px;height:5px;border-radius:50%;background:${sc}"></div>${st}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-window.fCouriers = function (f, btn) {
-  curFilt = f;
-  document.querySelectorAll('#page-couriers .tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  renderCouriersPage();
-};
-
-window.fCouriersVerif = function (f, btn) {
-  verifFilt = f;
-  document.querySelectorAll('#page-couriers .sh-actions .tabs:last-child .tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  renderCouriersPage();
-};
-
-window.toggleCOnline = async function (id, val) {
-  try {
-    await setDoc(doc(db, 'couriers', id), { isOnline: val, updatedAt: serverTimestamp() }, { merge: true });
-    toast(val ? 'Курьер онлайн' : 'Курьер офлайн', 'ok');
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.openVerifModal = function (id, current, name) {
-  const vs = {
-    verified: { label:'Верифицирован', color:'var(--green)',  bg:'var(--greend)',  border:'var(--greeng)',       dot:'var(--green)' },
-    pending:  { label:'На проверке',   color:'var(--yellow)', bg:'var(--yellowd)', border:'rgba(245,158,11,.25)',dot:'var(--yellow)' },
-    blocked:  { label:'Заблокирован',  color:'var(--red)',    bg:'var(--redd)',    border:'rgba(244,63,94,.25)', dot:'var(--red)' },
-  };
-
-  const optHtml = Object.entries(vs).map(([key, s]) => {
-    const active = key === current;
-    return `<label onclick="selectVerif('${key}')" id="vo-${key}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid ${active ? s.border : 'var(--b)'};background:${active ? s.bg : 'var(--s2)'};cursor:pointer;transition:all .15s">
-      <div style="width:16px;height:16px;border-radius:50%;border:2px solid ${active ? s.dot : 'var(--muted)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        ${active ? `<div style="width:8px;height:8px;border-radius:50%;background:${s.dot}"></div>` : ''}
-      </div>
-      <div>
-        <div style="font-size:.74rem;font-weight:600;color:${s.color}">${s.label}</div>
-        <div style="font-size:.62rem;color:var(--text3);margin-top:1px">${
-          key === 'verified' ? 'Курьер прошёл проверку, может принимать заказы' :
-          key === 'pending'  ? 'Документы на рассмотрении, заказы недоступны' :
-          'Аккаунт заблокирован, доступ запрещён'
-        }</div>
-      </div>
-    </label>`;
-  }).join('');
-
-  document.getElementById('m-order-title').textContent = 'Статус верификации';
-  document.getElementById('m-order-body').innerHTML = `
-    <div style="font-size:.76rem;color:var(--text2);margin-bottom:16px">Курьер: <strong style="color:var(--text)">${name}</strong></div>
-    <div style="display:flex;flex-direction:column;gap:8px">${optHtml}</div>
-    <input type="hidden" id="verif-selected"  value="${current}"/>
-    <input type="hidden" id="verif-courier-id" value="${id}"/>`;
-
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="saveVerifStatus()">Сохранить</button>`;
-  openMo('order-modal');
-};
-
-window.selectVerif = function (val) {
-  const colors = {
-    verified: { border:'var(--greeng)',           bg:'var(--greend)',  dot:'var(--green)',  rb:'var(--green)' },
-    pending:  { border:'rgba(245,158,11,.25)',    bg:'var(--yellowd)', dot:'var(--yellow)', rb:'var(--yellow)' },
-    blocked:  { border:'rgba(244,63,94,.25)',     bg:'var(--redd)',    dot:'var(--red)',    rb:'var(--red)' },
-  };
-  ['verified','pending','blocked'].forEach(s => {
-    const el = document.getElementById('vo-' + s); if (!el) return;
-    const c  = colors[s];
-    const on = s === val;
-    el.style.borderColor = on ? c.border : 'var(--b)';
-    el.style.background  = on ? c.bg     : 'var(--s2)';
-    const rb = el.querySelector('div');
-    rb.style.borderColor = on ? c.rb : 'var(--muted)';
-    rb.innerHTML = on ? `<div style="width:8px;height:8px;border-radius:50%;background:${c.dot}"></div>` : '';
-  });
-  document.getElementById('verif-selected').value = val;
-};
-
-window.saveVerifStatus = async function () {
-  const id     = document.getElementById('verif-courier-id')?.value;
-  const status = document.getElementById('verif-selected')?.value;
-  if (!id || !status) return;
-  const labels = { verified:'Верифицирован', pending:'На проверке', blocked:'Заблокирован' };
-  try {
-    await setDoc(doc(db, 'couriers', id), { verificationStatus: status, updatedAt: serverTimestamp() }, { merge: true });
-    toast('Статус: ' + labels[status], 'ok');
-    closeMo('order-modal');
-  } catch { toast('Ошибка сохранения', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// CLIENTS
-// ══════════════════════════════════════════════════════════════
-
-function renderClients() {
-  const body = document.getElementById('cli-ob'); if (!body) return;
-  if (!allClients.length) {
-    body.innerHTML = '<tr><td colspan="8"><div class="er"><div class="er-ico">👤</div>Нет клиентов</div></td></tr>';
-    return;
-  }
-  body.innerHTML = allClients.map(c => {
-    const orders = allOrders.filter(o => o.clientId === c.uid);
-    const spent  = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
-    const date   = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('ru-RU') : '—';
-    return `<tr>
-      <td style="color:var(--text);font-weight:500">${c.displayName || '—'}</td>
-      <td class="mono" style="font-size:.64rem">${c.email || '—'}</td>
-      <td>${c.phone || '—'}</td>
-      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.address || '—'}</td>
-      <td style="font-family:var(--fm)">${orders.length}</td>
-      <td style="font-family:var(--fm);color:var(--green)">${spent.toLocaleString('ru-RU')} ₽</td>
-      <td class="mono" style="font-size:.62rem">${date}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="viewClient('${c.uid}')">Профиль</button></td>
-    </tr>`;
-  }).join('');
-}
-
-window.viewClient = function (uid) {
-  const c = allClients.find(x => x.uid === uid); if (!c) return;
-  const orders = allOrders.filter(o => o.clientId === uid);
-  const spent  = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
-
-  document.getElementById('m-order-title').textContent = c.displayName || c.email || 'Клиент';
-  document.getElementById('m-order-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div class="mf"><label class="ml">Email</label><div style="font-size:.76rem;color:var(--text)">${c.email || '—'}</div></div>
-      <div class="mf"><label class="ml">Телефон</label><div style="font-size:.76rem;color:var(--text)">${c.phone || '—'}</div></div>
-      <div class="mf"><label class="ml">Адрес</label><div style="font-size:.76rem;color:var(--text)">${c.address || '—'}</div></div>
-      <div class="mf"><label class="ml">Заказов / Потрачено</label><div style="font-size:.76rem;color:var(--text)">${orders.length} / ${spent.toLocaleString('ru-RU')} ₽</div></div>
-    </div>
-    <div style="font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Последние заказы</div>
-    ${orders.slice(0, 6).map(o => {
-      const col = SC[o.status] || '#888';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b);font-size:.72rem">
-        <span class="mono">#${o.id.slice(-6).toUpperCase()}</span>
-        <span style="color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.address || '—'}</span>
-        <span class="ostatus" style="color:${col};border-color:${col}30;background:${col}10;font-size:.5rem">${SL[o.status] || o.status}</span>
-        <span style="font-family:var(--fm);color:var(--green);font-size:.66rem">${o.total}₽</span>
-      </div>`;
-    }).join('') || '<div style="color:var(--text3);font-size:.72rem;text-align:center;padding:14px">Нет заказов</div>'}`;
-
-  document.getElementById('m-order-foot').innerHTML =
-    '<button class="btn btn-secondary" onclick="closeMo(\'order-modal\')">Закрыть</button>';
-  openMo('order-modal');
-};
-
-window.exportClients = function () {
-  const rows = allClients.map(c => {
-    const ords  = allOrders.filter(o => o.clientId === c.uid);
-    const spent = ords.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
-    return `${c.displayName || ''},${c.email || ''},${c.phone || ''},${ords.length},${spent}`;
-  });
-  const csv = ['Имя,Email,Телефон,Заказов,Потрачено', ...rows].join('\n');
-  const a   = document.createElement('a');
-  a.href    = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-  a.download = 'clients.csv';
-  a.click();
-  toast('CSV скачан', 'ok');
-};
-
-// ══════════════════════════════════════════════════════════════
-// CATALOG
-// ══════════════════════════════════════════════════════════════
-
-function renderCatalog() {
-  const body = document.getElementById('cat-ob'); if (!body) return;
-  if (!allProducts.length) {
-    body.innerHTML = '<tr><td colspan="6"><div class="er"><div class="er-ico">🍽️</div>Нет товаров</div></td></tr>';
-    return;
-  }
-  body.innerHTML = allProducts.map(p => `<tr>
-    <td style="display:flex;align-items:center;gap:9px;color:var(--text);font-weight:500">
-      <div style="width:28px;height:28px;background:var(--s2);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.76rem;flex-shrink:0;overflow:hidden">
-        ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover">` : '🍽️'}
-      </div>
-      ${p.name}
-    </td>
-    <td style="color:var(--text2)">${p.categoryId || '—'}</td>
-    <td style="font-family:var(--fm);color:var(--green)">${p.price} ₽</td>
-    <td>
-      ${p.barcode
-        ? `<span style="font-family:var(--fm);font-size:.62rem;color:var(--acc2);background:var(--accd);border:1px solid var(--accg);padding:2px 7px;border-radius:4px;letter-spacing:.06em">${p.barcode}</span>`
-        : '<span style="font-size:.6rem;color:var(--text3)">—</span>'}
-    </td>
-    <td><span class="ostatus" style="color:${p.available !== false ? 'var(--green)' : 'var(--red)'};border-color:${p.available !== false ? 'var(--greeng)' : 'rgba(244,63,94,.2)'};background:${p.available !== false ? 'var(--greend)' : 'var(--redd)'}"><span class="osdot"></span>${p.available !== false ? 'Доступен' : 'Скрыт'}</span></td>
-    <td><div class="oact">
-      <button class="btn btn-secondary btn-sm" onclick="editProduct('${p.id}')">Изменить</button>
-      <button class="btn btn-${p.available !== false ? 'danger' : 'success'} btn-sm" onclick="toggleProd('${p.id}',${!(p.available !== false)})">${p.available !== false ? 'Скрыть' : 'Показать'}</button>
-    </div></td>
-  </tr>`).join('');
-}
-
-const _barcodeFieldHtml = () => `
-  <div class="mf">
-    <label class="ml">Штрих-код (EAN-13, QR и др.)</label>
-    <div style="display:flex;gap:7px">
-      <input class="mi" id="p-bc" placeholder="4607086561315" inputmode="numeric" style="flex:1;letter-spacing:.06em"/>
-      <button class="btn btn-secondary" onclick="scanBarcodeAdmin()" title="Сканировать" style="flex-shrink:0;padding:0 12px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="3" height="16" rx="1"/><rect x="7" y="4" width="1.5" height="16" rx=".5"/><rect x="10" y="4" width="3" height="16" rx="1"/><rect x="15" y="4" width="1.5" height="16" rx=".5"/><rect x="18" y="4" width="3" height="16" rx="1"/></svg>
-      </button>
-    </div>
-  </div>`;
-
-window.openAddProduct = function () {
-  document.getElementById('m-order-title').textContent = 'Добавить товар';
-  document.getElementById('m-order-body').innerHTML = `
-    <div class="mf"><label class="ml">Название *</label><input class="mi" id="p-nm" placeholder="Бургер Классик"/></div>
-    <div class="mf"><label class="ml">Описание</label><input class="mi" id="p-ds" placeholder="Говядина, сыр, салат…"/></div>
-    <div class="mr">
-      <div class="mf"><label class="ml">Цена (₽) *</label><input class="mi" type="number" id="p-pr" placeholder="350"/></div>
-      <div class="mf"><label class="ml">Категория</label><input class="mi" id="p-ct" placeholder="burgers"/></div>
-    </div>
-    <div class="mf"><label class="ml">URL изображения</label><input class="mi" id="p-im" placeholder="https://…"/></div>
-    ${_barcodeFieldHtml()}`;
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="saveNewProd()">Добавить</button>`;
-  openMo('order-modal');
-};
-
-window.editProduct = function (id) {
-  const p = allProducts.find(x => x.id === id); if (!p) return;
-  document.getElementById('m-order-title').textContent = 'Редактировать: ' + p.name;
-  document.getElementById('m-order-body').innerHTML = `
-    <div class="mf"><label class="ml">Название</label><input class="mi" id="p-nm" value="${p.name || ''}"/></div>
-    <div class="mf"><label class="ml">Описание</label><input class="mi" id="p-ds" value="${p.description || ''}"/></div>
-    <div class="mr">
-      <div class="mf"><label class="ml">Цена (₽)</label><input class="mi" type="number" id="p-pr" value="${p.price || ''}"/></div>
-      <div class="mf"><label class="ml">Категория</label><input class="mi" id="p-ct" value="${p.categoryId || ''}"/></div>
-    </div>
-    <div class="mf"><label class="ml">URL изображения</label><input class="mi" id="p-im" value="${p.imageUrl || ''}"/></div>
-    ${_barcodeFieldHtml()}`;
-  document.getElementById('p-bc').value = p.barcode || '';
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-danger"    onclick="deleteProd('${id}')">Удалить</button>
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="saveEditProd('${id}')">Сохранить</button>`;
-  openMo('order-modal');
-};
-
-window.saveNewProd = async function () {
-  const name  = document.getElementById('p-nm')?.value.trim();
-  const price = parseFloat(document.getElementById('p-pr')?.value || '0');
-  if (!name || !price) { toast('Заполните название и цену', 'warn'); return; }
-  try {
-    await addDoc(collection(db, 'products'), {
-      name,
-      description: document.getElementById('p-ds')?.value.trim() || '',
-      price,
-      categoryId:  document.getElementById('p-ct')?.value.trim() || '',
-      imageUrl:    document.getElementById('p-im')?.value.trim() || '',
-      barcode:     document.getElementById('p-bc')?.value.trim() || '',
-      available:   true,
-      createdAt:   serverTimestamp(),
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Товар добавлен', 'ok');
-    closeMo('order-modal');
-    await loadProducts();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.saveEditProd = async function (id) {
-  try {
-    await updateDoc(doc(db, 'products', id), {
-      name:        document.getElementById('p-nm')?.value.trim() || '',
-      description: document.getElementById('p-ds')?.value.trim() || '',
-      price:       parseFloat(document.getElementById('p-pr')?.value || '0'),
-      categoryId:  document.getElementById('p-ct')?.value.trim() || '',
-      imageUrl:    document.getElementById('p-im')?.value.trim() || '',
-      barcode:     document.getElementById('p-bc')?.value.trim() || '',
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Товар обновлён', 'ok');
-    closeMo('order-modal');
-    await loadProducts();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.toggleProd = async function (id, val) {
-  try {
-    await updateDoc(doc(db, 'products', id), { available: val, updatedAt: serverTimestamp() });
-    toast(val ? 'Товар активирован' : 'Товар скрыт', 'ok');
-    await loadProducts();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.deleteProd = async function (id) {
-  if (!confirm('Удалить товар?')) return;
-  try {
-    await deleteDoc(doc(db, 'products', id));
-    toast('Удалён', 'ok');
-    closeMo('order-modal');
-    await loadProducts();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.scanBarcodeAdmin = async function () {
-  if (!('BarcodeDetector' in window)) {
-    toast('BarcodeDetector не поддерживается. Введите вручную.', 'warn');
-    return;
-  }
-  let div = document.getElementById('admin-scan-ov');
-  if (!div) { div = document.createElement('div'); div.id = 'admin-scan-ov'; document.body.appendChild(div); }
-  div.innerHTML = `
-    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
-      <div style="font-size:.86rem;color:#fff;font-weight:600">Наведите камеру на штрих-код</div>
-      <div style="position:relative;width:min(300px,90vw);aspect-ratio:4/3;overflow:hidden;border-radius:12px">
-        <video id="asv" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
-        <div style="position:absolute;left:10%;right:10%;height:2px;background:rgba(99,102,241,.9);animation:laserMove 2s ease-in-out infinite;top:50%"></div>
-      </div>
-      <div id="as-hint" style="font-size:.72rem;color:rgba(255,255,255,.6)">Ожидаем сканирования…</div>
-      <button onclick="closeAdminScan()" style="padding:8px 22px;background:var(--accd);border:1px solid var(--accg);color:var(--acc2);border-radius:7px;cursor:pointer;font-size:.72rem">Отмена</button>
-    </div>`;
-
-  const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','code_128','code_39','qr_code'] });
-  const stream   = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } }).catch(() => null);
-  if (!stream) { toast('Камера недоступна', 'err'); div.innerHTML = ''; return; }
-
-  const v = document.getElementById('asv');
-  v.srcObject = stream;
-  await v.play();
-
-  let raf;
-  const loop = async () => {
-    try {
-      const res = await detector.detect(v);
-      if (res.length) {
-        const code = res[0].rawValue;
-        stream.getTracks().forEach(t => t.stop());
-        cancelAnimationFrame(raf);
-        div.innerHTML = '';
-        const inp = document.getElementById('p-bc');
-        if (inp) { inp.value = code; inp.focus(); }
-        toast('Штрих-код: ' + code, 'ok');
-        return;
-      }
-    } catch {}
-    raf = requestAnimationFrame(loop);
-  };
-  raf = requestAnimationFrame(loop);
-
-  window.closeAdminScan = () => {
-    cancelAnimationFrame(raf);
-    stream.getTracks().forEach(t => t.stop());
-    div.innerHTML = '';
-  };
-};
-
-// ══════════════════════════════════════════════════════════════
-// NEWS
-// ══════════════════════════════════════════════════════════════
-
-async function loadNewsAdmin() {
-  try {
-    const q    = query(collection(db, 'news'), orderBy('createdAt', 'desc'), limit(100));
-    const snap = await getDocs(q);
-    allNews    = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const pub  = allNews.filter(a => a.status === 'published').length;
-    const b    = document.getElementById('sb-news-b');
-    if (b) { b.textContent = pub; b.style.display = pub ? '' : 'none'; }
-    if (document.getElementById('page-news').classList.contains('active')) {
-      renderNewsTable();
-      renderNewsStats();
-    }
-  } catch (e) { console.error('News:', e); }
-}
-
-function renderNewsStats() {
-  const el = document.getElementById('news-stats'); if (!el) return;
-  const total = allNews.length;
-  const pub   = allNews.filter(a => a.status === 'published').length;
-  const draft = allNews.filter(a => a.status === 'draft').length;
-  const views = allNews.reduce((s, a) => s + (a.views || 0), 0);
-  const kpi   = (lbl, val, col) =>
-    `<div style="background:var(--s1);border:1px solid var(--b);border-radius:9px;padding:10px 16px;min-width:110px">
-      <div style="font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${lbl}</div>
-      <div style="font-family:var(--fd);font-size:1.1rem;font-weight:800;color:${col}">${val}</div>
-    </div>`;
-  el.innerHTML =
-    kpi('Всего',        total,                'var(--text)') +
-    kpi('Опубликовано', pub,                  'var(--green)') +
-    kpi('Черновики',    draft,                'var(--text3)') +
-    kpi('Просмотры',    views.toLocaleString(),'var(--cyan)');
-}
-
-function renderNewsTable() {
-  const ob = document.getElementById('news-ob'); if (!ob) return;
-  renderNewsStats();
-  const list = newsFilt === 'all' ? allNews : allNews.filter(a => a.status === newsFilt);
-  if (!list.length) {
-    ob.innerHTML = '<tr><td colspan="7"><div class="er"><div class="er-ico">📰</div>Статей нет</div></td></tr>';
-    return;
-  }
-  ob.innerHTML = list.map(a => {
-    const date = a.createdAt?.toDate
-      ? a.createdAt.toDate().toLocaleDateString('ru-RU', { day:'numeric', month:'short', year:'numeric' })
-      : '—';
-    const cov = a.coverUrl
-      ? `<img class="news-cover-th" src="${escHtml(a.coverUrl)}" alt="" onerror="this.style.display='none'">`
-      : `<div class="news-cover-ph"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
-    const st = a.status === 'published'
-      ? '<span class="ostatus ns-pub"><span class="osdot"></span>Опубликована</span>'
-      : '<span class="ostatus ns-drft"><span class="osdot"></span>Черновик</span>';
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:10px">${cov}
-        <div>
-          <div style="font-weight:600;font-size:.72rem;color:var(--text);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.title || '—')}</div>
-          ${a.subtitle ? `<div style="font-size:.6rem;color:var(--text3);margin-top:2px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.subtitle)}</div>` : ''}
-        </div>
-      </div></td>
-      <td><span style="font-size:.62rem">${newsCatEmoji(a.category)} ${escHtml(newsCatLabel(a.category))}</span></td>
-      <td style="font-size:.68rem;color:var(--text2)">${escHtml(a.author || '—')}</td>
-      <td>${st}</td>
-      <td><span class="mono">${(a.views || 0).toLocaleString()}</span></td>
-      <td><span class="mono" style="font-size:.6rem">${date}</span></td>
-      <td><div class="oact">
-        <button class="btn btn-secondary btn-sm" onclick="editNews('${a.id}')">✏️</button>
-        <button class="btn ${a.status === 'published' ? 'btn-secondary' : 'btn-success'} btn-sm" onclick="toggleNewsPublish('${a.id}','${a.status}')">${a.status === 'published' ? '📥' : '✓'}</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteNews('${a.id}')">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-window.fNews = function (f, btn) {
-  newsFilt = f;
-  document.querySelectorAll('#page-news .tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderNewsTable();
-};
-
-window.openNewsModal = function () {
-  editingNewsId = null;
-  document.getElementById('news-modal-title').textContent = 'Новая статья';
-  document.getElementById('ni-save-btn').textContent      = 'Опубликовать';
-  ['ni-title','ni-subtitle','ni-cover','ni-content'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  document.getElementById('ni-author').value  = AD?.displayName || 'Редакция';
-  document.getElementById('ni-rtime').value   = '3';
-  document.getElementById('ni-status').value  = 'published';
-  document.getElementById('ni-cat').value     = 'актуали';
-  const prev = document.getElementById('ni-cover-preview');
-  if (prev) { prev.style.display = 'none'; prev.src = ''; }
-  openMo('news-modal');
-};
-
-window.editNews = function (id) {
-  const a = allNews.find(x => x.id === id); if (!a) return;
-  editingNewsId = id;
-  document.getElementById('news-modal-title').textContent = 'Редактировать статью';
-  document.getElementById('ni-save-btn').textContent      = 'Сохранить';
-  document.getElementById('ni-title').value    = a.title || '';
-  document.getElementById('ni-subtitle').value = a.subtitle || '';
-  document.getElementById('ni-author').value   = a.author || '';
-  document.getElementById('ni-rtime').value    = a.readingTime || '3';
-  document.getElementById('ni-cover').value    = a.coverUrl || '';
-  document.getElementById('ni-content').value  = a.content || '';
-  document.getElementById('ni-status').value   = a.status || 'draft';
-  document.getElementById('ni-cat').value      = a.category || 'актуали';
-  previewNewscover(a.coverUrl || '');
-  openMo('news-modal');
-};
-
-window.previewNewscover = function (url) {
-  const img = document.getElementById('ni-cover-preview'); if (!img) return;
-  if (url && url.startsWith('http')) {
-    img.src = url; img.style.display = 'block';
-    img.onerror = () => { img.style.display = 'none'; };
-  } else {
-    img.style.display = 'none'; img.src = '';
-  }
-};
-
-window.saveNews = async function () {
-  const title   = document.getElementById('ni-title').value.trim();
-  const content = document.getElementById('ni-content').value.trim();
-  if (!title)   { toast('Заголовок обязателен', 'err'); return; }
-  if (!content) { toast('Добавьте текст статьи', 'err'); return; }
-
-  const btn = document.getElementById('ni-save-btn');
-  btn.disabled = true; btn.textContent = 'Сохраняем…';
-
-  const data = {
-    title,
-    subtitle:    document.getElementById('ni-subtitle').value.trim(),
-    content,
-    author:      document.getElementById('ni-author').value.trim() || 'Редакция',
-    readingTime: parseInt(document.getElementById('ni-rtime').value) || 3,
-    coverUrl:    document.getElementById('ni-cover').value.trim(),
-    status:      document.getElementById('ni-status').value,
-    category:    document.getElementById('ni-cat').value,
-    authorId:    CU?.uid || '',
-    updatedAt:   serverTimestamp(),
-  };
-  try {
-    if (editingNewsId) {
-      await updateDoc(doc(db, 'news', editingNewsId), data);
-      toast('Статья обновлена ✓', 'ok');
-    } else {
-      data.createdAt = serverTimestamp();
-      data.views     = 0;
-      await addDoc(collection(db, 'news'), data);
-      toast('Статья опубликована ✓', 'ok');
-    }
-    closeMo('news-modal');
-    await loadNewsAdmin();
-  } catch (e) { console.error(e); toast('Ошибка: ' + e.message, 'err'); }
-  btn.disabled = false;
-  btn.textContent = editingNewsId ? 'Сохранить' : 'Опубликовать';
-};
-
-window.toggleNewsPublish = async function (id, cur) {
-  const ns = cur === 'published' ? 'draft' : 'published';
-  try {
-    await updateDoc(doc(db, 'news', id), { status: ns, updatedAt: serverTimestamp() });
-    toast(ns === 'published' ? 'Статья опубликована ✓' : 'Убрана в черновики', 'ok');
-    await loadNewsAdmin();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.deleteNews = async function (id) {
-  const a = allNews.find(x => x.id === id);
-  if (!confirm('Удалить статью «' + (a?.title || id) + '»?')) return;
-  try {
-    await deleteDoc(doc(db, 'news', id));
-    toast('Статья удалена', 'ok');
-    await loadNewsAdmin();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// ANALYTICS
-// ══════════════════════════════════════════════════════════════
-
-function renderAnalytics() {
-  // Заказы по часам
-  const hourly = Array(24).fill(0);
-  allOrders.forEach(o => { if (o.createdAt?.toDate) hourly[o.createdAt.toDate().getHours()]++; });
-  const mxH  = Math.max(...hourly) || 1;
-  const chH  = document.getElementById('ch-hourly');
-  if (chH) chH.innerHTML = hourly.map((v, i) =>
-    `<div class="bar" style="height:${Math.round(v / mxH * 100)}%;flex:1" title="${i}:00 — ${v}"></div>`
-  ).join('');
-
-  // Заказы по дням (7 дней)
-  const days = [], labels = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
-    const cnt = allOrders.filter(o => {
-      if (!o.createdAt?.toDate) return false;
-      const od = new Date(o.createdAt.toDate()); od.setHours(0, 0, 0, 0);
-      return od.getTime() === d.getTime();
-    }).length;
-    days.push(cnt);
-    labels.push(d.toLocaleDateString('ru-RU', { weekday: 'short' }));
-  }
-  const mxD = Math.max(...days) || 1;
-  const chD = document.getElementById('ch-daily');
-  if (chD) chD.innerHTML = days.map((v, i) =>
-    `<div class="bar g" style="height:${Math.round(v / mxD * 100)}%;flex:1" title="${labels[i]}: ${v}"></div>`
-  ).join('');
-  const lbD = document.getElementById('ch-dlbls');
-  if (lbD) lbD.innerHTML = labels.map(l => `<span>${l}</span>`).join('');
-
-  // Топ категорий
-  const catCnt = {};
-  allOrders.forEach(o => (o.items || []).forEach(i => {
-    catCnt[i.categoryId || 'other'] = (catCnt[i.categoryId || 'other'] || 0) + i.quantity;
-  }));
-  const topCats = document.getElementById('top-cats');
-  if (topCats) topCats.innerHTML = Object.entries(catCnt)
-    .sort((a, b) => b[1] - a[1]).slice(0, 6)
-    .map(([cat, cnt]) =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:1px solid var(--b);font-size:.7rem">
-        <span style="color:var(--text2)">${cat}</span>
-        <span style="font-family:var(--fm);color:var(--acc2)">${cnt}</span>
-      </div>`
-    ).join('') || '<div style="padding:14px;text-align:center;color:var(--text3);font-size:.7rem">Нет данных</div>';
-
-  // Топ курьеров
-  const topC = document.getElementById('top-couriers');
-  if (topC) topC.innerHTML = [...allCouriers]
-    .sort((a, b) => (b.totalDeliveries || 0) - (a.totalDeliveries || 0)).slice(0, 6)
-    .map((c, i) =>
-      `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--b)">
-        <div style="font-family:var(--fm);font-size:.66rem;color:var(--text3);width:14px">#${i + 1}</div>
-        <div style="flex:1;font-size:.72rem;font-weight:500;color:var(--text)">${c.displayName || '—'}</div>
-        <div style="font-family:var(--fm);font-size:.66rem;color:var(--acc2)">${c.totalDeliveries || 0} дост.</div>
-        <div style="font-family:var(--fm);font-size:.66rem;color:var(--green)">${c.earnings || 0}₽</div>
-      </div>`
-    ).join('') || '<div style="padding:14px;text-align:center;color:var(--text3);font-size:.7rem">Нет данных</div>';
-
-  // Сводка
-  const ps = document.getElementById('period-sum');
-  if (ps) {
-    const rev = allOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
-    const del = allOrders.filter(o => o.status === 'delivered').length;
-    const can = allOrders.filter(o => o.status === 'cancelled').length;
-    const row = (lbl, val, col = 'var(--text)') =>
-      `<div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">${lbl}</span><span style="font-family:var(--fm);color:${col}">${val}</span></div>`;
-    ps.innerHTML = `<div style="display:flex;flex-direction:column;gap:11px;font-size:.76rem">
-      ${row('Всего заказов',          allOrders.length)}
-      ${row('Выручка',                rev.toLocaleString('ru-RU') + ' ₽', 'var(--green)')}
-      ${row('Доставлено',             del, 'var(--acc2)')}
-      ${row('Отменено',               can, 'var(--red)')}
-      ${row('Клиентов',               allClients.length)}
-      ${row('Статей опубликовано',    allNews.filter(a => a.status === 'published').length, 'var(--cyan)')}
-      ${row('Курьеров',               allCouriers.length)}
-    </div>`;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// STAFF
-// ══════════════════════════════════════════════════════════════
-
-function renderStaff() {
-  const body = document.getElementById('staff-ob'); if (!body) return;
-  if (!allStaff.length) {
-    body.innerHTML = '<tr><td colspan="5"><div class="er"><div class="er-ico">👥</div>Нет сотрудников</div></td></tr>';
-    return;
-  }
-  const rc = { admin:'var(--acc2)', support:'var(--green)', moderator:'var(--yellow)' };
-  body.innerHTML = allStaff.map(s => {
-    const date = s.lastLoginAt?.toDate
-      ? s.lastLoginAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-      : '—';
-    return `<tr>
-      <td style="color:var(--text);font-weight:500">${s.displayName || '—'}</td>
-      <td class="mono" style="font-size:.64rem">${s.email || '—'}</td>
-      <td><span style="font-size:.58rem;padding:2px 9px;border-radius:99px;background:var(--accd);color:${rc[s.role] || 'var(--text2)'};border:1px solid var(--accg)">${ROLES[s.role] || s.role || '—'}</span></td>
-      <td class="mono" style="font-size:.62rem">${date}</td>
-      <td>${s.uid !== CU.uid
-        ? `<button class="btn btn-secondary btn-sm" onclick="editStaff('${s.uid}')">Роль</button>`
-        : '<span style="font-size:.6rem;color:var(--text3)">Это вы</span>'}</td>
-    </tr>`;
-  }).join('');
-}
-
-window.openAddStaff = function () {
-  document.getElementById('m-order-title').textContent = 'Добавить сотрудника';
-  document.getElementById('m-order-body').innerHTML = `
-    <div style="padding:9px 12px;background:var(--yellowd);border:1px solid rgba(245,158,11,.2);border-radius:7px;font-size:.7rem;color:var(--yellow);margin-bottom:14px">
-      ⚠️ Сотрудник должен сначала зарегистрироваться через страницу входа. Здесь вы меняете роль по email.
-    </div>
-    <div class="mf"><label class="ml">Email сотрудника</label><input class="mi" id="st-em" placeholder="admin@galelium.com"/></div>
-    <div class="mf">
-      <label class="ml">Роль</label>
-      <select class="mi" id="st-rl">
-        <option value="support">🎧 Поддержка</option>
-        <option value="moderator">🛡️ Модератор</option>
-        <option value="admin">👑 Администратор</option>
-      </select>
-    </div>`;
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="saveNewStaff()">Сохранить</button>`;
-  openMo('order-modal');
-};
-
-window.saveNewStaff = async function () {
-  const email = document.getElementById('st-em')?.value.trim();
-  const role  = document.getElementById('st-rl')?.value;
-  if (!email) { toast('Введите email', 'warn'); return; }
-  try {
-    const q    = query(collection(db, 'users'), where('email', '==', email));
-    const snap = await getDocs(q);
-    if (snap.empty) { toast('Пользователь не найден', 'err'); return; }
-    await setDoc(doc(db, 'users', snap.docs[0].id), { role, updatedAt: serverTimestamp() }, { merge: true });
-    toast('Роль обновлена: ' + ROLES[role], 'ok');
-    closeMo('order-modal');
-    await loadStaff();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.editStaff = function (uid) {
-  const s = allStaff.find(x => x.uid === uid); if (!s) return;
-  document.getElementById('m-order-title').textContent = 'Роль: ' + (s.displayName || s.email);
-  document.getElementById('m-order-body').innerHTML = `
-    <div class="mf">
-      <label class="ml">Роль</label>
-      <select class="mi" id="st-rl-ed">
-        <option value="support"  ${s.role === 'support'   ? 'selected' : ''}>🎧 Поддержка</option>
-        <option value="moderator"${s.role === 'moderator' ? 'selected' : ''}>🛡️ Модератор</option>
-        <option value="admin"    ${s.role === 'admin'     ? 'selected' : ''}>👑 Администратор</option>
-      </select>
-    </div>`;
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="updateStaffRole('${uid}')">Сохранить</button>`;
-  openMo('order-modal');
-};
-
-window.updateStaffRole = async function (uid) {
-  const role = document.getElementById('st-rl-ed')?.value;
-  try {
-    await setDoc(doc(db, 'users', uid), { role, updatedAt: serverTimestamp() }, { merge: true });
-    toast('Роль обновлена', 'ok');
-    closeMo('order-modal');
-    await loadStaff();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// SUPPORT CHATS (admin side)
-// ══════════════════════════════════════════════════════════════
-
-function listenSupportChats() {
-  if (unsubChats) unsubChats();
-  const q = query(collection(db, 'supportChats'), orderBy('updatedAt', 'desc'));
-  unsubChats = onSnapshot(q, (snap) => {
-    CHATS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderSupportChats();
-  }, () => {});
-}
-
-function renderSupportChats() {
-  const el = document.getElementById('chats-list'); if (!el) return;
-  const list        = tktFilt === 'unread' ? CHATS.filter(c => (c.adminUnread || 0) > 0) : [...CHATS];
-  const totalUnread = CHATS.filter(c => (c.adminUnread || 0) > 0).length;
-  const b           = document.getElementById('sb-tkt-b');
-  if (b) { b.style.display = totalUnread > 0 ? '' : 'none'; b.textContent = totalUnread; }
-
-  el.innerHTML = list.map(c => {
-    const init      = (c.userName || '?').trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-    const time      = c.updatedAt?.toDate
-      ? c.updatedAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-      : '—';
-    const hasUnread = (c.adminUnread || 0) > 0;
-    return `<div class="sc-item ${currentChatId === c.id ? 'active' : ''}" onclick="openSupportChat('${c.id}')">
-      <div class="sc-item-av">${escHtml(init)}</div>
-      <div class="sc-item-body">
-        <div class="sc-item-head">
-          <div class="sc-item-name">${escHtml(c.userName || 'Пользователь')}</div>
-          <div class="sc-item-time">${time}</div>
-        </div>
-        <div class="sc-item-last">
-          ${hasUnread ? '<span class="sc-item-dot"></span>' : ''}
-          ${escHtml((c.lastMessage || '').slice(0, 55) || 'Нет сообщений')}
-        </div>
-        ${c.orderNumber ? `<div class="sc-item-order">Заказ #${escHtml(c.orderNumber)}</div>` : ''}
-      </div>
-      ${hasUnread ? `<div class="sc-item-badge">${c.adminUnread}</div>` : ''}
-    </div>`;
-  }).join('') || '<div class="er"><div class="er-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>Нет обращений</div>';
-}
-
-window.fChats = function (f, btn) {
-  tktFilt = f;
-  document.querySelectorAll('#page-support .fp').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  renderSupportChats();
-};
-
-window.openSupportChat = async function (id) {
-  currentChatId = id;
-  renderSupportChats();
-  const c = CHATS.find(x => x.id === id); if (!c) return;
-  const init    = (c.userName || '?').trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const orderHtml = c.orderId ? `
-    <div class="sc-order-chip" onclick="openOrderModal('${c.orderId}')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <span>Заказ <strong>#${escHtml(c.orderNumber || '')}</strong></span>
-      <svg style="margin-left:auto;color:var(--text3)" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-    </div>` : '';
-
-  document.getElementById('chat-detail').innerHTML = `
-    <div class="sc-detail-wrap">
-      <div class="panel-head">
-        <div class="sc-detail-user">
-          <div class="sc-detail-av">${escHtml(init)}</div>
-          <div>
-            <div class="panel-title">${escHtml(c.userName || 'Пользователь')}</div>
-            <div class="sc-detail-phone">${escHtml(c.userPhone || '—')}</div>
-          </div>
-        </div>
-      </div>
-      ${orderHtml}
-      <div class="sc-msgs" id="sc-msgs"><div style="padding:28px;text-align:center;color:var(--text3);font-size:.7rem">Загрузка…</div></div>
-      <div class="sc-reply-row">
-        <textarea class="sc-reply-input" id="sc-reply-input" rows="1" placeholder="Ваш ответ…"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminReply('${id}');}"></textarea>
-        <button class="sc-send-btn" id="sc-send-btn" onclick="sendAdminReply('${id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>`;
-
-  updateDoc(doc(db, 'supportChats', id), { adminUnread: 0 }).catch(() => {});
-  _listenChatMessages(id);
-};
-
-function _listenChatMessages(chatId) {
-  if (unsubChatMsgs) unsubChatMsgs();
-  const q = query(collection(db, 'supportChats', chatId, 'messages'), orderBy('createdAt', 'asc'));
-  unsubChatMsgs = onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const el   = document.getElementById('sc-msgs'); if (!el) return;
-    if (!msgs.length) {
-      el.innerHTML = '<div style="padding:28px;text-align:center;color:var(--text3);font-size:.7rem">Нет сообщений</div>';
-      return;
-    }
-    el.innerHTML = msgs.map(m => {
-      const isAdmin  = m.senderRole === 'admin';
-      const time     = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }) : '';
-      const nameHtml = isAdmin && m.senderName ? `<span class="sc-msg-name">${escHtml(m.senderName)}</span>` : '';
-      return `<div class="sc-msg ${isAdmin ? 'sc-msg-admin' : 'sc-msg-client'}">${nameHtml}${escHtml(m.text)}<span class="sc-msg-time">${time}</span></div>`;
-    }).join('');
-    el.scrollTop = el.scrollHeight;
-  });
-}
-
-window.sendAdminReply = async function (chatId) {
-  const inp = document.getElementById('sc-reply-input'); if (!inp) return;
-  const text = inp.value.trim(); if (!text) return;
-  inp.value = ''; inp.style.height = 'auto';
-  const btn = document.getElementById('sc-send-btn'); if (btn) btn.disabled = true;
-  try {
-    await addDoc(collection(db, 'supportChats', chatId, 'messages'), {
-      text,
-      senderId:   CU.uid,
-      senderRole: 'admin',
-      senderName: AD?.displayName || CU.displayName || 'Поддержка',
-      createdAt:  serverTimestamp(),
-    });
-    await updateDoc(doc(db, 'supportChats', chatId), {
-      userUnread:           increment(1),
-      lastMessage:          text.slice(0, 120),
-      lastMessageAt:        serverTimestamp(),
-      lastMessageSenderRole:'admin',
-      updatedAt:            serverTimestamp(),
-    });
-  } catch { toast('Ошибка отправки', 'err'); }
-  if (btn) btn.disabled = false;
-  inp.focus();
-};
-
-// ══════════════════════════════════════════════════════════════
-// TELEGRAM SUPPORT (tgChats)
-// ══════════════════════════════════════════════════════════════
-
-let TG_CHATS        = [];
-let tgChatFilt      = 'all';
-let currentTgChatId = null;
-let unsubTgChats    = null;
-let unsubTgMsgs     = null;
-
-function listenTgChats() {
-  if (unsubTgChats) unsubTgChats();
-  const q = query(collection(db, 'tgChats'), orderBy('updatedAt', 'desc'));
-  unsubTgChats = onSnapshot(q, (snap) => {
-    TG_CHATS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderTgChats();
-    updateTgBadge();
-  }, () => {});
-}
-
-function updateTgBadge() {
-  const total = TG_CHATS.filter(c => (c.adminUnread || 0) > 0).length;
-  const b = document.getElementById('sb-tg-b');
-  if (b) { b.style.display = total > 0 ? '' : 'none'; b.textContent = total; }
-}
-
-function renderTgChats() {
-  const el = document.getElementById('tg-chats-list'); if (!el) return;
-  const list = tgChatFilt === 'unread'
-    ? TG_CHATS.filter(c => (c.adminUnread || 0) > 0)
-    : [...TG_CHATS];
-
-  el.innerHTML = list.map(c => {
-    const init      = (c.userName || '?').trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TG';
-    const time      = c.updatedAt?.toDate
-      ? c.updatedAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-      : '—';
-    const hasUnread = (c.adminUnread || 0) > 0;
-    return `<div class="sc-item ${currentTgChatId === c.id ? 'active' : ''}" onclick="openTgChat('${c.id}')">
-      <div class="sc-item-av" style="background:linear-gradient(135deg,#2196f3,#1565c0)">${escHtml(init)}</div>
-      <div class="sc-item-body">
-        <div class="sc-item-head">
-          <div class="sc-item-name">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="#2196f3" style="margin-right:3px;vertical-align:middle"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.873.751z"/></svg>
-            ${escHtml(c.userName || 'Telegram пользователь')}
-          </div>
-          <div class="sc-item-time">${time}</div>
-        </div>
-        <div class="sc-item-last">
-          ${hasUnread ? '<span class="sc-item-dot"></span>' : ''}
-          ${escHtml((c.lastMessage || '').slice(0, 55) || 'Нет сообщений')}
-        </div>
-      </div>
-      ${hasUnread ? `<div class="sc-item-badge">${c.adminUnread}</div>` : ''}
-    </div>`;
-  }).join('') || '<div class="er"><div class="er-ico">💬</div>Нет обращений из Telegram</div>';
-}
-
-window.fTgChats = function (f, btn) {
-  tgChatFilt = f;
-  document.querySelectorAll('#tg-chats-filter .fp').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  renderTgChats();
-};
-
-window.openTgChat = async function (id) {
-  currentTgChatId = id;
-  renderTgChats();
-  const c = TG_CHATS.find(x => x.id === id); if (!c) return;
-  const init = (c.userName || 'TG').trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'TG';
-
-  document.getElementById('tg-chat-detail').innerHTML = `
-    <div class="sc-detail-wrap">
-      <div class="panel-head">
-        <div class="sc-detail-user">
-          <div class="sc-detail-av" style="background:linear-gradient(135deg,#2196f3,#1565c0)">${escHtml(init)}</div>
-          <div>
-            <div class="panel-title">${escHtml(c.userName || 'Telegram пользователь')}</div>
-            <div class="sc-detail-phone" style="color:#2196f3;font-size:.7rem">Telegram · ID: ${escHtml(c.tgChatId || id)}</div>
-          </div>
-        </div>
-      </div>
-      <div class="sc-msgs" id="tg-msgs"><div style="padding:28px;text-align:center;color:var(--text3);font-size:.7rem">Загрузка…</div></div>
-      <div class="sc-reply-row">
-        <textarea class="sc-reply-input" id="tg-reply-input" rows="1" placeholder="Ответ в Telegram…"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTgReply('${id}');}"></textarea>
-        <button class="sc-send-btn" id="tg-send-btn" onclick="sendTgReply('${id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>`;
-
-  updateDoc(doc(db, 'tgChats', id), { adminUnread: 0 }).catch(() => {});
-  _listenTgMessages(id);
-};
-
-function _listenTgMessages(chatId) {
-  if (unsubTgMsgs) unsubTgMsgs();
-  const q = query(collection(db, 'tgChats', chatId, 'messages'), orderBy('createdAt', 'asc'));
-  unsubTgMsgs = onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const el   = document.getElementById('tg-msgs'); if (!el) return;
-    if (!msgs.length) {
-      el.innerHTML = '<div style="padding:28px;text-align:center;color:var(--text3);font-size:.7rem">Нет сообщений</div>';
-      return;
-    }
-    el.innerHTML = msgs.map(m => {
-      const isAdmin = m.sender === 'admin';
-      const time    = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }) : '';
-      const name    = isAdmin ? `<span class="sc-msg-name">Поддержка</span>` : '';
-      return `<div class="sc-msg ${isAdmin ? 'sc-msg-admin' : 'sc-msg-client'}">${name}${escHtml(m.text)}<span class="sc-msg-time">${time}</span></div>`;
-    }).join('');
-    el.scrollTop = el.scrollHeight;
-  });
-}
-
-window.sendTgReply = async function (chatId) {
-  const inp = document.getElementById('tg-reply-input'); if (!inp) return;
-  const text = inp.value.trim(); if (!text) return;
-  inp.value = ''; inp.style.height = 'auto';
-  const btn = document.getElementById('tg-send-btn'); if (btn) btn.disabled = true;
-  try {
-    await addDoc(collection(db, 'tgChats', chatId, 'messages'), {
-      text,
-      sender:    'admin',
-      senderName: AD?.displayName || CU.displayName || 'Поддержка',
-      createdAt: serverTimestamp(),
-    });
-    await updateDoc(doc(db, 'tgChats', chatId), {
-      userUnread:  increment(1),
-      lastMessage: text.slice(0, 120),
-      updatedAt:   serverTimestamp(),
-    });
-  } catch { toast('Ошибка отправки', 'err'); }
-  if (btn) btn.disabled = false;
-  inp.focus();
-};
-
-window.switchSupportTab = function (tab) {
-  const webTab = document.getElementById('support-tab-web');
-  const tgTab  = document.getElementById('support-tab-tg');
-  const webBtn = document.getElementById('tab-web-support');
-  const tgBtn  = document.getElementById('tab-tg-support');
-  if (tab === 'web') {
-    webTab.style.display = '';
-    tgTab.style.display  = 'none';
-    webBtn.classList.add('active');
-    tgBtn.classList.remove('active');
-  } else {
-    webTab.style.display = 'none';
-    tgTab.style.display  = '';
-    webBtn.classList.remove('active');
-    tgBtn.classList.add('active');
-    renderTgChats();
-  }
-};
-
-// ══════════════════════════════════════════════════════════════
-// HR / VACANCIES
-// ══════════════════════════════════════════════════════════════
-
-async function loadVacancies() {
-  try {
-    const snap   = await getDocs(query(collection(db, 'vacancies'), orderBy('createdAt', 'desc')));
-    allVacancies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updateHrBadge();
-    if (document.getElementById('page-hr').classList.contains('active')) renderHrPage();
-  } catch (e) { console.error('Vacancies:', e); }
-}
-
-function updateHrBadge() {
-  const open = allVacancies.filter(v => v.status === 'open').length;
-  const b    = document.getElementById('sb-hr-b');
-  if (b) { b.textContent = open; b.style.display = open > 0 ? '' : 'none'; }
-}
-
-function renderHrPage() {
-  renderHrKPIs();
-  renderHrTable();
-}
-
-function renderHrKPIs() {
-  const open     = allVacancies.filter(v => v.status === 'open').length;
-  const closed   = allVacancies.filter(v => v.status === 'closed').length;
-  const totalApps= allVacancies.reduce((s, v) => s + (v.applications || 0), 0);
-  const depts    = new Set(allVacancies.filter(v => v.status === 'open').map(v => v.department)).size;
-  set('hr-kv-open',   open);
-  set('hr-kv-apps',   totalApps);
-  set('hr-kv-depts',  depts);
-  set('hr-kv-closed', closed);
-  updateHrBadge();
-}
-
-function renderHrTable() {
-  const body = document.getElementById('hr-ob'); if (!body) return;
-  const list = hrFilt === 'all' ? allVacancies : allVacancies.filter(v => v.status === hrFilt);
-  if (!list.length) {
-    body.innerHTML = '<tr><td colspan="8"><div class="er"><div class="er-ico">💼</div>Вакансии не найдены</div></td></tr>';
-    return;
-  }
-  const TYPE     = { 'full-time':'Полный день', 'part-time':'Частичная', internship:'Стажировка' };
-  const DEPT_ICO = { 'Технологии':'💻','Операции':'⚙️','Маркетинг':'📣','Финансы':'💰','Дизайн':'🎨','HR':'👥' };
-  body.innerHTML = list.map(v => {
-    const date   = v.createdAt?.toDate ? v.createdAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
-    const isOpen = v.status === 'open';
-    const sc     = isOpen ? 'var(--green)' : 'var(--text3)';
-    const sb     = isOpen ? 'var(--greend)' : 'var(--muted2)';
-    const sbr    = isOpen ? 'rgba(34,197,94,.2)' : 'var(--b)';
-    return `<tr>
-      <td style="min-width:150px">
-        <div style="font-weight:700;color:var(--text);font-size:.76rem">${escHtml(v.title || '—')}</div>
-        ${v.location ? `<div style="font-size:.6rem;color:var(--text3);margin-top:2px">📍 ${escHtml(v.location)}</div>` : ''}
-      </td>
-      <td><span style="font-size:.6rem;background:var(--s2);border:1px solid var(--b);padding:2px 8px;border-radius:5px">${DEPT_ICO[v.department] || '💼'} ${escHtml(v.department || '—')}</span></td>
-      <td style="font-size:.66rem;color:var(--text2)">${TYPE[v.type] || v.type || '—'}</td>
-      <td style="font-family:var(--fm);font-size:.66rem;color:var(--green);white-space:nowrap">${escHtml(v.salary || '—')}</td>
-      <td style="text-align:center"><span style="font-family:var(--fm);font-size:.74rem;color:var(--text2);font-weight:600">${v.applications || 0}</span></td>
-      <td><span class="ostatus" style="color:${sc};background:${sb};border-color:${sbr}"><span class="osdot"></span>${isOpen ? 'Открытая' : 'Закрытая'}</span></td>
-      <td class="mono" style="font-size:.6rem">${date}</td>
-      <td><div class="oact">
-        <button class="btn btn-secondary btn-sm" onclick="viewApplications('${v.id}')">Заявки (${v.applications || 0})</button>
-        <button class="btn btn-secondary btn-sm" onclick="openHrModal('${v.id}')">✎ Изменить</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-window.fHr = function (filter, btn) {
-  hrFilt = filter;
-  document.querySelectorAll('#page-hr .tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderHrTable();
-};
-
-window.openHrModal = function (id) {
-  editingVacId = id || null;
-  const isEdit = !!id;
-  document.getElementById('hr-modal-title').textContent = isEdit ? 'Редактировать вакансию' : 'Новая вакансия';
-  const delBtn = document.getElementById('hv-del-btn');
-  if (delBtn) delBtn.style.display = isEdit ? '' : 'none';
-
-  if (isEdit) {
-    const v = allVacancies.find(x => x.id === id);
-    if (v) {
-      document.getElementById('hv-title').value    = v.title || '';
-      document.getElementById('hv-salary').value   = v.salary || '';
-      document.getElementById('hv-dept').value     = v.department || 'Технологии';
-      document.getElementById('hv-type').value     = v.type || 'full-time';
-      document.getElementById('hv-location').value = v.location || '';
-      document.getElementById('hv-desc').value     = v.description || '';
-      document.getElementById('hv-req').value      = v.requirements || '';
-      document.getElementById('hv-status').value   = v.status || 'open';
-    }
-  } else {
-    ['hv-title','hv-salary','hv-location','hv-desc','hv-req'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.getElementById('hv-dept').value   = 'Технологии';
-    document.getElementById('hv-type').value   = 'full-time';
-    document.getElementById('hv-status').value = 'open';
-  }
-  openMo('hr-modal');
-};
-
-window.saveVacancy = async function () {
-  const title = document.getElementById('hv-title').value.trim();
-  if (!title) { toast('Укажите должность', 'err'); return; }
-  const data = {
-    title,
-    salary:      document.getElementById('hv-salary').value.trim(),
-    department:  document.getElementById('hv-dept').value,
-    type:        document.getElementById('hv-type').value,
-    location:    document.getElementById('hv-location').value.trim(),
-    description: document.getElementById('hv-desc').value.trim(),
-    requirements:document.getElementById('hv-req').value.trim(),
-    status:      document.getElementById('hv-status').value,
-    updatedAt:   serverTimestamp(),
-  };
-  try {
-    if (editingVacId) {
-      await updateDoc(doc(db, 'vacancies', editingVacId), data);
-      toast('Вакансия обновлена ✓', 'ok');
-    } else {
-      data.applications = 0;
-      data.createdAt    = serverTimestamp();
-      await addDoc(collection(db, 'vacancies'), data);
-      toast('Вакансия создана ✓', 'ok');
-    }
-    closeMo('hr-modal');
-    await loadVacancies();
-    renderHrPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.deleteVacancy = async function () {
-  if (!editingVacId) return;
-  const v = allVacancies.find(x => x.id === editingVacId);
-  if (!confirm('Удалить вакансию «' + (v?.title || editingVacId) + '»?')) return;
-  try {
-    await deleteDoc(doc(db, 'vacancies', editingVacId));
-    toast('Вакансия удалена', 'ok');
-    closeMo('hr-modal');
-    await loadVacancies();
-    renderHrPage();
-  } catch (e) { toast('Ошибка удаления: ' + e.message, 'err'); }
-};
-
-window.viewApplications = async function (vacId) {
-  const v = allVacancies.find(x => x.id === vacId);
-  document.getElementById('hr-apps-title').textContent = (v?.title || 'Вакансия') + ' — заявки';
-  const body = document.getElementById('hr-apps-body');
-  body.innerHTML = '<div class="pload"><div class="spin"></div></div>';
-  openMo('hr-apps-modal');
-  try {
-    const snap = await getDocs(query(collection(db, 'vacancies', vacId, 'applications'), orderBy('createdAt', 'desc')));
-    const apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!apps.length) {
-      body.innerHTML = '<div class="er" style="padding:36px"><div class="er-ico">📭</div>Заявок пока нет</div>';
-      return;
-    }
-    body.innerHTML = apps.map(a => {
-      const date = a.createdAt?.toDate
-        ? a.createdAt.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-        : '—';
-      return `<div style="padding:13px 18px;border-bottom:1px solid var(--b)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:10px;flex-wrap:wrap">
-          <div style="font-weight:700;font-size:.78rem;color:var(--text)">${escHtml(a.name || '—')}</div>
-          <span class="mono" style="font-size:.58rem;color:var(--text3)">${date}</span>
-        </div>
-        <div style="font-size:.68rem;color:var(--text3);display:flex;gap:14px;flex-wrap:wrap;margin-bottom:${a.message ? '7px' : '0'}">
-          ${a.phone ? `<span>📞 ${escHtml(a.phone)}</span>` : ''}
-          ${a.link  ? `<a href="${escHtml(a.link)}" target="_blank" style="color:var(--acc2);text-decoration:underline">🔗 Резюме</a>` : ''}
-        </div>
-        ${a.message ? `<div style="font-size:.7rem;color:var(--text2);background:var(--s2);border-radius:7px;padding:8px 11px;line-height:1.5">${escHtml(a.message)}</div>` : ''}
-      </div>`;
-    }).join('');
-  } catch { body.innerHTML = '<div class="er" style="padding:36px">Ошибка загрузки заявок</div>'; }
-};
-
-// ══════════════════════════════════════════════════════════════
-// DELIVERY SERVICES (Firestore: deliveryServices/)
-// Управление вкладками курьерских служб в корзине клиента.
-// ══════════════════════════════════════════════════════════════
-
-async function loadDeliveryServices() {
-  try {
-    const q  = query(collection(db, 'deliveryServices'), orderBy('order', 'asc'));
-    const sn = await getDocs(q);
-    allDeliveryServices = sn.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    try {
-      const sn = await getDocs(collection(db, 'deliveryServices'));
-      allDeliveryServices = sn.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch { allDeliveryServices = []; }
-  }
-  renderDeliveryServices();
-}
-
-function renderDeliveryServices() {
-  const el = document.getElementById('ds-list'); if (!el) return;
-  const active = allDeliveryServices.filter(s => s.active).length;
-  const tot    = allDeliveryServices.length;
-
-  const kva = document.getElementById('ds-kv-active');
-  const kvt = document.getElementById('ds-kv-total');
-  if (kva) kva.textContent = active;
-  if (kvt) kvt.textContent = tot;
-
-  if (!tot) {
-    el.innerHTML = `<div class="er"><div class="er-ico">🚚</div>Нет курьерских служб. Нажмите «Новая служба».</div>`;
-    return;
-  }
-
-  el.innerHTML = allDeliveryServices.map(s => {
-    const colLabel = s.targetCollection === 'mavsimiOrders'
-      ? '<span style="font-size:.5rem;padding:1px 5px;background:#3b82f620;color:#3b82f6;border:1px solid #3b82f630;border-radius:3px">mavsimiOrders</span>'
-      : '<span style="font-size:.5rem;padding:1px 5px;background:var(--acc)20;color:var(--acc);border:1px solid var(--acc)30;border-radius:3px">dastdarozOrders</span>';
-    return `<div style="background:var(--s);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px">
-      <img src="${s.logoUrl || ''}" alt="${s.name}"
-           style="width:44px;height:44px;border-radius:8px;object-fit:contain;background:var(--s2);border:1px solid var(--b)"
-           onerror="this.style.opacity='.3'">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:600;color:var(--text)">${s.name} ${s.active ? '' : '<span style="font-size:.55rem;color:var(--red)">(неактивна)</span>'}</div>
-        <div style="font-size:.62rem;color:var(--text3);margin-top:2px">${s.subtitle || ''}</div>
-        <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
-          <span style="font-size:.5rem;padding:1px 5px;background:var(--s2);border:1px solid var(--b);border-radius:3px;color:var(--text3)">id: ${s.id}</span>
-          ${colLabel}
-          <span style="font-size:.5rem;padding:1px 5px;background:var(--s2);border:1px solid var(--b);border-radius:3px;color:var(--text3)">порядок: ${s.order ?? '—'}</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-secondary btn-sm" onclick="toggleDSActive('${s.id}',${!s.active})">${s.active ? 'Деактивировать' : 'Активировать'}</button>
-        <button class="btn btn-secondary btn-sm" onclick="openDSModal('${s.id}')">Редактировать</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDS('${s.id}')">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-window.openDSModal = function (id = null) {
-  _dsEditId = id;
-  const s   = id ? allDeliveryServices.find(x => x.id === id) : null;
-  document.getElementById('ds-modal-title').textContent = id ? 'Редактировать службу' : 'Новая курьерская служба';
-  document.getElementById('ds-edit-id').value           = id || '';
-  document.getElementById('ds-id-inp').value            = s?.id || '';
-  document.getElementById('ds-id-inp').disabled         = !!id; // нельзя менять ID существующей
-  document.getElementById('ds-name-inp').value          = s?.name || '';
-  document.getElementById('ds-sub-inp').value           = s?.subtitle || '';
-  document.getElementById('ds-logo-inp').value          = s?.logoUrl || '';
-  document.getElementById('ds-col-inp').value           = s?.targetCollection || 'dastdarozOrders';
-  document.getElementById('ds-order-inp').value         = s?.order ?? '';
-  document.getElementById('ds-active-chk').checked      = s ? !!s.active : true;
-  document.getElementById('ds-modal-bg').style.display  = 'flex';
-};
-
-window.closeDSModal = function (e) {
-  if (e && e.target !== document.getElementById('ds-modal-bg')) return;
-  document.getElementById('ds-modal-bg').style.display = 'none';
-  _dsEditId = null;
-};
-
-window.saveDS = async function () {
-  const svcId = (document.getElementById('ds-id-inp').value || '').trim().toLowerCase().replace(/\s+/g, '-');
-  const name  = (document.getElementById('ds-name-inp').value || '').trim();
-  if (!svcId || !name) { toast('Заполните ID и название', 'warn'); return; }
-
-  const data = {
-    name,
-    subtitle:         (document.getElementById('ds-sub-inp').value || '').trim(),
-    logoUrl:          (document.getElementById('ds-logo-inp').value || '').trim(),
-    targetCollection: document.getElementById('ds-col-inp').value || 'dastdarozOrders',
-    order:            parseInt(document.getElementById('ds-order-inp').value) || 99,
-    active:           document.getElementById('ds-active-chk').checked,
-    updatedAt:        serverTimestamp(),
-  };
-
-  try {
-    if (_dsEditId) {
-      await updateDoc(doc(db, 'deliveryServices', _dsEditId), data);
-      toast('Служба обновлена', 'ok');
-    } else {
-      data.createdAt = serverTimestamp();
-      await setDoc(doc(db, 'deliveryServices', svcId), data);
-      toast('Служба добавлена', 'ok');
-    }
-    document.getElementById('ds-modal-bg').style.display = 'none';
-    _dsEditId = null;
-    await loadDeliveryServices();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.toggleDSActive = async function (id, val) {
-  try {
-    await updateDoc(doc(db, 'deliveryServices', id), { active: val, updatedAt: serverTimestamp() });
-    toast(val ? 'Служба активирована' : 'Служба деактивирована', 'ok');
-    await loadDeliveryServices();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.deleteDS = async function (id) {
-  if (!confirm(`Удалить курьерскую службу "${id}"? Это не удалит уже созданные заказы.`)) return;
-  try {
-    await deleteDoc(doc(db, 'deliveryServices', id));
-    toast('Служба удалена', 'ok');
-    await loadDeliveryServices();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// STORES — Legacy (Firestore: stores/)
-// Коллекция stores/ НЕ отображается в дашборде.
-// Данные загружаются, т.к. могут использоваться в home.html.
-// Функции openStoreModal/saveNewStore/etc. доступны через window.
-// ══════════════════════════════════════════════════════════════
-
-async function loadStores() {
-  try {
-    const snap = await getDocs(query(collection(db, 'stores'), orderBy('order', 'asc')));
-    allStores  = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) { console.error('Stores (legacy):', e); }
-}
-
-window.openStoreModal = function (id) {
-  const s = id ? allStores.find(x => x.id === id) : null;
-  document.getElementById('m-order-title').textContent = s ? 'Редактировать магазин' : 'Добавить магазин';
-  document.getElementById('m-order-body').innerHTML = `
-    <div class="mf"><label class="ml">Название (ID) *</label><input class="mi" id="st-name" placeholder="bi1" value="${escHtml(s?.name || '')}"/></div>
-    <div class="mf"><label class="ml">Описание</label><input class="mi" id="st-desc" value="${escHtml(s?.description || '')}"/></div>
-    <div class="mf"><label class="ml">URL изображения</label><input class="mi" id="st-img" value="${escHtml(s?.imageUrl || '')}"/></div>
-    <div class="mf"><label class="ml">URL JSON-каталога</label><input class="mi" id="st-menu-url" value="${escHtml(s?.menuUrl || '')}"/></div>
-    <div class="mr">
-      <div class="mf"><label class="ml">Бейдж</label><input class="mi" id="st-badge" value="${escHtml(s?.badge || '')}"/></div>
-      <div class="mf"><label class="ml">Порядок</label><input class="mi" type="number" id="st-order" value="${s?.order ?? 0}"/></div>
-    </div>
-    <div class="mf" style="display:flex;align-items:center;gap:10px;padding:10px 0">
-      <input type="checkbox" id="st-active" style="width:16px;height:16px;accent-color:var(--green)" ${s?.active !== false ? 'checked' : ''}>
-      <label for="st-active" style="font-size:.72rem;color:var(--text2)">Активен</label>
-    </div>
-    <div class="mf" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--b)">
-      <input type="checkbox" id="st-restricted" style="width:16px;height:16px;accent-color:var(--yellow)" ${s?.restricted ? 'checked' : ''}>
-      <label for="st-restricted" style="font-size:.72rem;color:var(--text2)">🚫 Ограничен</label>
-    </div>`;
-  document.getElementById('m-order-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="${id ? `saveEditStore('${id}')` : 'saveNewStore()'}">${id ? 'Сохранить' : 'Добавить'}</button>`;
-  openMo('order-modal');
-};
-
-window.saveNewStore = async function () {
-  const name = document.getElementById('st-name')?.value.trim();
-  if (!name) { toast('Введите название', 'warn'); return; }
-  try {
-    await addDoc(collection(db, 'stores'), {
-      name,
-      description: document.getElementById('st-desc')?.value.trim() || '',
-      imageUrl:    document.getElementById('st-img')?.value.trim() || '',
-      menuUrl:     document.getElementById('st-menu-url')?.value.trim() || '',
-      badge:       document.getElementById('st-badge')?.value.trim() || '',
-      order:       parseInt(document.getElementById('st-order')?.value || '0'),
-      active:      document.getElementById('st-active')?.checked ?? true,
-      restricted:  document.getElementById('st-restricted')?.checked ?? false,
-      createdAt:   serverTimestamp(),
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Магазин добавлен', 'ok');
-    closeMo('order-modal');
-    await loadStores();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.saveEditStore = async function (id) {
-  try {
-    await updateDoc(doc(db, 'stores', id), {
-      name:        document.getElementById('st-name')?.value.trim() || '',
-      description: document.getElementById('st-desc')?.value.trim() || '',
-      imageUrl:    document.getElementById('st-img')?.value.trim() || '',
-      menuUrl:     document.getElementById('st-menu-url')?.value.trim() || '',
-      badge:       document.getElementById('st-badge')?.value.trim() || '',
-      order:       parseInt(document.getElementById('st-order')?.value || '0'),
-      active:      document.getElementById('st-active')?.checked ?? true,
-      restricted:  document.getElementById('st-restricted')?.checked ?? false,
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Магазин обновлён', 'ok');
-    closeMo('order-modal');
-    await loadStores();
-  } catch { toast('Ошибка', 'err'); }
-};
-
-window.toggleStore = async function (id, val) {
-  try { await updateDoc(doc(db, 'stores', id), { active: val, updatedAt: serverTimestamp() }); toast(val ? 'Активирован' : 'Скрыт', 'ok'); await loadStores(); }
-  catch { toast('Ошибка', 'err'); }
-};
-
-window.toggleStoreRestrict = async function (id, val) {
-  try { await updateDoc(doc(db, 'stores', id), { restricted: val, updatedAt: serverTimestamp() }); toast(val ? '🚫 Ограничен' : '✅ Снято', val ? 'warn' : 'ok'); await loadStores(); }
-  catch { toast('Ошибка', 'err'); }
-};
-
-window.deleteStore = async function (id) {
-  const s = allStores.find(x => x.id === id);
-  if (!confirm(`Удалить магазин «${s?.name || id}»?`)) return;
-  try { await deleteDoc(doc(db, 'stores', id)); toast('Удалён', 'ok'); await loadStores(); }
-  catch { toast('Ошибка', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// RETAILERS (Firestore: retailers/)
-// ══════════════════════════════════════════════════════════════
-
-async function loadRetCities() {
-  if (_retCities.length) return;
-  try {
-    const snap  = await getDocs(query(collection(db, 'cities'), orderBy('order')));
-    _retCities  = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.active !== false);
-  } catch {
-    _retCities = [{ id: 'dushanbe', name: 'Душанбе' }];
-  }
-}
-
-function fillRetCitySelect(selId, selVal = '') {
-  const el = document.getElementById(selId); if (!el) return;
-  el.innerHTML = _retCities.map(c =>
-    `<option value="${c.id}"${c.id === selVal ? ' selected' : ''}>${escHtml(c.name)}${c.region ? ' · ' + escHtml(c.region) : ''}</option>`
-  ).join('');
-}
-
-async function renderRetailersPage() {
-  const list = document.getElementById('retailers-list'); if (!list) return;
-  list.innerHTML = '<div class="pload"><div class="spin"></div> Загружаем…</div>';
-
-  await loadRetCities();
-
-  try {
-    const snap = await getDocs(query(collection(db, 'retailers'), orderBy('order')));
-    _retailers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    try {
-      const snap2 = await getDocs(collection(db, 'retailers'));
-      _retailers  = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch { _retailers = []; }
-  }
-
-  // Считаем точки
-  const locCounts = {};
-  let totalLocs   = 0;
-  await Promise.all(_retailers.map(async r => {
-    try {
-      const ls      = await getDocs(collection(db, 'retailers', r.id, 'locations'));
-      locCounts[r.id] = ls.size;
-      totalLocs      += ls.size;
-    } catch { locCounts[r.id] = 0; }
-  }));
-
-  // KPI
-  const kEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  kEl('ret-kv-active', _retailers.filter(r => r.active !== false).length);
-  kEl('ret-kv-total',  _retailers.length);
-  kEl('ret-kv-locs',   totalLocs);
-
-  if (!_retailers.length) {
-    list.innerHTML = '<div class="pload" style="flex-direction:column;gap:8px;padding:32px"><div style="font-size:2rem;opacity:.12">🏪</div><div style="font-size:.76rem;color:var(--text3)">Ритейлеров пока нет — нажмите «Новый ритейлер»</div></div>';
-    return;
-  }
-
-  list.innerHTML = _retailers.map(r => {
-    const cnt      = locCounts[r.id] ?? 0;
-    const cityName = _retCities.find(c => c.id === r.primaryCityId)?.name || r.primaryCityId || '—';
-    const isActive = r.active !== false;
-    const logo     = r.imageUrl
-      ? `<img src="${escHtml(r.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none'">`
-      : `<span style="font-size:.52rem;font-weight:700;color:var(--text3)">${escHtml((r.name || '').slice(0, 2).toUpperCase())}</span>`;
-    return `<div class="ret-card" id="ret-card-${r.id}">
-      <div class="ret-card-head" onclick="toggleRetCard('${r.id}')">
-        <div class="ret-card-logo">${logo}</div>
-        <div class="ret-card-info">
-          <div class="ret-card-name">${escHtml(r.name || '—')}</div>
-          <div class="ret-card-meta">
-            <span class="ret-card-city">📍 ${escHtml(cityName)}</span>
-            <span class="ret-card-locs-count">🏪 ${cnt} точ${cnt === 1 ? 'ка' : cnt < 5 ? 'ки' : 'ек'}</span>
-            ${!isActive ? '<span style="font-size:.55rem;color:var(--text3);padding:2px 6px;background:var(--s2);border-radius:99px;border:1px solid var(--b)">скрыт</span>' : ''}
-          </div>
-        </div>
-        <div class="ret-card-actions">
-          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openRetailerModal('${r.id}')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <svg class="ret-card-chevron" id="ret-chevron-${r.id}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-      </div>
-      <div class="ret-locs-panel" id="ret-locs-${r.id}">
-        <div class="ret-locs-head">
-          <div class="ret-locs-title">📍 Точки магазина</div>
-          <button class="btn btn-success btn-sm" onclick="openLocationModal('${r.id}','${escHtml(r.name || '')}')">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Добавить точку
-          </button>
-        </div>
-        <div id="ret-locs-list-${r.id}"><div class="pload" style="padding:14px"><div class="spin"></div></div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-window.toggleRetCard = async function (rid) {
-  const panel = document.getElementById(`ret-locs-${rid}`);
-  const chev  = document.getElementById(`ret-chevron-${rid}`);
-  if (!panel) return;
-  const isOpen = panel.classList.contains('open');
-  panel.classList.toggle('open', !isOpen);
-  chev?.classList.toggle('open', !isOpen);
-  if (!isOpen) await loadLocationsPanel(rid);
-};
-
-async function loadLocationsPanel(rid) {
-  const el = document.getElementById(`ret-locs-list-${rid}`); if (!el) return;
-  el.innerHTML = '<div class="pload" style="padding:12px"><div class="spin"></div></div>';
-  try {
-    const snap = await getDocs(collection(db, 'retailers', rid, 'locations'));
-    renderLocationsPanel(rid, snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  } catch (e) {
-    el.innerHTML = `<div class="ret-loc-empty">Ошибка: ${e.message}</div>`;
-  }
-}
-
-function renderLocationsPanel(rid, locs) {
-  const el = document.getElementById(`ret-locs-list-${rid}`); if (!el) return;
-  if (!locs.length) {
-    el.innerHTML = '<div class="ret-loc-empty">Точек пока нет — нажмите «Добавить точку»</div>';
-    return;
-  }
-  const rName = _retailers.find(r => r.id === rid)?.name || '';
-  el.innerHTML = locs.map(loc => {
-    const cName  = _retCities.find(c => c.id === loc.cityId)?.name || loc.cityId || '—';
-    const coords = (loc.lat && loc.lng) ? `${(+loc.lat).toFixed(5)}, ${(+loc.lng).toFixed(5)}` : '';
-    return `<div class="ret-loc-row" style="cursor:pointer" onclick="openRetCatalog('${rid}','${escHtml(rName)}')">
-      <div class="ret-loc-ico">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      </div>
-      <div class="ret-loc-body">
-        <div class="ret-loc-addr">${escHtml(loc.address || '—')}</div>
-        <div class="ret-loc-meta">${escHtml(cName)}${coords ? ' · ' + coords : ''}</div>
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openRetCatalog('${rid}','${escHtml(rName)}')" title="Каталог товаров">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openLocationModal('${rid}','${escHtml(rName)}','${loc.id}')" title="Редактировать точку">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </button>
-    </div>`;
-  }).join('');
-}
-
-window.openRetailerModal = async function (rid = null) {
-  _editRetId = rid;
-  await loadRetCities();
-  fillRetCitySelect('ret-city');
-
-  const title   = document.getElementById('ret-modal-title');
-  const delBtn  = document.getElementById('ret-del-btn');
-  const preview = document.getElementById('ret-img-preview');
-  if (title)   title.textContent       = rid ? 'Редактировать ритейлер' : 'Новый ритейлер';
-  if (delBtn)  delBtn.style.display    = rid ? 'inline-flex' : 'none';
-  if (preview) preview.style.display   = 'none';
-
-  if (rid) {
-    const r = _retailers.find(x => x.id === rid);
-    if (r) {
-      const v = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
-      v('ret-id', r.id); v('ret-name', r.name || ''); v('ret-desc', r.description || '');
-      v('ret-image', r.imageUrl || ''); v('ret-order', r.order ?? 1);
-      v('ret-active', String(r.active !== false));
-      fillRetCitySelect('ret-city', r.primaryCityId || '');
-      if (r.imageUrl) _showRetPreview(r.imageUrl);
-    }
-  } else {
-    ['ret-id','ret-name','ret-desc','ret-image'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-    const ord = document.getElementById('ret-order'); if (ord) ord.value = _retailers.length + 1;
-    const act = document.getElementById('ret-active'); if (act) act.value = 'true';
-  }
-  openMo('retailer-modal');
-};
-
-window.closeRetailerModal = () => closeMo('retailer-modal');
-
-function _showRetPreview(url) {
-  const w = document.getElementById('ret-img-preview');
-  const i = document.getElementById('ret-img-preview-img');
-  if (!w || !i) return;
-  if (!url) { w.style.display = 'none'; return; }
-  i.src = url; w.style.display = 'block';
-}
-
-document.getElementById('ret-image')?.addEventListener('input', e => _showRetPreview(e.target.value));
-
-window.saveRetailer = async function () {
-  const name   = document.getElementById('ret-name')?.value.trim() || '';
-  const cityId = document.getElementById('ret-city')?.value || '';
-  const imgUrl = document.getElementById('ret-image')?.value.trim() || '';
-  const desc   = document.getElementById('ret-desc')?.value.trim() || '';
-  const order  = parseInt(document.getElementById('ret-order')?.value || '1');
-  const active = document.getElementById('ret-active')?.value === 'true';
-
-  if (!name)   { toast('Введите название ритейлера', 'warn'); return; }
-  if (!cityId) { toast('Выберите город', 'warn'); return; }
-
-  const btn = document.querySelector('#retailer-modal .btn-primary');
-  if (btn) { btn.disabled = true; btn.textContent = 'Сохраняем…'; }
-
-  try {
-    const data = { name, primaryCityId: cityId, imageUrl: imgUrl, description: desc, order: isNaN(order) ? 1 : order, active, updatedAt: serverTimestamp() };
-    if (_editRetId) {
-      await updateDoc(doc(db, 'retailers', _editRetId), data);
-      toast(`Ритейлер «${name}» обновлён`, 'ok');
-    } else {
-      data.cityIds  = [];
-      data.createdAt = serverTimestamp();
-      await addDoc(collection(db, 'retailers'), data);
-      toast(`Ритейлер «${name}» создан`, 'ok');
-    }
-    closeRetailerModal();
-    _retCities = [];
-    await renderRetailersPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; } }
-};
-
-window.deleteRetailer = async function () {
-  if (!_editRetId) return;
-  const r = _retailers.find(x => x.id === _editRetId);
-  if (!confirm(`Удалить ритейлер «${r?.name}» и все его точки?`)) return;
-  try {
-    const ls = await getDocs(collection(db, 'retailers', _editRetId, 'locations'));
-    const b  = writeBatch(db);
-    ls.docs.forEach(d => b.delete(d.ref));
-    b.delete(doc(db, 'retailers', _editRetId));
-    await b.commit();
-    toast('Ритейлер удалён', 'ok');
-    closeRetailerModal();
-    await renderRetailersPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.openLocationModal = async function (rid, rName, locId = null) {
-  _editLocRid = rid; _editLocId = locId;
-  await loadRetCities();
-
-  const title  = document.getElementById('loc-modal-title');
-  const delBtn = document.getElementById('loc-del-btn');
-  const rn     = document.getElementById('loc-retailer-name');
-  const ridEl  = document.getElementById('loc-retailer-id');
-  const lidEl  = document.getElementById('loc-id');
-
-  if (title)  title.textContent      = locId ? 'Редактировать точку' : 'Новая точка';
-  if (delBtn) delBtn.style.display   = locId ? 'inline-flex' : 'none';
-  if (rn)     rn.textContent         = rName || '';
-  if (ridEl)  ridEl.value            = rid;
-  if (lidEl)  lidEl.value            = locId || '';
-
-  if (locId) {
-    try {
-      const snap = await getDoc(doc(db, 'retailers', rid, 'locations', locId));
-      if (snap.exists()) {
-        const l = snap.data();
-        fillRetCitySelect('loc-city', l.cityId || '');
-        const v = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
-        v('loc-address', l.address || '');
-        v('loc-lat',     l.lat ?? '');
-        v('loc-lng',     l.lng ?? '');
-      }
-    } catch { toast('Ошибка загрузки точки', 'err'); }
-  } else {
-    const r = _retailers.find(x => x.id === rid);
-    fillRetCitySelect('loc-city', r?.primaryCityId || '');
-    ['loc-address','loc-lat','loc-lng'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-  }
-  openMo('location-modal');
-};
-
-window.closeLocationModal = () => closeMo('location-modal');
-
-window.saveLocation = async function () {
-  const rid     = document.getElementById('loc-retailer-id')?.value || '';
-  const locId   = document.getElementById('loc-id')?.value || '';
-  const cityId  = document.getElementById('loc-city')?.value || '';
-  const address = document.getElementById('loc-address')?.value.trim() || '';
-  const latRaw  = document.getElementById('loc-lat')?.value || '';
-  const lngRaw  = document.getElementById('loc-lng')?.value || '';
-
-  if (!cityId)  { toast('Выберите город', 'warn'); return; }
-  if (!address) { toast('Введите адрес', 'warn'); return; }
-
-  const lat = latRaw ? parseFloat(latRaw) : null;
-  const lng = lngRaw ? parseFloat(lngRaw) : null;
-  if ((latRaw && isNaN(lat)) || (lngRaw && isNaN(lng))) { toast('Некорректные координаты', 'warn'); return; }
-
-  const btn = document.querySelector('#location-modal .btn-primary');
-  if (btn) { btn.disabled = true; btn.textContent = 'Сохраняем…'; }
-
-  try {
-    const data = { cityId, address, updatedAt: serverTimestamp() };
-    if (lat !== null) data.lat = lat;
-    if (lng !== null) data.lng = lng;
-
-    if (locId) {
-      await updateDoc(doc(db, 'retailers', rid, 'locations', locId), data);
-    } else {
-      data.createdAt = serverTimestamp();
-      await addDoc(collection(db, 'retailers', rid, 'locations'), data);
-    }
-    await updateDoc(doc(db, 'retailers', rid), { cityIds: arrayUnion(cityId) });
-
-    toast('Точка сохранена ✓', 'ok');
-    closeLocationModal();
-    await loadLocationsPanel(rid);
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; } }
-};
-
-window.deleteLocation = async function () {
-  const rid    = document.getElementById('loc-retailer-id')?.value || '';
-  const locId  = document.getElementById('loc-id')?.value || '';
-  const cityId = document.getElementById('loc-city')?.value || '';
-  if (!rid || !locId) return;
-  if (!confirm('Удалить эту точку?')) return;
-  try {
-    await deleteDoc(doc(db, 'retailers', rid, 'locations', locId));
-    const rem = await getDocs(query(collection(db, 'retailers', rid, 'locations'), where('cityId', '==', cityId)));
-    if (rem.empty) await updateDoc(doc(db, 'retailers', rid), { cityIds: arrayRemove(cityId) });
-    toast('Точка удалена', 'ok');
-    closeLocationModal();
-    await loadLocationsPanel(rid);
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// GENERAL CATALOGS
-// ══════════════════════════════════════════════════════════════
-
-async function loadGenCatalogs() {
-  try {
-    const q    = query(collection(db, 'generalCatalogs'), orderBy('order', 'asc'));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      allGenCatalogs = GC_DEFAULTS.map((c, i) => ({ id: c.slug, ...c, order: i, active: true, _isDefault: true }));
-    } else {
-      allGenCatalogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-    if (document.getElementById('page-gen-catalogs')?.classList.contains('active')) renderGenCatalogsPage();
-  } catch (e) {
-    console.error('GenCatalogs:', e);
-    allGenCatalogs = GC_DEFAULTS.map((c, i) => ({ id: c.slug, ...c, order: i, active: true, _isDefault: true }));
-  }
-}
-
-function renderGenCatalogsPage() {
-  const grid = document.getElementById('gen-catalogs-grid'); if (!grid) return;
-  const active = allGenCatalogs.filter(c => c.active !== false).length;
-  const hidden = allGenCatalogs.filter(c => c.active === false).length;
-  set('gc-kv-active', active);
-  set('gc-kv-hidden', hidden);
-  set('gc-kv-total',  allGenCatalogs.length);
-
-  if (!allGenCatalogs.length) {
-    grid.innerHTML = '<div class="er" style="grid-column:1/-1"><div class="er-ico">📂</div>Нет категорий. Нажмите «Инициализировать все»</div>';
-    return;
-  }
-
-  grid.innerHTML = allGenCatalogs.map(c => {
-    const isActive    = c.active !== false;
-    const statusColor = isActive ? 'var(--green)' : 'var(--text3)';
-    const statusBg    = isActive ? 'var(--greend)' : 'var(--muted2)';
-    const cityIds     = c.cityIds || [];
-    const citiesSnip  = cityIds.length === 0
-      ? `<div style="font-size:.52rem;color:var(--cyan);margin-top:5px;display:flex;align-items:center;gap:3px">
-           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
-           Все города
-         </div>`
-      : `<div style="font-size:.52rem;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:3px;flex-wrap:wrap">
-           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-           ${cityIds.map(cid => {
-             const cn = (_retCities || []).find(x => x.id === cid)?.name || cid;
-             return `<span style="padding:1px 5px;background:var(--s2);border:1px solid var(--b);border-radius:99px">${escHtml(cn)}</span>`;
-           }).join('')}
-         </div>`;
-    return `<div class="gc-card${isActive ? '' : ' gc-card-hidden'}">
-      <div class="gc-card-img">
-        <img src="storage/general-catalogs/${escHtml(c.slug)}.png" alt="${escHtml(c.name || c.slug)}"
-             style="width:100%;height:100%;object-fit:cover;display:block"
-             onerror="this.style.display='none';this.parentElement.classList.add('gc-img-err')"/>
-        <div class="gc-card-status" style="color:${statusColor};background:${statusBg};border-color:${statusColor}">
-          <div style="width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0"></div>
-          ${isActive ? 'Активна' : 'Скрыта'}
-        </div>
-      </div>
-      <div class="gc-card-body">
-        <div class="gc-card-name" title="${escHtml(c.name || c.slug)}">${escHtml(c.name || c.slug)}</div>
-        <div class="gc-card-slug">${escHtml(c.slug)}</div>
-        ${citiesSnip}
-        <div class="gc-card-foot">
-          <button class="btn btn-secondary btn-sm" onclick="openGcModal('${escHtml(c.id || c.slug)}')">✏️ Изменить</button>
-          <button class="btn btn-${isActive ? 'danger' : 'success'} btn-sm" onclick="toggleGc('${escHtml(c.id || c.slug)}',${!isActive})">${isActive ? 'Скрыть' : 'Показать'}</button>
-        </div>
-        ${c._isDefault ? '<div style="font-size:.5rem;color:var(--yellow);margin-top:6px">⚠ Не сохранено в Firestore</div>' : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-window.openGcModal = async function (id) {
-  const c = allGenCatalogs.find(x => (x.id || x.slug) === id);
-  if (!c) { toast('Не найдено', 'warn'); return; }
-
-  await loadRetCities();
-  const selCityIds = c.cityIds || [];
-  const citiesHtml = _retCities.length
-    ? _retCities.map(city => `
-        <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--b);background:var(--s2);transition:border-color .15s"
-               onmouseenter="this.style.borderColor='var(--bh)'" onmouseleave="this.style.borderColor='var(--b)'">
-          <input type="checkbox" class="gc-city-cb" value="${escHtml(city.id)}"
-                 style="width:15px;height:15px;accent-color:var(--acc);cursor:pointer;flex-shrink:0"
-                 ${selCityIds.includes(city.id) ? 'checked' : ''}>
-          <span style="font-size:.72rem;color:var(--text)">${escHtml(city.name)}${city.region ? ` <span style="color:var(--text3);font-size:.6rem">· ${escHtml(city.region)}</span>` : ''}</span>
-        </label>`).join('')
-    : '<div style="font-size:.68rem;color:var(--text3)">Города не загружены</div>';
-
-  document.getElementById('gc-modal-title').textContent = 'Редактировать категорию';
-  document.getElementById('gc-modal-body').innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-      <img src="storage/general-catalogs/${escHtml(c.slug)}.png" alt=""
-           style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid var(--b);background:var(--s2)"
-           onerror="this.style.display='none'"/>
-      <div>
-        <div style="font-family:var(--fm);font-size:.66rem;color:var(--text3);margin-bottom:3px">${escHtml(c.slug)}.png</div>
-        <div style="font-size:.62rem;color:var(--text3)">Иконка: storage/general-catalogs/</div>
-      </div>
-    </div>
-    <div class="mf"><label class="ml">Отображаемое название *</label><input class="mi" id="gc-edit-name" value="${escHtml(c.name || c.slug)}" placeholder="Например: Суши"/></div>
-    <div class="mf"><label class="ml">Порядок отображения</label><input class="mi" type="number" id="gc-edit-order" value="${c.order ?? 0}" min="0"/></div>
-    <div class="mf" style="display:flex;align-items:center;gap:10px;padding:8px 0">
-      <input type="checkbox" id="gc-edit-active" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer" ${c.active !== false ? 'checked' : ''}>
-      <label for="gc-edit-active" style="font-size:.72rem;color:var(--text2);cursor:pointer">Активна (показывается на главной)</label>
-    </div>
-    <div class="mf" style="margin-top:4px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <label class="ml" style="margin-bottom:0">Города показа</label>
-        <span style="font-size:.56rem;color:var(--text3)">Пусто = все города</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px" id="gc-cities-list">${citiesHtml}</div>
-      <div style="font-size:.58rem;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:4px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Если ни один город не отмечен — категория показывается во всех городах
-      </div>
-    </div>
-    <input type="hidden" id="gc-edit-slug" value="${escHtml(c.slug)}"/>`;
-
-  document.getElementById('gc-modal-foot').innerHTML = `
-    <button class="btn btn-secondary" onclick="closeMo('gc-modal')">Отмена</button>
-    <button class="btn btn-primary"   onclick="saveGc('${escHtml(c.id || c.slug)}')">Сохранить</button>`;
-  openMo('gc-modal');
-};
-
-window.saveGc = async function (id) {
-  const name = document.getElementById('gc-edit-name')?.value.trim();
-  const slug = document.getElementById('gc-edit-slug')?.value.trim();
-  if (!name) { toast('Введите название', 'warn'); return; }
-  const cityIds = [...document.querySelectorAll('.gc-city-cb:checked')].map(cb => cb.value);
-  const data = {
-    slug, name,
-    order:     parseInt(document.getElementById('gc-edit-order')?.value || '0'),
-    active:    document.getElementById('gc-edit-active')?.checked ?? true,
-    cityIds,
-    updatedAt: serverTimestamp(),
-  };
-  try {
-    const existing = allGenCatalogs.find(x => (x.id || x.slug) === id && !x._isDefault);
-    if (existing) {
-      await updateDoc(doc(db, 'generalCatalogs', id), data);
-    } else {
-      data.createdAt = serverTimestamp();
-      await setDoc(doc(db, 'generalCatalogs', slug), data);
-    }
-    toast('Сохранено ✓', 'ok');
-    closeMo('gc-modal');
-    await loadGenCatalogs();
-    renderGenCatalogsPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.toggleGc = async function (id, val) {
-  try {
-    const existing = allGenCatalogs.find(x => (x.id || x.slug) === id && !x._isDefault);
-    if (existing) {
-      await updateDoc(doc(db, 'generalCatalogs', id), { active: val, updatedAt: serverTimestamp() });
-    } else {
-      const def = GC_DEFAULTS.find(x => x.slug === id);
-      if (!def) { toast('Не найдено', 'warn'); return; }
-      await setDoc(doc(db, 'generalCatalogs', id), {
-        slug: def.slug, name: def.name, order: GC_DEFAULTS.findIndex(x => x.slug === id),
-        active: val, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      });
-    }
-    toast(val ? 'Активирована' : 'Скрыта', 'ok');
-    await loadGenCatalogs();
-    renderGenCatalogsPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.initGenCatalogs = async function () {
-  if (!confirm('Создать все 51 категорию в Firestore? Уже существующие будут пропущены.')) return;
-  toast('Инициализация…', 'info');
-  let created = 0, skipped = 0;
-  try {
-    const snap     = await getDocs(collection(db, 'generalCatalogs'));
-    const existing = new Set(snap.docs.map(d => d.id));
-    const batch    = [];
-    GC_DEFAULTS.forEach((c, i) => {
-      if (existing.has(c.slug)) { skipped++; return; }
-      batch.push(setDoc(doc(db, 'generalCatalogs', c.slug), {
-        slug: c.slug, name: c.name, order: i, active: true,
-        cityIds: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      }));
-      created++;
-    });
-    await Promise.all(batch);
-    toast(`✓ Создано: ${created}, пропущено: ${skipped}`, 'ok');
-    await loadGenCatalogs();
-    renderGenCatalogsPage();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// ADS / PROMO
-// ══════════════════════════════════════════════════════════════
-
-window.renderAdsPage = async function () {
-  try {
-    const snap = await getDoc(doc(db, 'config', 'homePromo'));
-    const d    = snap.exists() ? snap.data() : {};
-    document.getElementById('ads-active').checked  = d.active !== false;
-    document.getElementById('ads-img-url').value   = d.imageUrl || '';
-    document.getElementById('ads-link-url').value  = d.linkUrl  || '';
-    previewPromo();
-  } catch { toast('Ошибка загрузки рекламы', 'err'); }
-};
-
-window.previewPromo = function () {
-  const url   = document.getElementById('ads-img-url').value.trim();
-  const wrap  = document.getElementById('ads-preview-wrap');
-  const img   = document.getElementById('ads-preview-img');
-  const empty = document.getElementById('ads-preview-empty');
-  if (!url) { wrap.style.display = 'none'; return; }
-  wrap.style.display  = 'block';
-  img.style.display   = 'none';
-  empty.style.display = 'none';
-  img.src = url;
-};
-
-window.saveHomePromo = async function () {
-  const imageUrl = document.getElementById('ads-img-url').value.trim();
-  const linkUrl  = document.getElementById('ads-link-url').value.trim();
-  const active   = document.getElementById('ads-active').checked;
-  try {
-    await setDoc(doc(db, 'config', 'homePromo'), { imageUrl, linkUrl, active, updatedAt: serverTimestamp() }, { merge: true });
-    toast('Реклама сохранена ✓', 'ok');
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// PARTNER APPLICATIONS
-// ══════════════════════════════════════════════════════════════
-
-async function loadPartnerApps() {
-  try {
-    const snap     = await getDocs(query(collection(db, 'partnerApplications'), orderBy('createdAt', 'desc')));
-    allPartnerApps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updatePartnerBadge();
-    if (document.getElementById('page-partners')?.classList.contains('active')) renderPartnerPage();
-  } catch (e) { console.error('PartnerApps:', e); }
-}
-
-function updatePartnerBadge() {
-  const n = allPartnerApps.filter(a => a.status === 'new').length;
-  const b = document.getElementById('sb-partner-b');
-  if (b) { b.textContent = n; b.style.display = n > 0 ? '' : 'none'; }
-}
-
-function renderPartnerPage() {
-  const body = document.getElementById('partner-ob'); if (!body) return;
-  const total     = allPartnerApps.length;
-  const newC      = allPartnerApps.filter(a => a.status === 'new').length;
-  const contacted = allPartnerApps.filter(a => a.status === 'contacted').length;
-  set('partner-kv-new',       newC);
-  set('partner-kv-contacted', contacted);
-  set('partner-kv-total',     total);
-
-  const list = partnerFilt === 'all' ? allPartnerApps : allPartnerApps.filter(a => a.status === partnerFilt);
-  if (!list.length) {
-    body.innerHTML = `<tr><td colspan="8"><div class="er"><div class="er-ico">🤝</div>${partnerFilt === 'new' ? 'Нет новых заявок' : 'Заявок не найдено'}</div></td></tr>`;
-    return;
-  }
-  body.innerHTML = list.map(a => {
-    const raw  = a.createdAt;
-    const date = raw?.toDate
-      ? raw.toDate().toLocaleDateString('ru-RU', { day:'2-digit', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' })
-      : raw ? new Date(raw).toLocaleDateString('ru-RU') : '—';
-    const isNew       = a.status === 'new';
-    const isContacted = a.status === 'contacted';
-    const sc  = isNew ? 'var(--yellow)' : isContacted ? 'var(--green)' : 'var(--text3)';
-    const sb  = isNew ? 'var(--yellowd)' : isContacted ? 'var(--greend)' : 'var(--muted2)';
-    const sbr = isNew ? 'rgba(245,158,11,.25)' : isContacted ? 'rgba(34,197,94,.2)' : 'var(--b)';
-    const sl  = isNew ? 'Новая' : isContacted ? 'Связались' : 'Архив';
-    return `<tr>
-      <td style="min-width:140px">
-        <div style="font-weight:700;color:var(--text);font-size:.76rem">${escHtml(a.company || '—')}</div>
-        ${a.restaurant ? `<div style="font-size:.6rem;color:var(--text3);margin-top:2px">🍽 ${escHtml(a.restaurant)}</div>` : ''}
-      </td>
-      <td style="font-size:.7rem;color:var(--text2);max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(a.address || '—')}</div></td>
-      <td style="font-family:var(--fm);font-size:.68rem;color:var(--acc2);white-space:nowrap">${escHtml(a.phone || '—')}</td>
-      <td style="font-family:var(--fm);font-size:.64rem;color:var(--text3);white-space:nowrap">${a.phone2 ? escHtml(a.phone2) : '—'}</td>
-      <td style="max-width:200px;font-size:.68rem;color:var(--text2)">${a.comment ? `<span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word">${escHtml(a.comment)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
-      <td><span class="ostatus" style="color:${sc};background:${sb};border-color:${sbr}"><span class="osdot"></span>${sl}</span></td>
-      <td class="mono" style="font-size:.58rem;white-space:nowrap">${date}</td>
-      <td><div class="oact">
-        ${isNew ? `<button class="btn btn-success btn-sm" onclick="markPartner('${a.id}','contacted')">✓ Связались</button>` : ''}
-        ${a.status === 'contacted' ? `<button class="btn btn-secondary btn-sm" onclick="markPartner('${a.id}','archived')">Архив</button>` : ''}
-        <button class="btn btn-danger btn-sm" onclick="deletePartnerApp('${a.id}')">✕</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-window.fPartners = function (filter, btn) {
-  partnerFilt = filter;
-  document.querySelectorAll('#page-partners .tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderPartnerPage();
-};
-
-window.markPartner = async function (id, status) {
-  try {
-    await updateDoc(doc(db, 'partnerApplications', id), { status, updatedAt: serverTimestamp() });
-    toast(status === 'contacted' ? 'Отмечено: связались ✓' : 'Перемещено в архив', 'ok');
-    await loadPartnerApps();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.deletePartnerApp = async function (id) {
-  const a = allPartnerApps.find(x => x.id === id);
-  if (!confirm('Удалить заявку от «' + (a?.company || id) + '»?')) return;
-  try {
-    await deleteDoc(doc(db, 'partnerApplications', id));
-    toast('Заявка удалена', 'ok');
-    await loadPartnerApps();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-/** Вызывается из home.html — сохраняет заявку партнёра в Firestore */
-window._submitPartnerApp = async function (data) {
-  await addDoc(collection(db, 'partnerApplications'), { ...data, status: 'new', createdAt: serverTimestamp() });
-  await loadPartnerApps();
-};
-
-// ══════════════════════════════════════════════════════════════
-// DELIVERY ZONES (Города доставки)
-// ══════════════════════════════════════════════════════════════
-
-async function loadAZones() {
-  document.getElementById('az-tbody').innerHTML = '<tr><td colspan="6"><div class="pload"><div class="spin"></div></div></td></tr>';
-  try {
-    const snap = await getDocs(query(collection(db, 'cities'), orderBy('order')));
-    allCities  = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderCities();
-    const inactiveCount = allCities.filter(c => c.active === false).length;
-    const sb = document.getElementById('sb-az-b');
-    if (sb) { sb.style.display = inactiveCount ? '' : 'none'; sb.textContent = inactiveCount; }
-  } catch (e) {
-    document.getElementById('az-tbody').innerHTML =
-      `<tr><td colspan="6" style="color:var(--red);text-align:center;padding:24px;font-size:.76rem">Ошибка загрузки: ${e.message}</td></tr>`;
-  }
-}
-
-function renderCities() {
-  const active   = allCities.filter(c => c.active !== false).length;
-  const inactive = allCities.filter(c => c.active === false).length;
-  set('az-kv-total',   allCities.length || '0');
-  set('az-kv-avail',   active);
-  set('az-kv-unavail', inactive);
-
-  const list = _cityFilter === 'active'   ? allCities.filter(c => c.active !== false)
-             : _cityFilter === 'inactive' ? allCities.filter(c => c.active === false)
-             : allCities;
-
-  if (!list.length) {
-    document.getElementById('az-tbody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--muted2);font-size:.76rem">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:.25;display:block;margin:0 auto 8px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      Городов нет
-    </td></tr>`;
-    return;
-  }
-
-  document.getElementById('az-tbody').innerHTML = list.map(c => {
-    const ok  = c.active !== false;
-    const col = ok ? 'var(--green)' : 'var(--red)';
-    const lbl = ok ? 'Активен' : 'Скоро';
-    return `<tr>
-      <td style="font-size:.68rem;color:var(--muted2);font-family:monospace;white-space:nowrap">${escHtml(c.id)}</td>
-      <td style="font-weight:600;white-space:nowrap">${escHtml(c.name || '—')}</td>
-      <td style="color:var(--text2);font-size:.72rem">${escHtml(c.region || '—')}</td>
-      <td style="text-align:center;color:var(--muted2);font-size:.76rem;font-weight:600">${c.order ?? '—'}</td>
-      <td><span class="ostatus" style="color:${col};border-color:${col}30;background:${col}10;font-size:.52rem">${lbl}</span></td>
-      <td><div style="display:flex;gap:5px;align-items:center">
-        <button class="btn btn-secondary btn-sm" onclick="toggleCity('${c.id}',${ok})" style="font-size:.6rem;padding:4px 9px">${ok ? 'Отключить' : 'Включить'}</button>
-        <button class="btn btn-secondary btn-sm" onclick="openCityModal('${c.id}')" style="font-size:.6rem;padding:4px 9px">✏️</button>
-        <button class="btn btn-sm" onclick="deleteCity('${c.id}','${escHtml((c.name || '').replace(/'/g, "\\'"))}')" style="font-size:.6rem;padding:4px 9px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25)">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-window.cityFilter = function (f, btn) {
-  _cityFilter = f;
-  document.querySelectorAll('#az-tabs .tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderCities();
-};
-
-window.openCityModal = function (id = null) {
-  _cityEditId = id;
-  const c = id ? allCities.find(x => x.id === id) : null;
-  document.getElementById('az-modal-title').textContent = c ? 'Редактировать город' : 'Новый город';
-  const idField = document.getElementById('az-id-field');
-  const idInput = document.getElementById('az-id');
-  if (idField) idField.style.display = c ? 'none' : '';
-  if (idInput) { idInput.value = ''; idInput.disabled = !!c; }
-  document.getElementById('az-name').value            = c?.name   || '';
-  document.getElementById('az-region').value          = c?.region || '';
-  document.getElementById('az-order').value           = c?.order  ?? (allCities.length + 1);
-  document.getElementById('az-avail-tog').checked     = c ? c.active !== false : true;
-  document.getElementById('az-modal').classList.add('open');
-  setTimeout(() => document.getElementById(c ? 'az-name' : 'az-id').focus(), 150);
-};
-
-window.closeCityModal = function () {
-  document.getElementById('az-modal').classList.remove('open');
-  _cityEditId = null;
-};
-
-window.saveCity = async function () {
-  const name   = document.getElementById('az-name').value.trim();
-  const region = document.getElementById('az-region').value.trim();
-  const order  = parseInt(document.getElementById('az-order').value) || 1;
-  const active = document.getElementById('az-avail-tog').checked;
-  const rawId  = document.getElementById('az-id')?.value.trim();
-
-  if (!name) { toast('Введите название города', 'warn'); return; }
-  if (!_cityEditId && !rawId) { toast('Введите ID города (напр. dushanbe)', 'warn'); return; }
-  if (!_cityEditId && !/^[a-z0-9_-]+$/.test(rawId)) {
-    toast('ID может содержать только строчные буквы, цифры, - и _', 'warn'); return;
-  }
-
-  const btn = document.getElementById('az-save-btn');
-  btn.disabled = true; btn.textContent = 'Сохраняем…';
-  try {
-    const data = { name, region, order, active };
-    if (_cityEditId) {
-      await updateDoc(doc(db, 'cities', _cityEditId), data);
-      toast('Город обновлён ✓', 'ok');
-    } else {
-      await setDoc(doc(db, 'cities', rawId), data);
-      toast('Город добавлен ✓', 'ok');
-    }
-    closeCityModal();
-    await loadAZones();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-  finally { btn.disabled = false; btn.textContent = 'Сохранить'; }
-};
-
-window.toggleCity = async function (id, currentActive) {
-  try {
-    await updateDoc(doc(db, 'cities', id), { active: !currentActive });
-    toast(currentActive ? '🔜 Город скрыт' : '✅ Город активирован', 'ok');
-    await loadAZones();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.deleteCity = async function (id, name) {
-  if (!confirm(`Удалить город «${name}»?\nЭто действие необратимо.`)) return;
-  try {
-    await deleteDoc(doc(db, 'cities', id));
-    toast('Город удалён', 'ok');
-    await loadAZones();
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// RETAILER CATALOG  (retailers/{rid}/catalog/{productId})
-// ══════════════════════════════════════════════════════════════
-
-let _retCatRid   = null;
-let _retCatName  = '';
-let _retCatProds = [];
-
-window.openRetCatalog = async function (rid, rName) {
-  _retCatRid   = rid;
-  _retCatName  = rName;
-  _retCatProds = [];
-
-  document.getElementById('ret-cat-title').textContent = rName;
-  const search = document.getElementById('ret-cat-search');
-  const filter = document.getElementById('ret-cat-filter');
-  if (search) search.value = '';
-  if (filter) filter.innerHTML = '<option value="">Все категории</option>';
-  document.getElementById('ret-cat-body').innerHTML = _retCatSkeleton();
-  openMo('ret-catalog-modal');
-
-  try {
-    const snap = await getDocs(collection(db, 'retailers', rid, 'catalog'));
-    _retCatProds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    _retCatProds.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
-    _fillRetCatFilter();
-    renderRetCatalog();
-  } catch (e) {
-    document.getElementById('ret-cat-body').innerHTML =
-      `<div class="ret-loc-empty" style="padding:28px">Ошибка загрузки: ${e.message}</div>`;
-  }
-};
-
-function _retCatSkeleton() {
-  const row = () => `<div class="ret-cat-prod">
-    <div class="ret-cat-prod-img" style="background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;border:none"></div>
-    <div class="ret-cat-prod-body">
-      <div class="skl-block" style="height:8px;width:58%;margin-bottom:6px"></div>
-      <div class="skl-block" style="height:7px;width:36%"></div>
-    </div>
-    <div class="skl-block" style="height:9px;width:50px;border-radius:4px;flex-shrink:0"></div>
-    <div style="display:flex;gap:5px;flex-shrink:0">
-      <div class="skl-block" style="height:26px;width:28px;border-radius:7px"></div>
-      <div class="skl-block" style="height:26px;width:28px;border-radius:7px"></div>
-    </div>
-  </div>`;
-  return [1,2,3,4,5].map(row).join('');
-}
-
-function _fillRetCatFilter() {
-  const sel = document.getElementById('ret-cat-filter'); if (!sel) return;
-  const cats = [...new Set(_retCatProds.map(p => p.categoryId).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
-  sel.innerHTML = '<option value="">Все категории</option>' +
-    cats.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
-}
-
-function renderRetCatalog() {
-  const body   = document.getElementById('ret-cat-body'); if (!body) return;
-  const search = (document.getElementById('ret-cat-search')?.value || '').toLowerCase().trim();
-  const cat    = document.getElementById('ret-cat-filter')?.value || '';
-
-  const list = _retCatProds.filter(p => {
-    if (cat && p.categoryId !== cat) return false;
-    if (search && !(p.name || '').toLowerCase().includes(search)) return false;
-    return true;
-  });
-
-  if (!list.length) {
-    body.innerHTML = _retCatProds.length
-      ? '<div class="ret-loc-empty">Ничего не найдено по фильтру</div>'
-      : '<div class="ret-loc-empty" style="padding:32px">Каталог пуст — нажмите «+ Товар»</div>';
-    return;
-  }
-
-  body.innerHTML = list.map(p => {
-    const avail = p.available !== false;
-    const img = p.imageUrl
-      ? `<img src="${escHtml(p.imageUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
-      : `<span style="font-size:.9rem">📦</span>`;
-    return `<div class="ret-cat-prod${avail ? '' : ' ret-cat-prod-hidden'}">
-      <div class="ret-cat-prod-img">${img}</div>
-      <div class="ret-cat-prod-body">
-        <div class="ret-cat-prod-name">${escHtml(p.name || '—')}</div>
-        <div class="ret-cat-prod-meta">
-          ${p.categoryId ? `<span class="ret-cat-badge-cat">${escHtml(p.categoryId)}</span>` : ''}
-          ${!avail ? '<span class="ret-cat-badge-hid">скрыт</span>' : ''}
-        </div>
-      </div>
-      <div class="ret-cat-prod-price">${p.price != null ? p.price + '\u00a0см' : '—'}</div>
-      <div class="ret-cat-prod-acts">
-        <button class="btn btn-secondary btn-sm" onclick="openRetProdModal('${p.id}')" title="Изменить">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="btn btn-${avail ? 'warn' : 'success'} btn-sm"
-          onclick="toggleRetProd('${p.id}',${!avail})"
-          title="${avail ? 'Скрыть товар' : 'Показать товар'}">
-          ${avail
-            ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>`
-            : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`}
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-window.filterRetCatalog = function () { renderRetCatalog(); };
-
-window.openRetProdModal = function (id = null) {
-  const p = id ? _retCatProds.find(x => x.id === id) : null;
-  document.getElementById('m-order-title').textContent =
-    p ? 'Изменить: ' + (p.name || '—') : 'Новый товар';
-  document.getElementById('m-order-body').innerHTML = `
-    <div style="padding:8px 10px;background:var(--s2);border:1px solid var(--b);border-radius:8px;font-size:.62rem;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:6px">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      <strong style="color:var(--text)">${escHtml(_retCatName)}</strong>
-      <code style="color:var(--text3);font-size:.58rem">retailers/${_retCatRid}/catalog/</code>
-    </div>
-    <div class="mf">
-      <label class="ml">Название *</label>
-      <input class="mi" id="rp-nm" value="${escHtml(p?.name || '')}" placeholder="Молоко 1л"/>
-    </div>
-    <div class="mf">
-      <label class="ml">Описание</label>
-      <input class="mi" id="rp-ds" value="${escHtml(p?.description || '')}" placeholder="Краткое описание…"/>
-    </div>
-    <div class="mr">
-      <div class="mf">
-        <label class="ml">Цена (смн) *</label>
-        <input class="mi" type="number" min="0" id="rp-pr" value="${p?.price ?? ''}" placeholder="10"/>
-      </div>
-      <div class="mf">
-        <label class="ml">Категория</label>
-        <input class="mi" id="rp-ct" value="${escHtml(p?.categoryId || '')}" placeholder="молочное"/>
-      </div>
-    </div>
-    <div class="mf">
-      <label class="ml">URL изображения</label>
-      <input class="mi" id="rp-im" value="${escHtml(p?.imageUrl || '')}" placeholder="https://…"/>
-    </div>`;
-  document.getElementById('m-order-foot').innerHTML = `
-    ${p ? `<button class="btn btn-danger" style="margin-right:auto" onclick="deleteRetProd('${id}')">Удалить</button>` : ''}
-    <button class="btn btn-secondary" onclick="closeMo('order-modal')">Отмена</button>
-    <button class="btn btn-primary" onclick="${p ? `saveRetEditProd('${id}')` : 'saveRetNewProd()'}">
-      ${p ? 'Сохранить' : 'Добавить'}
-    </button>`;
-  openMo('order-modal');
-};
-
-window.saveRetNewProd = async function () {
-  const name  = document.getElementById('rp-nm')?.value.trim();
-  const price = parseFloat(document.getElementById('rp-pr')?.value || '0');
-  if (!name)  { toast('Укажите название', 'warn'); return; }
-  if (!price) { toast('Укажите цену', 'warn'); return; }
-  try {
-    await addDoc(collection(db, 'retailers', _retCatRid, 'catalog'), {
-      name,
-      description: document.getElementById('rp-ds')?.value.trim() || '',
-      price,
-      categoryId:  document.getElementById('rp-ct')?.value.trim() || '',
-      imageUrl:    document.getElementById('rp-im')?.value.trim() || '',
-      available:   true,
-      createdAt:   serverTimestamp(),
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Товар добавлен', 'ok');
-    closeMo('order-modal');
-    await openRetCatalog(_retCatRid, _retCatName);
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.saveRetEditProd = async function (id) {
-  try {
-    await updateDoc(doc(db, 'retailers', _retCatRid, 'catalog', id), {
-      name:        document.getElementById('rp-nm')?.value.trim() || '',
-      description: document.getElementById('rp-ds')?.value.trim() || '',
-      price:       parseFloat(document.getElementById('rp-pr')?.value || '0'),
-      categoryId:  document.getElementById('rp-ct')?.value.trim() || '',
-      imageUrl:    document.getElementById('rp-im')?.value.trim() || '',
-      updatedAt:   serverTimestamp(),
-    });
-    toast('Товар обновлён', 'ok');
-    closeMo('order-modal');
-    await openRetCatalog(_retCatRid, _retCatName);
-  } catch (e) { toast('Ошибка: ' + e.message, 'err'); }
-};
-
-window.toggleRetProd = async function (id, val) {
-  try {
-    await updateDoc(doc(db, 'retailers', _retCatRid, 'catalog', id),
-      { available: val, updatedAt: serverTimestamp() });
-    toast(val ? 'Товар показан' : 'Товар скрыт', 'ok');
-    await openRetCatalog(_retCatRid, _retCatName);
-  } catch (e) { toast('Ошибка', 'err'); }
-};
-
-window.deleteRetProd = async function (id) {
-  if (!confirm('Удалить товар из каталога?')) return;
-  try {
-    await deleteDoc(doc(db, 'retailers', _retCatRid, 'catalog', id));
-    toast('Удалён', 'ok');
-    closeMo('order-modal');
-    await openRetCatalog(_retCatRid, _retCatName);
-  } catch (e) { toast('Ошибка', 'err'); }
-};
-
-// ══════════════════════════════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════════════════════════════
-
-const PAGE_TITLES = {
-  overview:             'Обзор',
-  orders:               'Заказы',
-  couriers:             'Курьеры',
-  clients:              'Клиенты',
-  support:              'Поддержка',
-  catalog:              'Каталог',
-  'delivery-services':  'Курьерские службы',
-  stores:               'Ритейлеры',
-  addresses:            'Адреса доставки',
-  'gen-catalogs':       'Общий каталог',
-  news:                 'Новости',
-  analytics:            'Аналитика',
-  staff:                'Сотрудники',
-  settings:             'Настройки',
-  hr:                   'HR / Вакансии',
-  ads:                  'Реклама',
-  partners:             'Партнерство',
-};
-
-window.goPage = function (page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page)?.classList.add('active');
-  document.querySelector(`.ni[data-page="${page}"]`)?.classList.add('active');
-
-  const el = document.getElementById('tb-title');
-  if (el) el.textContent = PAGE_TITLES[page] || page;
-
-  if (page === 'couriers')          renderCouriersPage();
-  if (page === 'support')           { renderSupportChats(); listenTgChats(); }
-  if (page === 'analytics')         renderAnalytics();
-  if (page === 'staff')             renderStaff();
-  if (page === 'overview')          { renderDonut(); renderLiveOrders(); renderAct(); }
-  if (page === 'news')              renderNewsTable();
-  if (page === 'hr')                renderHrPage();
-  if (page === 'stores')            renderRetailersPage();
-  if (page === 'ads')               renderAdsPage();
-  if (page === 'gen-catalogs')      renderGenCatalogsPage();
-  if (page === 'partners')          renderPartnerPage();
-  if (page === 'addresses')         loadAZones();
-  if (page === 'delivery-services') loadDeliveryServices();
-
-  closeSB();
-  document.getElementById('pages')?.scrollTo(0, 0);
-};
-
-window.toggleSB = function () {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sb-overlay').classList.toggle('open');
-};
-
-window.closeSB = function () {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sb-overlay').classList.remove('open');
-};
-
-document.getElementById('sb-overlay').addEventListener('click', closeSB);
-
-// ══════════════════════════════════════════════════════════════
-// MODALS
-// ══════════════════════════════════════════════════════════════
-
-window.openMo = function (id) { document.getElementById(id)?.classList.add('open'); };
-window.closeMo = function (id) { document.getElementById(id)?.classList.remove('open'); };
-
-// Закрытие по клику на бэкдроп
-document.querySelectorAll('.mo').forEach(m =>
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
-);
-
-// Закрытие по Escape
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.querySelectorAll('.mo.open').forEach(m => m.classList.remove('open'));
-});
-
-// ══════════════════════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════════════════════
-
+// ─── Toast уведомления ────────────────────────────────────────
 window.toast = function (msg, type = '') {
   const w  = document.getElementById('toast-wrap');
   const el = document.createElement('div');
   el.className = 'toast ' + type;
   el.innerHTML = `<div class="tdot"></div><span>${msg}</span>`;
   w.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  setTimeout(() => el.remove(), 3400);
 };
 
-// ══════════════════════════════════════════════════════════════
-// SEARCH
-// ══════════════════════════════════════════════════════════════
+/** Свайп вниз для закрытия шитов */
+function initSwipeToClose(sheetEl, closeFn, handleEl) {
+  if (!sheetEl) return;
+  const trigger = handleEl || sheetEl;
+  let startY = 0, lastY = 0, active = false;
 
-window.onSearch = function (v) {
-  if (!v) return;
-  const q = v.toLowerCase();
+  trigger.addEventListener('touchstart', e => {
+    if (!handleEl && sheetEl.scrollTop > 0) return;
+    startY = lastY = e.touches[0].clientY;
+    active = true;
+    sheetEl.style.transition = 'none';
+  }, { passive: true });
 
-  const fo = allOrders.find(o =>
-    o.id.slice(-6).toLowerCase().includes(q) ||
-    o.clientName?.toLowerCase().includes(q) ||
-    o.address?.toLowerCase().includes(q)
-  );
-  if (fo) { openOrderModal(fo.id); return; }
+  document.addEventListener('touchmove', e => {
+    if (!active) return;
+    lastY = e.touches[0].clientY;
+    const dy = Math.max(0, lastY - startY);
+    sheetEl.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
 
-  const fc = allClients.find(c => c.displayName?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q));
-  if (fc) { goPage('clients'); toast('Клиент найден: ' + fc.displayName, 'info'); return; }
+  document.addEventListener('touchend', () => {
+    if (!active) return;
+    active = false;
+    const dy = Math.max(0, lastY - startY);
+    sheetEl.style.transition = '';
+    sheetEl.style.transform  = '';
+    if (dy > 100) closeFn();
+  });
+}
 
-  const fr = allCouriers.find(c => c.displayName?.toLowerCase().includes(q));
-  if (fr) { goPage('couriers'); toast('Курьер найден: ' + fr.displayName, 'info'); return; }
 
-  const fn = allNews.find(a => a.title?.toLowerCase().includes(q));
-  if (fn) { goPage('news'); toast('Статья: ' + fn.title, 'info'); return; }
+// ─── 5. Инициализация sheets (sheet.js) ──────────────────────
+function _initSheets() {
 
-  toast('Ничего не найдено по «' + v + '»', 'info');
-};
+  // ── City selector ──────────────────────────────────────────
+  Sheet.define({ id: 'city', title: 'Выбор города', zIndex: 700, onOpen: _loadCities });
+  Sheet.body('city').innerHTML = `
+    <p class="citysh-subtitle">Все магазины и доставка будут показаны для выбранного города</p>
+    <div class="citysh-list" id="citysh-list">
+      <div class="citysh-empty">Загружаем города…</div>
+    </div>`;
 
-// ══════════════════════════════════════════════════════════════
-// REFRESH
-// ══════════════════════════════════════════════════════════════
+  // ── Cart address picker ────────────────────────────────────
+  Sheet.define({ id: 'caddr', title: 'Адрес доставки', zIndex: 700 });
+  Sheet.body('caddr').innerHTML = `
+    <div class="caddrsh-list" id="caddrsh-list">
+      <div class="caddrsh-empty">Адреса загружаются…</div>
+    </div>`;
 
-window.refreshAll = async function () {
-  toast('Обновляем…', 'info');
-  await loadAll();
-  toast('Обновлено ✓', 'ok');
-};
+  // ── Add new address ────────────────────────────────────────
+  Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710 });
+  const addaddrBody = Sheet.body('addaddr');
+  addaddrBody.style.cssText = 'padding:0 20px';
+  addaddrBody.innerHTML = `
+    <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
+    <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
+      placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
+    <button class="addaddr-save" id="addaddr-save-btn" onclick="saveProfileAddr()">
+      Сохранить
+    </button>`;
+}
 
-// ══════════════════════════════════════════════════════════════
-// EXPORT
-// ══════════════════════════════════════════════════════════════
+_initSheets();
 
-window.exportOrders = function () {
-  const rows = allOrders.map(o =>
-    `${o.id.slice(-6)},${o.clientName || ''},${(o.address || '').replace(/,/g, ' ')},${o.courierName || ''},${o.status},${o.total || 0},${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('ru-RU') : ''}`
-  );
-  const csv = ['ID,Клиент,Адрес,Курьер,Статус,Сумма,Дата', ...rows].join('\n');
-  const a   = document.createElement('a');
-  a.href    = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-  a.download = 'orders.csv';
-  a.click();
-  toast('CSV скачан', 'ok');
-};
+// ─── 5. Auth / Инициализация ──────────────────────────────────
+onAuthStateChanged(auth, async u => {
+  if (!u) {
+    GUEST = true;
+    CU    = null;
+    UD    = null;
+    if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
+    await Promise.all([loadProds(), loadCats(), loadStores(), loadGenCats(), loadDeliveryServices()]);
+    renderSB();
+    renderGuestBanner();
+    renderGuestProfile();
+    renderCart();
+    return;
+  }
 
-// ══════════════════════════════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════════════════════════════
+  GUEST = false;
+  CU    = u;
+  await loadUD();
+  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadGenCats(), loadDeliveryServices()]);
+  renderSB();
+  renderProfile();
+  renderCart();
+  removeGuestBanner();
+  listenSupportBadge();
+  loadHomePromo();
+  checkAddressBanner(u.uid);
+});
 
-// TODO: реализовать сохранение настроек в Firestore (config/delivery)
-window.saveSettings = function () {
-  toast('Настройки сохранены', 'ok');
-};
+/** Загрузка промо-баннера на главной */
+async function loadHomePromo() {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'homePromo'));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (!d.active || !d.imageUrl) return;
+    const section = document.getElementById('promo-section');
+    const card    = document.getElementById('promo-card');
+    const img     = document.getElementById('promo-img');
+    if (!section || !card || !img) return;
+    img.src = d.imageUrl;
+    img.alt = d.altText || '';
+    if (d.linkUrl) { card.href = d.linkUrl; card.classList.remove('no-link'); }
+    else           { card.removeAttribute('href'); card.classList.add('no-link'); }
+    section.style.display = 'block';
+  } catch {}
+}
 
-// ══════════════════════════════════════════════════════════════
-// LOGOUT
-// ══════════════════════════════════════════════════════════════
+/** Загрузка данных пользователя из Firestore */
+async function loadUD() {
+  const fallbackPhone = phoneFromPseudoEmail(CU.email);
+  try {
+    const s = await getDoc(doc(db, 'users', CU.uid));
+    UD = s.exists()
+      ? s.data()
+      : { displayName: CU.displayName || '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+  } catch {
+    UD = { displayName: '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+  }
+}
 
 window.doLogout = async function () {
-  if (unsubOrders)  unsubOrders();
-  if (unsubCouriers) unsubCouriers();
-  if (unsubChats)    unsubChats();
+  if (unsubLive) unsubLive();
   await signOut(auth);
-  location.href = 'admin-login.html';
 };
+
+window.goLogin = function () { location.href = 'login.html'; };
+
+/** Проверка авторизации перед действием */
+function requireAuth(msg) {
+  if (!GUEST) return true;
+  toast(msg || 'Войдите для этого действия', 'info');
+  setTimeout(() => {
+    const el = document.querySelector('.toast:last-child');
+    if (el) { el.style.cursor = 'pointer'; el.onclick = () => goLogin(); }
+  }, 50);
+  return false;
+}
+
+// DOMContentLoaded: регистрируем свайпы и инициализируем UI
+document.addEventListener('DOMContentLoaded', () => {
+  initSwipeToClose(
+    document.getElementById('ptn-sheet'),
+    () => typeof closePartnerSheet === 'function' && closePartnerSheet(),
+    document.getElementById('ptn-drag-handle')
+  );
+  initSwipeToClose(
+    document.getElementById('bs-city'),
+    () => closeCitySheet(),
+    document.querySelector('#bs-city .bs-drag')
+  );
+
+  const _tbCityEl = document.getElementById('tb-city-name');
+  if (_tbCityEl) _tbCityEl.textContent = _selectedCityName;
+});
+
+
+// ─── 6. Навигация ─────────────────────────────────────────────
+window.goPage = function (page) {
+  if (GUEST && ['orders', 'status', 'cart'].includes(page)) {
+    toast(page === 'cart'
+      ? 'Войдите, чтобы использовать корзину'
+      : 'Войдите, чтобы видеть заказы', 'info');
+    return;
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni,.mn-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.querySelectorAll(`.ni[data-page="${page}"],.mn-item[data-page="${page}"]`)
+    .forEach(n => n.classList.add('active'));
+
+  const tb = document.getElementById('tb-title');
+  if (page === 'home') {
+    tb.innerHTML = 'dastdaroz <em>Delivery</em>';
+  } else {
+    tb.textContent = {
+      catalog: 'Каталог',
+      cart:    'Корзина',
+      orders:  'Мои заказы',
+      status:  'Статус заказа',
+      profile: 'Профиль',
+      store:   activeStore?.name || 'Магазин',
+    }[page] || 'dastdaroz';
+  }
+
+  if (page === 'status') renderStatusPage();
+  if (page === 'orders') { showOrdersSkeleton(); loadOrders(); }
+  if (page === 'store')  renderStorePage();
+
+  closeSB();
+  document.getElementById('pages').scrollTop = 0;
+};
+
+window.selectDeliveryService = function (svc) {
+  deliveryService = svc;
+  document.querySelectorAll('.dtab').forEach(el => {
+    el.classList.toggle('active', el.dataset.svc === svc);
+  });
+};
+
+// ── Курьерские службы из Firestore ────────────────────────────
+async function loadDeliveryServices() {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'deliveryServices'),
+        where('active', '==', true),
+        orderBy('order', 'asc'))
+    );
+    deliveryServices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    // Fallback — два жёстко заданных сервиса если Firestore не ответил
+    deliveryServices = [
+      { id: 'mavsimi',   name: 'Мавсими Расон',      subtitle: 'Хидмати расонидан',         logoUrl: '/storage/delivery-service/mavsimi_rason_mini.png',   active: true, order: 1 },
+      { id: 'dastdaroz', name: 'Dastdaroz Delivery',  subtitle: 'Бета · Собственная доставка', logoUrl: '/storage/delivery-service/dastdaroz_delivery_mini.png', active: true, order: 2 },
+    ];
+  }
+  renderDeliveryTabs();
+}
+
+function renderDeliveryTabs() {
+  const container = document.getElementById('delivery-tabs');
+  if (!container) return;
+
+  if (!deliveryServices.length) {
+    container.innerHTML = '<div style="font-size:.65rem;color:var(--tx3);padding:8px 4px">Нет доступных служб доставки</div>';
+    return;
+  }
+
+  // Выбираем первый сервис по умолчанию если текущий не найден
+  if (!deliveryServices.find(s => s.id === deliveryService)) {
+    deliveryService = deliveryServices[0].id;
+  }
+
+  container.innerHTML = deliveryServices.map(svc => {
+    const isBeta = svc.id === 'dastdaroz';
+    return `<div class="dtab ${deliveryService === svc.id ? 'active' : ''}" data-svc="${svc.id}" onclick="selectDeliveryService('${svc.id}')">
+      <img class="dtab-logo-sq" src="${escHtml(svc.logoUrl || '')}" alt="${escHtml(svc.name)}"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="dtab-logo-fb" style="display:none">${escHtml((svc.name || '').slice(0, 2).toUpperCase())}</div>
+      <div class="dtab-info">
+        <div class="dtab-name">${escHtml(svc.name)}${isBeta ? ' <span style="font-size:.48rem;background:var(--acc);color:#fff;border-radius:4px;padding:1px 4px;vertical-align:middle">β</span>' : ''}</div>
+        <div class="dtab-sub">${escHtml(svc.subtitle || '')}</div>
+      </div>
+      <div class="dtab-radio"></div>
+    </div>`;
+  }).join('');
+}
+
+
+// ─── 7. Сайдбар ───────────────────────────────────────────────
+window.toggleSB = function () {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('open');
+};
+window.closeSB = function () {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+};
+document.getElementById('sb-overlay').addEventListener('click', closeSB);
+
+function renderSB() {
+  if (GUEST) {
+    _renderGuestSB();
+    return;
+  }
+  const name = UD?.displayName || 'Покупатель';
+  const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+  document.getElementById('sb-uname').textContent = name;
+  const av = document.getElementById('sb-av');
+  av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+
+  const adv = document.getElementById('sb-addr-val');
+  if (UD?.address) {
+    adv.textContent = UD.address;
+    adv.classList.remove('empty');
+  } else {
+    adv.textContent = 'Указать адрес →';
+    adv.classList.add('empty');
+  }
+
+  const profAddrDisplay = document.getElementById('prof-addr-display');
+  if (profAddrDisplay) {
+    profAddrDisplay.textContent   = UD?.address || 'Указать адрес →';
+    profAddrDisplay.style.color   = UD?.address ? 'var(--tx2)' : 'var(--acc)';
+    profAddrDisplay.style.fontWeight = UD?.address ? '500' : '600';
+  }
+}
+
+function _renderGuestSB() {
+  const nm = document.getElementById('sb-uname');
+  if (nm) nm.textContent = 'Гость';
+
+  const av = document.getElementById('sb-av');
+  if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+  const adv = document.getElementById('sb-addr-val');
+  if (adv) { adv.textContent = 'Войдите для оформления заказа'; adv.classList.add('empty'); }
+
+  const role = document.querySelector('.sb-urole');
+  if (role) role.textContent = 'Гостевой режим';
+
+  const logoutBtn = document.querySelector('.sb-logout');
+  if (logoutBtn) {
+    logoutBtn.title   = 'Войти';
+    logoutBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>`;
+    logoutBtn.onclick = e => { e.stopPropagation(); goLogin(); };
+    logoutBtn.style.color = 'var(--acc)';
+  }
+
+  const userEl = document.querySelector('.sb-user');
+  if (userEl) userEl.onclick = () => goLogin();
+}
+
+function renderGuestBanner() {
+  document.getElementById('topbar')?.style?.setProperty('display', 'none');
+  document.getElementById('guest-topbar')?.classList.add('visible');
+  document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('#prof-nav-section .pn-guest-hidden').forEach(el => el.style.display = 'none');
+  const addrRow = document.getElementById('sb-addr-row');
+  if (addrRow) { addrRow.style.pointerEvents = 'none'; addrRow.style.opacity = '.45'; }
+}
+
+function removeGuestBanner() {
+  document.getElementById('topbar')?.style?.removeProperty('display');
+  document.getElementById('guest-topbar')?.classList.remove('visible');
+  document.querySelectorAll('.sb-nav .guest-hidden').forEach(el => el.style.display = '');
+  document.querySelectorAll('#prof-nav-section .pn-guest-hidden').forEach(el => el.style.display = '');
+  const addrRow = document.getElementById('sb-addr-row');
+  if (addrRow) { addrRow.style.pointerEvents = ''; addrRow.style.opacity = ''; }
+}
+
+
+// ─── 8. Общие категории ───────────────────────────────────────
+async function loadGenCats() {
+  // Сразу показываем скелетоны — сбрасываем старые данные до ответа Firestore
+  showGenCatsSkeleton();
+
+  try {
+    const snap = await getDocs(query(collection(db, 'generalCatalogs'), orderBy('order', 'asc')));
+    if (!snap.empty) {
+      const all = snap.docs.map(d => {
+        const data = d.data();
+        const raw = data.cityIds;
+        const cityIds = Array.isArray(raw)
+          ? raw.filter(Boolean)
+          : (typeof raw === 'string' && raw.trim() ? [raw.trim()] : []);
+        return {
+          id:      d.id,
+          nameRu:  data.nameRu || data.name || d.id,
+          nameTj:  data.nameTj || data.name || d.id,
+          icon:    data.icon   || `storage/general-catalogs/${d.id}.png`,
+          order:   data.order  ?? 0,
+          active:  data.active,
+          cityIds,
+        };
+      }).filter(c => c.active !== false);
+
+      genCats = all.filter(c =>
+        !c.cityIds.length || c.cityIds.includes(_selectedCityId)
+      );
+    } else {
+      genCats = [...GENERAL_CATS];
+    }
+  } catch {
+    genCats = [...GENERAL_CATS];
+  }
+  renderGenCats();
+  renderCatalogGenCats();
+}
+
+// Сбрасывает контент и возвращает скелетоны в оба контейнера
+function showGenCatsSkeleton() {
+  genCats = [];
+  const row = document.getElementById('gen-cats-row');
+  if (row) {
+    row.innerHTML = Array(8).fill(
+      '<div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>'
+    ).join('');
+  }
+  const grid = document.getElementById('gen-cat-grid');
+  if (grid) {
+    grid.innerHTML = Array(9).fill(
+      '<div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>'
+    ).join('');
+  }
+}
+
+function renderGenCats() {
+  const el = document.getElementById('gen-cats-row');
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
+  el.innerHTML = genCats.map(c => `
+    <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
+      <div class="gen-cat-img-wrap">
+        <img class="gen-cat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
+      </div>
+      <div class="gen-cat-name">${c.nameRu}</div>
+    </button>`).join('');
+}
+
+function renderCatalogGenCats() {
+  const el = document.getElementById('gen-cat-grid');
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
+  el.innerHTML = genCats.map(c => `
+    <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
+      <div class="gcat-img-wrap">
+        <img class="gcat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
+      </div>
+      <div class="gcat-name">${c.nameRu}</div>
+    </div>`).join('');
+}
+
+window.onGenCatClick = function (id) { goPage('catalog'); };
+
+// Seeding утилита (запустить один раз из консоли: await seedGeneralCats())
+window.seedGeneralCats = async function () {
+  try {
+    const batch = writeBatch(db);
+    GENERAL_CATS.forEach(c => {
+      batch.set(doc(db, 'generalCategories', c.id), {
+        nameRu: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order, active: true,
+      });
+    });
+    await batch.commit();
+    genCats = [...GENERAL_CATS];
+    renderGenCats();
+    renderCatalogGenCats();
+    console.log('✅ seedGeneralCats: записано', GENERAL_CATS.length, 'категорий');
+  } catch (e) {
+    console.error('❌ seedGeneralCats:', e);
+  }
+};
+
+
+// ─── 9. Магазины / Ритейлеры ─────────────────────────────────
+async function loadStores() {
+  const cityId = _selectedCityId;
+  try {
+    const [byPrimary, byCityIds] = await Promise.all([
+      getDocs(query(collection(db, 'retailers'), where('primaryCityId', '==', cityId))),
+      getDocs(query(collection(db, 'retailers'), where('cityIds', 'array-contains', cityId))),
+    ]);
+
+    const seen = new Set();
+    stores = [...byPrimary.docs, ...byCityIds.docs]
+      .filter(d => {
+        if (seen.has(d.id)) return false;
+        seen.add(d.id);
+        return d.data().active !== false;
+      })
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  } catch (e) {
+    console.warn('loadStores fallback:', e?.message);
+    try {
+      const s = await getDocs(query(collection(db, 'retailers'), where('active', '==', true)));
+      stores = s.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.primaryCityId === cityId || (r.cityIds || []).includes(cityId))
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    } catch { stores = []; }
+  }
+  renderStoresGrid();
+}
+
+function renderStoresGrid() {
+  const el = document.getElementById('stores-grid');
+  if (!el) return;
+
+  if (!stores.length) {
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px 20px;color:var(--tx3);font-size:.76rem">
+      <div style="font-size:1.6rem;margin-bottom:8px;opacity:.3">🏪</div>
+      В городе <strong>${_selectedCityName}</strong> магазинов пока нет
+    </div>`;
+    return;
+  }
+
+  const esc = v => String(v || '').replace(/'/g, '&#39;');
+  el.innerHTML = stores.map(s => `
+    <div class="store-card" onclick="openRetailer('${s.id}')" title="${esc(s.name)}">
+      <div class="store-card-img-wrap">
+        ${s.imageUrl
+          ? `<img class="store-card-img" src="${s.imageUrl}" alt="${esc(s.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="store-card-placeholder" ${s.imageUrl ? 'style="display:none"' : ''}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+          <span>${esc(s.name)}</span>
+        </div>
+      </div>
+      ${s.name ? `<div class="store-card-name">${esc(s.name)}</div>` : ''}
+    </div>`).join('');
+}
+
+window.openRetailer = async function (sid) {
+  activeStore    = stores.find(s => s.id === sid);
+  storeCatFilter = 'all';
+  jsonMenuData   = null;
+  jsonProdsMap   = {};
+  if (!activeStore) return;
+  goPage('store');
+  // Сбросить кнопку назад на «Главная»
+  const backBtn = document.querySelector('.store-cat-back');
+  if (backBtn) {
+    backBtn.onclick = () => goPage('home');
+    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Главная страница`;
+  }
+  renderRetailerPage(activeStore);
+};
+window.openStore = window.openRetailer; // алиас для совместимости
+
+// Открыть каталог конкретной точки ритейлера
+window.openRetailerCatalog = async function (rid, locId, locAddr) {
+  storeCatFilter = 'all';
+  jsonMenuData   = null;
+  jsonProdsMap   = {};
+
+  const prodsEl = document.getElementById('store-prods');
+  const catsEl  = document.getElementById('store-cats');
+  const hdrEl   = document.getElementById('store-header');
+
+  // Кнопка назад → возврат к списку точек
+  const backBtn = document.querySelector('.store-cat-back');
+  if (backBtn) {
+    backBtn.onclick = () => openRetailer(rid);
+    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> К точкам магазина`;
+  }
+
+  // Заголовок: баннер ритейлера + адрес точки
+  if (hdrEl && activeStore) {
+    const imgUrl = activeStore.imageUrl || '';
+    hdrEl.innerHTML = `
+      <div class="store-cat-header">
+        ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
+        <div class="store-cat-header-overlay"></div>
+        <div class="store-cat-header-body">
+          <div class="store-cat-header-tag">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+          </div>
+          <div class="store-cat-header-name">${activeStore.name}</div>
+          ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // Скелетон при загрузке
+  if (catsEl)  catsEl.innerHTML = '';
+  if (prodsEl) prodsEl.innerHTML = Array(6).fill(0).map(() =>
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
+      <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
+      <div class="skl-block" style="height:10px;width:82%"></div>
+      <div class="skl-block" style="height:7px;width:40%;margin-top:6px"></div>
+      <div class="pc-footer" style="margin-top:auto">
+        <div class="skl-block" style="height:11px;width:38%"></div>
+        <div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div>
+      </div>
+    </div></div>`
+  ).join('');
+
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'retailers', rid, 'catalog'), where('available', '==', true))
+    );
+    const allProds = snap.docs.map(d => ({ id: d.id, ...d.data(), storeId: rid }));
+
+    // Категории из уникальных categoryId продуктов
+    const catMap = {};
+    allProds.forEach(p => {
+      if (p.categoryId && !catMap[p.categoryId]) {
+        catMap[p.categoryId] = { id: p.categoryId, name: p.categoryId };
+      }
+    });
+    const categories = Object.values(catMap).sort((a, b) =>
+      a.name.localeCompare(b.name, 'ru')
+    );
+
+    jsonMenuData = { categories, products: allProds };
+    allProds.forEach(p => { jsonProdsMap[p.id] = p; });
+
+    renderStoreCatPills();
+    renderStoreProds();
+  } catch (e) {
+    console.error('openRetailerCatalog:', e);
+    if (prodsEl) prodsEl.innerHTML = `
+      <div class="store-cat-empty" style="grid-column:1/-1">
+        <span class="store-cat-empty-ico">⚠️</span>
+        <div class="store-cat-empty-t">Ошибка загрузки каталога</div>
+        <div class="store-cat-empty-s">${e.message}</div>
+      </div>`;
+  }
+};
+
+async function renderRetailerPage(retailer) {
+  const hdrEl   = document.getElementById('store-header');
+  const catsEl  = document.getElementById('store-cats');
+  const prodsEl = document.getElementById('store-prods');
+  if (!hdrEl) return;
+
+  const imgUrl = retailer.imageUrl || '';
+  hdrEl.innerHTML = `
+    <div class="store-cat-header">
+      ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
+      <div class="store-cat-header-overlay"></div>
+      <div class="store-cat-header-body">
+        <div class="store-cat-header-tag">Ритейлер · ${_selectedCityName}</div>
+        <div class="store-cat-header-name">${retailer.name}</div>
+        ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
+      </div>
+    </div>`;
+
+  if (catsEl)  catsEl.innerHTML  = '';
+  if (prodsEl) prodsEl.innerHTML = `
+    <div style="grid-column:1/-1">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--tx)">Точки в городе ${_selectedCityName}</span>
+      </div>
+      <div id="retailer-locations-list">
+        <div class="retailer-loc-skeleton"></div>
+        <div class="retailer-loc-skeleton"></div>
+      </div>
+    </div>`;
+
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'retailers', retailer.id, 'locations'), where('cityId', '==', _selectedCityId))
+    );
+    const locations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const listEl    = document.getElementById('retailer-locations-list');
+    if (!listEl) return;
+
+    if (!locations.length) {
+      listEl.innerHTML = `<div class="store-cat-empty">
+        <span class="store-cat-empty-ico">📍</span>
+        <div class="store-cat-empty-t">Точек в ${_selectedCityName} нет</div>
+        <div class="store-cat-empty-s">Попробуйте выбрать другой город</div>
+      </div>`;
+      return;
+    }
+
+    listEl.innerHTML = locations.map(loc => {
+      const mapsUrl  = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
+      const safeAddr = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `
+      <div class="retailer-loc-card" style="cursor:pointer"
+           onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
+        <div class="retailer-loc-ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="retailer-loc-body">
+          <div class="retailer-loc-addr">${loc.address || '—'}</div>
+          ${loc.lat && loc.lng ? `<div class="retailer-loc-coords">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}</div>` : ''}
+        </div>
+        ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener"
+            onclick="event.stopPropagation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          Карта
+        </a>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" style="flex-shrink:0;opacity:.6"><path d="M9 18l6-6-6-6"/></svg>`}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Retailer locations error:', e);
+    const listEl = document.getElementById('retailer-locations-list');
+    if (listEl) listEl.innerHTML = `<div class="store-cat-empty"><div class="store-cat-empty-t">Ошибка загрузки</div></div>`;
+  }
+}
+
+async function loadJsonMenu(url) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const raw = await resp.json();
+    jsonMenuData = Array.isArray(raw)
+      ? { categories: [], products: raw }
+      : { categories: raw.categories || [], products: raw.products || raw.items || [] };
+  } catch (e) {
+    console.error('JSON menu:', e);
+    jsonMenuData = { categories: [], products: [], error: e.message };
+  }
+
+  jsonProdsMap = {};
+  (jsonMenuData.products || []).forEach(p => {
+    if (p.id) jsonProdsMap[p.id] = { ...p, storeId: activeStore?.id };
+  });
+  renderStoreCatPills();
+  renderStoreProds();
+}
+
+window.filterStoreCat = function (id) {
+  storeCatFilter = id;
+  renderStoreCatPills();
+  renderStoreProds();
+};
+
+function renderStorePage() {
+  if (!activeStore) return;
+  const hdr = document.getElementById('store-header');
+  if (hdr) {
+    const imgUrl = activeStore.imageUrl || '';
+    hdr.innerHTML = `
+    <div class="store-cat-header">
+      ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
+      <div class="store-cat-header-overlay"></div>
+      <div class="store-cat-header-body">
+        <div class="store-cat-header-tag">Магазин</div>
+        <div class="store-cat-header-name">${activeStore.name}</div>
+        ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
+      </div>
+    </div>`;
+  }
+  renderStoreCatPills();
+  renderStoreProds();
+}
+
+function getStoreCats() {
+  if (!activeStore) return [];
+  const storeProdIds = new Set(prods.filter(p => p.storeId === activeStore.id).map(p => p.categoryId));
+  return cats.filter(c => storeProdIds.has(c.id));
+}
+
+function renderStoreCatPills() {
+  const el = document.getElementById('store-cats');
+  if (!el) return;
+
+  const all = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
+
+  if (jsonMenuData) {
+    el.innerHTML = all + (jsonMenuData.categories || []).map(c =>
+      `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+    ).join('');
+  } else {
+    el.innerHTML = all + getStoreCats().map(c =>
+      `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+    ).join('');
+  }
+}
+
+function renderStoreProds() {
+  const el = document.getElementById('store-prods');
+  if (!el || !activeStore) return;
+
+  const skeleton = Array(6).fill(0).map(() =>
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
+      <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
+      <div class="skl-block" style="height:10px;width:80%"></div>
+      <div class="skl-block" style="height:7px;width:40%;margin-top:4px"></div>
+    </div></div>`
+  ).join('');
+
+  if (activeStore.menuUrl && jsonMenuData === null) { el.innerHTML = skeleton; return; }
+
+  if (jsonMenuData) {
+    if (jsonMenuData.error && !jsonMenuData.products?.length) {
+      el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
+        <span class="store-cat-empty-ico">⚠️</span>
+        <div class="store-cat-empty-t">Ошибка при загрузке</div>
+        <div class="store-cat-empty-s">${jsonMenuData.error}</div>
+      </div>`;
+      return;
+    }
+    let list = jsonMenuData.products || [];
+    if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
+    el.innerHTML = list.length
+      ? list.map(p => renderPC({ ...p, storeId: activeStore.id })).join('')
+      : `<div class="store-cat-empty" style="grid-column:1/-1"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товары не найдены</div></div>`;
+    return;
+  }
+
+  let list = prods.filter(p => p.storeId === activeStore.id);
+  if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
+  el.innerHTML = list.length
+    ? list.map(renderPC).join('')
+    : `<div class="store-cat-empty" style="grid-column:1/-1"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товаров пока нет</div></div>`;
+}
+
+
+// ─── 10. Товары ───────────────────────────────────────────────
+async function loadProds() {
+  try {
+    const s = await getDocs(query(collection(db, 'products'), orderBy('name')));
+    prods = s.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {}
+  renderHomeProds();
+  renderCatalog();
+  renderHomeCats();
+  renderStoreProds();
+  renderStoresGrid();
+}
+
+function renderPC(p) {
+  const qty     = getCartQty(p.id);
+  const unavail = !p.available;
+  const ic      = catIcon(p.categoryId, catName(p.categoryId));
+  const imgHtml = p.imageUrl
+    ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy">`
+    : `<div style="width:64px;height:64px;opacity:.2">${ic.svg.replace('width="26" height="26"', 'width="64" height="64"')}</div>`;
+
+  const controls = unavail
+    ? `<button class="add-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`
+    : qty > 0
+      ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}')">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}')">+</button></div>`
+      : `<button class="add-btn" onclick="event.stopPropagation();addToCart('${p.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+
+  return `<div class="pc" onclick="openProdModal('${p.id}')">
+    <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
+    <div class="pc-body">
+      <div class="pc-cat">${catName(p.categoryId)}</div>
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-desc">${p.description || ''}</div>
+      <div class="pc-footer">
+        <div class="pc-price">${p.price}<span> см</span></div>
+        ${controls}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderHomeProds() {
+  const el = document.getElementById('home-prods');
+  if (!el) return;
+  const list = prods.filter(p => p.available !== false).slice(0, 8);
+  el.innerHTML = list.length
+    ? list.map(renderPC).join('')
+    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Товаров нет</div></div>`;
+}
+
+function renderCatalog() {
+  const el = document.getElementById('cat-prods');
+  if (!el) return;
+  let list = [...prods];
+  if (catFilter !== 'all') list = list.filter(p => p.categoryId === catFilter);
+  if (searchQ) list = list.filter(p =>
+    p.name.toLowerCase().includes(searchQ.toLowerCase()) ||
+    (p.description || '').toLowerCase().includes(searchQ.toLowerCase())
+  );
+  el.innerHTML = list.length
+    ? list.map(renderPC).join('')
+    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ничего не найдено</div></div>`;
+}
+
+// Модалка товара
+window.openProdModal = function (pid) {
+  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
+  if (!p) return;
+  renderProdModal(p);
+  document.getElementById('prod-modal-bg').classList.add('open');
+  document.getElementById('prod-modal-scroll').scrollTop = 0;
+};
+
+function renderProdModal(p) {
+  const qty     = getCartQty(p.id);
+  const unavail = p.available === false;
+  const ic      = catIcon(p.categoryId, catName(p.categoryId));
+  const cname   = catName(p.categoryId);
+  const store   = stores.find(s => s.id === p.storeId);
+
+  const heroHtml = p.imageUrl
+    ? `<img class="pm-hero-img" src="${p.imageUrl}" alt="${p.name}" loading="lazy">`
+    : `<div class="pm-hero-ph">${ic.svg.replace('width="26" height="26"', 'width="100" height="100"')}</div>`;
+
+  const storeBadge = store
+    ? `<div class="pm-badge-store">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+        ${store.name}
+       </div>`
+    : '';
+
+  const chips = [];
+  if (p.weight)  chips.push({ label: p.weight + ' г' });
+  if (p.volume)  chips.push({ label: p.volume + ' мл' });
+  if (p.brand)   chips.push({ label: p.brand });
+  if (p.country) chips.push({ label: p.country });
+  if (cname && !chips.find(c => c.label === cname)) chips.unshift({ label: cname });
+
+  const chipsHtml = chips.length
+    ? `<div class="pm-chips">${chips.map(c => `<span class="pm-chip">${c.label}</span>`).join('')}</div>`
+    : '';
+
+  const buyHtml = unavail
+    ? `<button class="pm-add-btn" disabled>Нет в наличии</button>`
+    : qty > 0
+      ? `<div class="pm-buy-wrap">
+           <div class="pm-qty-box">
+             <button class="pm-qty-btn" onclick="pmMinus('${p.id}')">−</button>
+             <div class="pm-qty-num" id="pm-qty-${p.id}">${qty}</div>
+             <button class="pm-qty-btn" onclick="pmPlus('${p.id}')">+</button>
+           </div>
+           <button class="pm-go-cart" onclick="closeProdModal();goPage('cart')">
+             В корзину — ${p.price * qty} см
+           </button>
+         </div>`
+      : `<button class="pm-add-btn" onclick="pmAdd('${p.id}')">Добавить в корзину</button>`;
+
+  document.getElementById('prod-modal-inner').innerHTML = `
+    <div class="pm-hero">
+      ${heroHtml}
+      <button class="pm-close" onclick="closeProdModal()">✕</button>
+      ${unavail ? '<div class="pm-badge-unavail">Нет в наличии</div>' : ''}
+      ${storeBadge}
+    </div>
+    <div class="pm-body">
+      <div class="pm-cat-line"><div class="pm-cat-dot"></div><div class="pm-cat-lbl">${cname || 'Товары'}</div></div>
+      <div class="pm-name">${p.name}</div>
+      ${p.description ? `<div class="pm-desc">${p.description}</div>` : ''}
+      ${chipsHtml}
+      <div class="pm-div"></div>
+      <div class="pm-buy-row">
+        <div class="pm-price-line">
+          <div class="pm-price">${p.price}</div>
+          <div class="pm-price-unit">см</div>
+        </div>
+        ${buyHtml}
+      </div>
+    </div>`;
+}
+
+window.pmAdd   = async function (pid) { await addToCart(pid); const p = prods.find(x => x.id === pid); if (p) renderProdModal(p); };
+window.pmPlus  = async function (pid) {
+  await addToCart(pid);
+  const p   = prods.find(x => x.id === pid);
+  const qty = getCartQty(pid);
+  const qEl = document.getElementById(`pm-qty-${pid}`);
+  if (qEl) {
+    qEl.textContent = qty;
+    const goBtn = document.querySelector('.pm-go-cart');
+    if (goBtn && p) goBtn.textContent = ` В корзину — ${p.price * qty} см`;
+  } else if (p) { renderProdModal(p); }
+};
+window.pmMinus = async function (pid) {
+  await pcMinus(pid);
+  const p   = prods.find(x => x.id === pid);
+  const qty = getCartQty(pid);
+  if (!qty) { if (p) renderProdModal(p); return; }
+  const qEl = document.getElementById(`pm-qty-${pid}`);
+  if (qEl) {
+    qEl.textContent = qty;
+    const goBtn = document.querySelector('.pm-go-cart');
+    if (goBtn && p) goBtn.textContent = ` В корзину — ${p.price * qty} см`;
+  }
+};
+
+window.closeProdModal = function (e) {
+  if (e && e.target !== document.getElementById('prod-modal-bg')) return;
+  document.getElementById('prod-modal-bg').classList.remove('open');
+};
+
+window.pcPlus  = async function (pid) { await addToCart(pid); };
+window.pcMinus = async function (pid) {
+  const item = cart.find(c => c.productId === pid);
+  if (!item) return;
+  const nq = item.quantity - 1;
+  const cr = doc(db, 'users', CU.uid, 'cart', pid);
+  if (nq <= 0) {
+    await deleteDoc(cr);
+    cart = cart.filter(c => c.productId !== pid);
+  } else {
+    await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
+    item.quantity = nq;
+  }
+  renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+};
+
+
+// ─── 11. Категории продуктов ──────────────────────────────────
+async function loadCats() {
+  try {
+    const s = await getDocs(collection(db, 'categories'));
+    cats = s.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {}
+  renderHomeCats();
+}
+
+function renderHomeCats() {
+  const el = document.getElementById('home-cats');
+  if (!el || !cats.length) return;
+  el.innerHTML = cats.map(c => {
+    const ic = catIcon(c.id, c.name);
+    return `<button class="cat-chip" style="--cat-bg:${ic.bg}" onclick="filterCat('${c.id}');goPage('catalog')">
+      <div class="cat-chip-ico">${ic.svg}</div>
+      <div class="cat-chip-name">${c.name}</div>
+    </button>`;
+  }).join('');
+}
+
+window.filterCat = function (id) {
+  catFilter = id;
+  renderCatalog();
+};
+
+
+// ─── 12. Поиск ────────────────────────────────────────────────
+window.onHomeSearch = function (v) {
+  homeSearchQ = v;
+  document.getElementById('search-clear')?.classList.toggle('show', v.length > 0);
+  renderSD(v);
+};
+
+window.clearHS = function () {
+  homeSearchQ = '';
+  const inp = document.getElementById('search-inp-home');
+  if (inp) inp.value = '';
+  document.getElementById('search-clear')?.classList.remove('show');
+  closeSD();
+};
+
+window.openSD  = function () { if (homeSearchQ) renderSD(homeSearchQ); };
+
+function renderSD(q) {
+  const dd = document.getElementById('search-dd');
+  if (!q) { dd.classList.remove('open'); return; }
+  const res = prods
+    .filter(p => p.available !== false && (
+      p.name.toLowerCase().includes(q.toLowerCase()) ||
+      (p.description || '').toLowerCase().includes(q.toLowerCase())
+    ))
+    .slice(0, 7);
+
+  if (!res.length) {
+    dd.innerHTML = `<div class="srd-empty">Ничего не найдено 🔍</div>`;
+    dd.classList.add('open');
+    return;
+  }
+  dd.innerHTML = res.map(p => {
+    const ic = catIcon(p.categoryId, catName(p.categoryId));
+    return `<div class="srd-item" onclick="pickSD('${p.id}')">
+      <div class="srd-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : ic.svg}</div>
+      <div class="srd-info"><div class="srd-name">${p.name}</div><div class="srd-cat">${catName(p.categoryId)}</div></div>
+      <div class="srd-price">${p.price} см</div>
+    </div>`;
+  }).join('');
+  dd.classList.add('open');
+}
+
+function closeSD() { document.getElementById('search-dd')?.classList.remove('open'); }
+
+window.pickSD = function (pid) {
+  closeSD(); clearHS();
+  catFilter = 'all';
+  searchQ   = prods.find(p => p.id === pid)?.name || '';
+  renderCatalog();
+  goPage('catalog');
+  searchQ = '';
+};
+
+window.onSearch = function (v) { searchQ = v; renderCatalog(); if (v) goPage('catalog'); };
+
+document.addEventListener('click', e => {
+  const sb = document.getElementById('search-box');
+  if (sb && !sb.contains(e.target)) closeSD();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeOrderModal(); closeProdModal(); }
+});
+
+
+// ─── 13. Корзина ──────────────────────────────────────────────
+async function loadCart() {
+  try {
+    const s = await getDocs(collection(db, 'users', CU.uid, 'cart'));
+    cart = s.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { cart = []; }
+  renderCart();
+  updateBadges();
+}
+
+window.addToCart = async function (pid) {
+  if (!requireAuth('Войдите, чтобы добавить в корзину')) return;
+  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
+  if (!p || !CU) return;
+
+  const cr = doc(db, 'users', CU.uid, 'cart', p.id);
+  const ex = cart.find(c => c.productId === p.id);
+  try {
+    if (ex) {
+      await updateDoc(cr, { quantity: increment(1), updatedAt: serverTimestamp() });
+      ex.quantity++;
+    } else {
+      const item = { productId: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl || '', quantity: 1, addedAt: serverTimestamp(), updatedAt: serverTimestamp() };
+      await setDoc(cr, item);
+      cart.push({ id: p.id, ...item });
+    }
+    toast(p.name + ' добавлен в корзину', 'ok');
+    renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+  } catch { toast('Ошибка', 'err'); }
+};
+
+window.updateQty = async function (pid, d) {
+  const item = cart.find(c => c.productId === pid);
+  if (!item) return;
+  const nq = item.quantity + d;
+  const cr = doc(db, 'users', CU.uid, 'cart', pid);
+  if (nq <= 0) {
+    await deleteDoc(cr);
+    cart = cart.filter(c => c.productId !== pid);
+  } else {
+    await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
+    item.quantity = nq;
+  }
+  renderCart(); updateBadges();
+};
+
+window.removeCI = async function (pid) {
+  await deleteDoc(doc(db, 'users', CU.uid, 'cart', pid));
+  cart = cart.filter(c => c.productId !== pid);
+  renderCart(); renderHomeProds(); renderCatalog(); updateBadges();
+};
+
+window.clearCartUI = async function () {
+  if (!cart.length || !confirm('Очистить корзину?')) return;
+  const b = writeBatch(db);
+  cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
+  await b.commit();
+  cart = [];
+  renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+};
+
+function renderCart() {
+  const el = document.getElementById('cart-list');
+  if (!el) return;
+
+  if (GUEST) {
+    el.innerHTML = `<div class="ci ci-empty"><div class="ci-empty-txt">
+      <div class="ci-empty-t">Вы не вошли</div>
+      <div class="ci-empty-s">Для использования корзины</div>
+      <button class="ci-empty-btn" onclick="goLogin()">Войти</button>
+    </div></div>`;
+    _setCartFooter(false);
+    return;
+  }
+
+  if (!cart.length) {
+    el.innerHTML = `<div class="ci ci-empty"><div class="ci-empty-txt"><div class="ci-empty-t">Корзина пуста</div></div></div>`;
+    _setCartFooter(false);
+  } else {
+    el.innerHTML = cart.map(i => {
+      const ic = catIcon(i.productId, '').svg;
+      return `<div class="ci">
+        <div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div>
+        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price} см / шт.</div></div>
+        <div class="qty">
+          <button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button>
+          <div class="qty-val">${i.quantity}</div>
+          <button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button>
+        </div>
+        <div class="ci-total">${i.price * i.quantity} см</div>
+        <button class="ci-del" onclick="removeCI('${i.productId}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+    _setCartFooter(true);
+  }
+
+  const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+  const tot = sub + (cart.length ? DFEE : 0);
+  const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' см';
+  const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
+  const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' см';
+  const ch  = document.getElementById('cs-header-items'); if (ch) ch.textContent = cart.length + ' позиций';
+}
+
+function _setCartFooter(active) {
+  const cs = document.getElementById('cart-sum');
+  const cb = document.getElementById('checkout-btn');
+  if (cs) cs.style.opacity = active ? '1' : '.5';
+  if (cb) cb.disabled = !active;
+}
+
+function updateBadges() {
+  const cnt = cart.reduce((s, c) => s + c.quantity, 0);
+  ['cart-nb', 'mob-cart-b', 'prof-cart-nb'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.style.display = cnt > 0 ? '' : 'none'; b.textContent = cnt; }
+  });
+  const tb = document.getElementById('tb-cnt');
+  if (tb) tb.textContent = cnt;
+}
+
+function setAddr() { /* адрес выбирается через шит адресов */ }
+
+
+// ─── 14. Оформление заказа ────────────────────────────────────
+window.doCheckout = async function () {
+  if (!requireAuth('Войдите для оформления заказа')) return;
+  if (!cart.length) return;
+
+  const addr = document.getElementById('cart-addr')?.value.trim();
+  const lat  = parseFloat(document.getElementById('cart-lat')?.value) || null;
+  const lng  = parseFloat(document.getElementById('cart-lng')?.value) || null;
+
+  if (!addr) {
+    toast('Укажите адрес доставки', 'err');
+    document.getElementById('cart-addr')?.focus();
+    return;
+  }
+
+  const btn = document.getElementById('checkout-btn');
+  btn.disabled  = true;
+  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Бронируем…';
+
+  try {
+    const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+    const oNum          = nextOrderNum();
+    const payMethod     = document.getElementById('cart-pay')?.value || 'cash';
+    const reservedUntil = new Date(Date.now() + BOOKING_DURATION_MS);
+
+    const orderData = {
+      clientId:        CU.uid,
+      clientName:      UD?.displayName || '',
+      orderNumber:     oNum,
+      items:           cart.map(c => ({
+        productId: c.productId,
+        name:      c.name,
+        price:     c.price,
+        quantity:  c.quantity,
+      })),
+      subtotal:        sub,
+      deliveryFee:     DFEE,
+      total:           sub + DFEE,
+      address:         addr,
+      lat,
+      lng,
+      comment:         document.getElementById('cart-comment')?.value.trim() || '',
+      paymentMethod:   payMethod,
+      deliveryService,
+      status:          'reserved',
+      reservedUntil,
+      courierId:       null,
+      courierName:     null,
+      createdAt:       serverTimestamp(),
+      updatedAt:       serverTimestamp(),
+    };
+
+    // Создаём заказ в коллекции бронированных заказов
+    const ref = await addDoc(collection(db, 'bookedOrders'), orderData);
+
+    // Очистка корзины
+    const b = writeBatch(db);
+    cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
+    await b.commit();
+    cart = [];
+    renderCart(); updateBadges();
+
+    // Добавляем новый заказ локально, чтобы сразу открыть модалку
+    const newOrder = {
+      id: ref.id,
+      ...orderData,
+      _col: 'bookedOrders',
+      createdAt: { toDate: () => new Date() }, // псевдо-timestamp для fmtDate
+      reservedUntil,
+    };
+    orders.unshift(newOrder);
+    activeOid = ref.id;
+
+    renderOrders(); renderOrdersBadge(); renderLiveBanner();
+
+    toast('Заказ забронирован! 🔒 У вас 10 минут', 'ok');
+
+    // Переходим на страницу заказов и открываем модалку бронирования
+    setTimeout(() => {
+      goPage('orders');
+      setTimeout(() => openOrderModal(ref.id), 200);
+    }, 350);
+
+    // Параллельно обновляем из Firestore
+    loadOrders().catch(() => {});
+
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+    btn.disabled  = false;
+    btn.innerHTML = 'Оформить заказ';
+  }
+};
+
+/** Подтверждение бронирования:
+ *  - удаляем из bookedOrders
+ *  - создаём в dastdarozOrders или mavsimiOrders (зависит от deliveryService)
+ */
+window.confirmReservation = async function (oid) {
+  const btn = document.getElementById('booking-confirm-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:13px;height:13px"></div> Подтверждаем…'; }
+  try {
+    // Находим заказ в памяти (он лежит в bookedOrders)
+    const booked = orders.find(x => x.id === oid);
+    if (!booked) throw new Error('Заказ не найден');
+
+    // Целевая коллекция по выбранной службе
+    const svc      = booked.deliveryService || 'dastdaroz';
+    const targetCol = svc === 'mavsimi' ? 'mavsimiOrders' : 'dastdarozOrders';
+
+    // Данные для целевой коллекции (без локальных полей)
+    const { _col, ...orderFields } = booked;
+    const confirmedData = {
+      ...orderFields,
+      status:       'pending',
+      confirmedAt:  serverTimestamp(),
+      updatedAt:    serverTimestamp(),
+    };
+    delete confirmedData.id; // addDoc сам создаст id, мы используем setDoc с тем же id
+
+    // Транзакция: записываем в целевую, удаляем из bookedOrders
+    await setDoc(doc(db, targetCol, oid), confirmedData);
+    await deleteDoc(doc(db, 'bookedOrders', oid));
+
+    // Обновляем в памяти
+    const idx = orders.findIndex(x => x.id === oid);
+    if (idx >= 0) {
+      orders[idx] = { ...orders[idx], status: 'pending', _col: targetCol };
+    }
+    activeOid        = oid;
+    activeCollection = targetCol;
+
+    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+    closeOrderModal();
+
+    // Для dastdaroz запускаем live-слежение
+    if (targetCol === 'dastdarozOrders') {
+      listenLive(oid, 'dastdarozOrders');
+    }
+
+    await loadOrders();
+    toast('Заказ подтверждён! ✅ Ожидайте курьера', 'ok');
+    setTimeout(() => { activeOid = oid; goPage('status'); renderStatusPage(); }, 350);
+  } catch (e) {
+    toast('Ошибка подтверждения: ' + e.message, 'err');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Подтвердить заказ'; }
+  }
+};
+
+/** Отмена бронирования (статус reserved → бронь ещё не подтверждена) */
+window.cancelReservation = async function (oid) {
+  if (!confirm('Отменить бронирование?')) return;
+  try {
+    await updateDoc(doc(db, 'bookedOrders', oid), {
+      status: 'cancelled',
+      updatedAt: serverTimestamp(),
+    });
+    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+    closeOrderModal();
+    await loadOrders();
+    toast('Бронирование отменено', 'ok');
+  } catch { toast('Ошибка отмены', 'err'); }
+};
+
+/** Запуск обратного отсчёта бронирования */
+function _startBookingCountdown(reservedUntil) {
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+
+  const endMs = reservedUntil instanceof Date
+    ? reservedUntil.getTime()
+    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
+
+  const tick = () => {
+    const el = document.getElementById('booking-timer-display');
+    if (!el) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; return; }
+
+    const rem = endMs - Date.now();
+    if (rem <= 0) {
+      el.textContent = '0:00';
+      el.closest?.('.booking-timer-ring')?.classList.add('expired');
+      clearInterval(_bookingTimerInterval);
+      _bookingTimerInterval = null;
+      // авто-показ истечения
+      const expiredEl = document.getElementById('booking-expired-note');
+      if (expiredEl) expiredEl.style.display = 'flex';
+      const confirmBtn = document.getElementById('booking-confirm-btn');
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; }
+      return;
+    }
+
+    const mins = Math.floor(rem / 60000);
+    const secs = Math.floor((rem % 60000) / 1000);
+    el.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    // меняем цвет когда < 2 минуты
+    const ringEl = document.getElementById('booking-timer-ring');
+    if (ringEl) {
+      if (rem < 120000) {
+        ringEl.classList.add('warning');
+        ringEl.classList.remove('normal');
+      } else {
+        ringEl.classList.add('normal');
+        ringEl.classList.remove('warning');
+      }
+    }
+  };
+
+  tick();
+  _bookingTimerInterval = setInterval(tick, 1000);
+}
+
+/** Маvsimi — добавляем в очередь (TODO: подключить API) */
+async function _submitToMavsimi(data) {
+  await addDoc(collection(db, 'mavsimiQueue'), {
+    ...data, synced: false, queuedAt: serverTimestamp(),
+  });
+}
+
+// Шит выбора адреса в корзине — структура через sheet.js (Sheet 'caddr')
+window.openCartAddrSheet = async function () {
+  Sheet.open('caddr');
+
+  const list = document.getElementById('caddrsh-list');
+  if (!list) return;
+
+  if (!CU) {
+    list.innerHTML = `<div class="caddrsh-empty">Войдите, чтобы выбрать адрес<br>
+      <button class="caddrsh-goto" onclick="closeCartAddrSheet();goLogin()">Войти →</button></div>`;
+    return;
+  }
+
+  list.innerHTML = '<div class="caddrsh-empty">Загружается…</div>';
+  try {
+    const snap  = await getDocs(query(collection(db, 'users', CU.uid, 'addresses'), orderBy('createdAt', 'asc')));
+    const addrs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderCartAddrList(addrs);
+  } catch (e) {
+    list.innerHTML = '<div class="caddrsh-empty">Ошибка загрузки</div>';
+  }
+};
+
+window.closeCartAddrSheet = () => Sheet.close('caddr');
+
+function _renderCartAddrList(addrs) {
+  const list    = document.getElementById('caddrsh-list');
+  if (!list) return;
+  const current = document.getElementById('cart-addr')?.value || '';
+  const esc     = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escAttr = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+  if (!addrs.length) {
+    list.innerHTML = `<div class="caddrsh-empty">Адресов нет<br>
+      <button class="caddrsh-goto" onclick="closeCartAddrSheet();goPage('profile')">Добавить в профиле →</button></div>`;
+    return;
+  }
+
+  list.innerHTML = addrs.map(a => {
+    const sel = a.text === current;
+    return `<button class="caddrsh-item${sel ? ' selected' : ''}"
+        data-text="${escAttr(a.text)}" onclick="selectCartAddr(this.dataset.text)">
+      <div class="caddrsh-item-ico">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="1.8">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <div class="caddrsh-item-text">${esc(a.text)}</div>
+      <div class="caddrsh-item-check">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+window.selectCartAddr = function (text) {
+  const inp = document.getElementById('cart-addr');
+  if (inp) inp.value = text;
+  const display = document.getElementById('cart-addr-display');
+  if (display) display.textContent = text;
+  const card = document.getElementById('cart-addr-card');
+  if (card) card.classList.add('filled');
+  closeCartAddrSheet();
+};
+
+
+// ─── 15. Заказы ───────────────────────────────────────────────
+async function loadOrders() {
+  if (!CU?.uid) return;
+  const uid = CU.uid;
+
+  const safeQuery = async (col) => {
+    try {
+      const q = query(collection(db, col), where('clientId', '==', uid), orderBy('createdAt', 'desc'));
+      const s = await getDocs(q);
+      return s.docs.map(d => ({ id: d.id, ...d.data(), _col: col }));
+    } catch {
+      try {
+        // fallback без orderBy (если нет индекса)
+        const q2 = query(collection(db, col), where('clientId', '==', uid));
+        const s2 = await getDocs(q2);
+        return s2.docs.map(d => ({ id: d.id, ...d.data(), _col: col }));
+      } catch { return []; }
+    }
+  };
+
+  const [booked, dast, mav] = await Promise.all([
+    safeQuery('bookedOrders'),
+    safeQuery('dastdarozOrders'),
+    safeQuery('mavsimiOrders'),
+  ]);
+
+  orders = [...booked, ...dast, ...mav].sort(
+    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+  );
+
+  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  if (live) {
+    activeOid        = live.id;
+    activeCollection = live._col;
+    // Live-слежение только для dastdaroz (mavsimi — через бэкенд в будущем)
+    if (!unsubLive && live.status !== 'reserved' && live._col === 'dastdarozOrders') {
+      listenLive(live.id, 'dastdarozOrders');
+    }
+  }
+
+  renderOrders();
+  renderOrdersBadge();
+  renderLiveBanner();
+  if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
+
+  const tot   = orders.length;
+  const spent = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
+  const po = document.getElementById('ps-orders'); if (po) po.textContent = tot;
+  const ps = document.getElementById('ps-spent');  if (ps) ps.textContent = spent;
+}
+
+function showOrdersSkeleton() {
+  const el = document.getElementById('orders-list');
+  if (!el) return;
+  const card = (w1, w2, w3, w4) =>
+    `<div class="oc oc-skl">
+      <div class="oc-head">
+        <div class="skl-block" style="height:11px;width:${w1}%;border-radius:6px"></div>
+        <div class="skl-block" style="height:20px;width:${w2}px;border-radius:99px"></div>
+      </div>
+      <div class="skl-block" style="height:8px;width:${w3}%;margin-bottom:6px"></div>
+      <div class="skl-block" style="height:8px;width:${w4}%;margin-bottom:13px"></div>
+    </div>`;
+  el.innerHTML = [card(50, 82, 82, 58), card(44, 76, 76, 64), card(54, 90, 70, 52)].join('');
+}
+
+window.setOTab = function (tab, btn) {
+  currentOTab = tab;
+  document.querySelectorAll('.otab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+};
+
+function filterOrders() {
+  if (currentOTab === 'active')    return orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
+  if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
+  return orders;
+}
+
+function renderOrders() {
+  const el   = document.getElementById('orders-list');
+  if (!el) return;
+  const list = filterOrders();
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><span class="empty-ico">📦</span><div class="empty-t">Заказов нет</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(o => {
+    const c        = SC[o.status] || '#888';
+    const l        = SL[o.status] || o.status;
+    const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+    const items    = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
+    const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+    return `<div class="oc st-${o.status}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
+      <div class="oc-head">
+        <div class="oc-num">Заказ ${num}</div>
+        <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10">${l}</div>
+      </div>
+      <div class="oc-items">${items}</div>
+      <div class="oc-footer">
+        <div><div class="oc-total">${o.total} см</div><div class="oc-meta">${fmtDate(o.createdAt)} · ${o.address || ''}</div></div>
+        <div class="oc-actions" onclick="event.stopPropagation()">
+          ${isActive ? `<div style="width:7px;height:7px;border-radius:50%;background:${c};animation:rpulse 2s infinite;flex-shrink:0"></div>` : ''}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderOrdersBadge() {
+  const act = orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status)).length;
+  ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
+  });
+}
+
+window.openOrderModal = function (oid) {
+  const o = orders.find(x => x.id === oid);
+  if (!o) return;
+
+  // Очищаем предыдущий таймер перед открытием
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+
+  const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+  const c        = SC[o.status] || '#888';
+  const l        = SL[o.status] || o.status;
+  const si       = STEPS.indexOf(o.status);
+  const pay      = { cash: 'Наличные 💵', card: 'Карта 💳', online: 'Онлайн 📱' }[o.paymentMethod] || o.paymentMethod;
+  const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+  const sub      = (o.items || []).reduce((s, i) => s + i.price * i.quantity, 0);
+  const delivery = o.total - sub;
+
+  // ════ БРОНИРОВАНИЕ — специальный UI ════
+  if (o.status === 'reserved') {
+    document.getElementById('order-modal-title').textContent = `Бронь заказа ${num}`;
+
+    const itemsHtml = (o.items || []).map(i =>
+      `<div class="receipt-row">
+        <span class="receipt-row-name">${escHtml(i.name)}</span>
+        <span class="receipt-row-qty">×${i.quantity}</span>
+        <span class="receipt-row-price">${i.price * i.quantity} см</span>
+      </div>`
+    ).join('');
+
+    document.getElementById('order-modal-body').innerHTML = `
+      <!-- ── Герой-блок бронирования ── -->
+      <div class="booking-hero">
+        <div class="booking-hero-glow"></div>
+        <div class="booking-icon-wrap">
+          <div class="booking-icon-ring">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="booking-hero-title">Заказ забронирован!</div>
+        <div class="booking-hero-sub">Подтвердите заказ до истечения времени</div>
+
+        <!-- Таймер обратного отсчёта -->
+        <div class="booking-timer-ring normal" id="booking-timer-ring">
+          <svg class="booking-timer-svg" viewBox="0 0 120 120" fill="none">
+            <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
+            <circle class="booking-timer-progress" id="booking-timer-progress"
+              cx="60" cy="60" r="52"
+              stroke="#fff" stroke-width="6"
+              stroke-linecap="round"
+              stroke-dasharray="326.7"
+              stroke-dashoffset="0"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="booking-timer-inner">
+            <div class="booking-timer-label">осталось</div>
+            <div class="booking-timer-display" id="booking-timer-display">10:00</div>
+            <div class="booking-timer-unit">мин</div>
+          </div>
+        </div>
+
+        <!-- Предупреждение об истечении -->
+        <div class="booking-expired-note" id="booking-expired-note" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Время бронирования истекло
+        </div>
+      </div>
+
+      <!-- ── Детали заказа ── -->
+      <div class="booking-order-card">
+        <div class="booking-order-header">
+          <div class="booking-order-num">Заказ ${num}</div>
+          <div class="booking-order-total">${o.total} см</div>
+        </div>
+
+        <div class="booking-items">
+          ${(o.items || []).map(i => `
+            <div class="booking-item">
+              <div class="booking-item-name">${escHtml(i.name)}</div>
+              <div class="booking-item-right">
+                <span class="booking-item-qty">×${i.quantity}</span>
+                <span class="booking-item-price">${i.price * i.quantity} см</span>
+              </div>
+            </div>`).join('')}
+        </div>
+
+        <div class="booking-totals">
+          <div class="booking-total-row">
+            <span>Товары</span>
+            <span>${sub} см</span>
+          </div>
+          <div class="booking-total-row">
+            <span>Доставка</span>
+            <span>${o.total - sub > 0 ? o.total - sub : DFEE} см</span>
+          </div>
+          <div class="booking-total-row booking-total-final">
+            <span>Итого</span>
+            <span>${o.total} см</span>
+          </div>
+        </div>
+
+        <div class="booking-info-grid">
+          <div class="booking-info-item">
+            <div class="booking-info-ico">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="booking-info-val">${escHtml(o.address || '—')}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Кнопки действий ── -->
+      <div class="booking-actions">
+        <button class="booking-btn-confirm" id="booking-confirm-btn" onclick="confirmReservation('${o.id}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Подтвердить заказ
+        </button>
+        <button class="booking-btn-cancel" onclick="cancelReservation('${o.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Отменить бронь
+        </button>
+      </div>`;
+
+    document.getElementById('order-modal-bg').classList.add('open');
+
+    // Запускаем таймер
+    const reservedUntil = o.reservedUntil instanceof Date
+      ? o.reservedUntil
+      : (o.reservedUntil?.toDate?.() ?? new Date(Date.now() + BOOKING_DURATION_MS));
+    _startBookingCountdown(reservedUntil);
+    _startTimerProgressAnimation(reservedUntil);
+    return; // выходим — не показываем обычный UI
+  }
+
+  const stepIcons = ['⏳','✅','👨‍🍳','🛵','🎉'];
+  const stepSubs  = ['Заказ принят','Подтверждение','Повар готовит','Курьер в пути','Доставлен'];
+  const timeline  = STEPS.map((s, i) => {
+    const cls = i < si ? 'done' : i === si ? 'cur' : '';
+    return `<div class="o-track-step ${cls}">
+      <div class="o-track-dot">${i <= si ? stepIcons[i] : ''}</div>
+      <div class="o-track-info">
+        <div class="o-track-title">${SL[s]}</div>
+        <div class="o-track-sub">${i < si ? 'Завершён ✓' : stepSubs[i]}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const qrUrl    = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent('GAL-' + o.id)}&color=1a9e4a&bgcolor=ffffff&margin=8&format=png`;
+  const itemsHtml = (o.items || []).map(i =>
+    `<div class="receipt-row">
+      <span class="receipt-row-name">${i.name}</span>
+      <span class="receipt-row-qty">×${i.quantity}</span>
+      <span class="receipt-row-price">${i.price * i.quantity} см</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('order-modal-title').textContent = `Заказ ${num}`;
+  document.getElementById('order-modal-body').innerHTML = `
+    <div style="margin:14px 0 4px">
+      <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        Посмотреть статус заказа
+      </button>
+    </div>
+    <div class="receipt">
+      <div class="receipt-top">
+        <div class="receipt-brand">dastdaroz Delivery</div>
+        <div class="receipt-order-num">Заказ ${num}</div>
+        <div class="receipt-status-row">
+          <div class="receipt-status-dot" style="background:${c}"></div>
+          <div class="receipt-status-lbl">${l}</div>
+        </div>
+      </div>
+      <div class="receipt-body">
+        <div class="receipt-section">
+          <div class="receipt-section-title">Состав</div>
+          ${itemsHtml}
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-section">
+          <div class="receipt-total-row"><span>Товары</span><span>${sub} см</span></div>
+          <div class="receipt-total-row"><span>Доставка</span><span>${delivery > 0 ? delivery : DFEE} см</span></div>
+          <div class="receipt-divider" style="margin:8px 0"></div>
+          <div class="receipt-total-row big"><span>Итого</span><span>${o.total} см</span></div>
+        </div>
+        <div class="receipt-section">
+          <div class="receipt-section-title">Информация</div>
+          <div class="receipt-info-grid">
+            <div class="receipt-info-item"><div class="receipt-info-label">Адрес</div><div class="receipt-info-val">${o.address || '—'}</div></div>
+            <div class="receipt-info-item"><div class="receipt-info-label">Оплата</div><div class="receipt-info-val">${pay}</div></div>
+            <div class="receipt-info-item"><div class="receipt-info-label">Курьер</div><div class="receipt-info-val">${o.courierName || 'Назначается…'}</div></div>
+            <div class="receipt-info-item"><div class="receipt-info-label">Время</div><div class="receipt-info-val">${fmtDate(o.createdAt)}</div></div>
+          </div>
+          ${o.comment ? `<div class="receipt-info-item" style="margin-top:10px"><div class="receipt-info-label">Комментарий</div><div class="receipt-info-val">${o.comment}</div></div>` : ''}
+        </div>
+        <div class="receipt-qr-wrap">
+          <div class="receipt-qr"><img src="${qrUrl}" alt="QR" loading="lazy"></div>
+          <div class="receipt-qr-hint">Код · GAL-${o.id.slice(-8).toUpperCase()}</div>
+        </div>
+      </div>
+      <div class="receipt-footer">
+        <div class="receipt-footer-brand">dastdaroz Delivery</div>
+        <div class="receipt-footer-ts">${fmtDate(o.createdAt)}</div>
+      </div>
+    </div>
+    ${['pending','confirmed'].includes(o.status) ? `
+    <div style="margin-top:4px;margin-bottom:8px">
+      <button class="btn-sm danger" style="width:100%;padding:10px;font-size:.64rem" onclick="cancelO('${o.id}');closeOrderModal()">Отменить заказ</button>
+    </div>` : ''}`;
+
+  document.getElementById('order-modal-bg').classList.add('open');
+  if (isActive && activeOid !== o.id) {
+    activeOid        = o.id;
+    activeCollection = o._col || 'dastdarozOrders';
+    if (o._col === 'dastdarozOrders') listenLive(o.id, 'dastdarozOrders');
+  }
+};
+
+window.closeOrderModal = function (e) {
+  if (e && e.target !== document.getElementById('order-modal-bg')) return;
+  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
+  document.getElementById('order-modal-bg').classList.remove('open');
+};
+
+/** Анимация прогресса круговой шкалы таймера */
+function _startTimerProgressAnimation(reservedUntil) {
+  const endMs   = reservedUntil instanceof Date
+    ? reservedUntil.getTime()
+    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
+  const startMs = endMs - BOOKING_DURATION_MS;
+  const total   = endMs - startMs;
+  const circ    = 326.7; // 2 * π * 52
+
+  const animTick = () => {
+    const el = document.getElementById('booking-timer-progress');
+    if (!el) return;
+    const rem  = Math.max(0, endMs - Date.now());
+    const frac = rem / total;
+    el.style.strokeDashoffset = String(circ * (1 - frac));
+  };
+  animTick();
+  // обновляем каждые 200мс для плавной анимации
+  const animId = setInterval(() => {
+    const el = document.getElementById('booking-timer-progress');
+    if (!el) { clearInterval(animId); return; }
+    animTick();
+    if (endMs - Date.now() <= 0) clearInterval(animId);
+  }, 200);
+}
+
+window.viewOrderStatus = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
+window.trackO          = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
+
+window.cancelO = async function (id) {
+  if (!confirm('Отменить заказ?')) return;
+  try {
+    const o   = orders.find(x => x.id === id);
+    const col = o?._col || 'dastdarozOrders';
+    await updateDoc(doc(db, col, id), { status: 'cancelled', updatedAt: serverTimestamp() });
+    toast('Заказ отменён', 'ok');
+    await loadOrders();
+  } catch { toast('Ошибка', 'err'); }
+};
+
+function renderLiveBanner() {
+  const wrap = document.getElementById('live-wrap');
+  if (!wrap) return;
+  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  if (!live) { wrap.innerHTML = ''; return; }
+  const num = live.orderNumber ? '#' + live.orderNumber : '#' + live.id.slice(-6);
+
+  if (live.status === 'reserved') {
+    wrap.innerHTML = `<div class="live-banner live-banner-booking" onclick="openOrderModal('${live.id}')">
+      <div class="live-booking-ico">🔒</div>
+      <div class="live-info">
+        <div class="live-lbl" style="color:var(--teal)">Бронь активна</div>
+        <div class="live-txt">Заказ ${num} · ${live.total} см · нажмите для подтверждения</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="live-banner" onclick="trackO('${live.id}')">
+    <div class="live-pulse"></div>
+    <div class="live-info">
+      <div class="live-lbl">Активный заказ</div>
+      <div class="live-txt">Заказ ${num} · ${SL[live.status]} · ${live.total} см</div>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </div>`;
+}
+
+function listenLive(oid, col = 'dastdarozOrders') {
+  if (unsubLive) { unsubLive(); unsubLive = null; }
+  unsubLive = onSnapshot(doc(db, col, oid), snap => {
+    if (!snap.exists()) return;
+    const o   = { id: snap.id, ...snap.data(), _col: col };
+    const idx = orders.findIndex(x => x.id === oid);
+    if (idx >= 0) orders[idx] = o; else orders.unshift(o);
+    if (activeOid === oid || !activeOid) { activeOid = oid; activeCollection = col; }
+    renderOrders(); renderOrdersBadge(); renderLiveBanner();
+    if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
+
+    const modalBg = document.getElementById('order-modal-bg');
+    if (modalBg?.classList.contains('open')) {
+      const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+      if (document.getElementById('order-modal-title')?.textContent.includes(num.replace('#', ''))) {
+        openOrderModal(oid);
+      }
+    }
+    if (['delivered', 'cancelled'].includes(o.status)) {
+      if (unsubLive) { unsubLive(); unsubLive = null; }
+      if (o.status === 'delivered') toast('🎉 Заказ доставлен!', 'ok');
+    }
+  });
+}
+
+
+// ─── 16. Статус заказа + Leaflet карта ───────────────────────
+let _trackMap          = null;
+let _trackMarkerDest   = null;
+let _trackMarkerCour   = null;
+let _trackRouteLine    = null;
+let _trackCourierUnsub = null;
+let _trackCourierId    = null;
+let _trackFitted       = false;
+let _trackLastOid      = null;
+
+const ICO_DEST    = '<div class="smap-marker-dest"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><circle cx="12" cy="12" r="3"/></svg></div>';
+const ICO_COURIER = '<div class="smap-marker-courier"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="1"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg></div>';
+
+function mkTrackIcon(html, size) {
+  return L.divIcon({ html, className: 'smap-marker-wrap', iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a    = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function renderStatusMap(o) {
+  const card = document.getElementById('status-map-card');
+  const info = document.getElementById('status-map-info');
+  if (!card) return;
+
+  const TERMINAL = ['delivered', 'cancelled'];
+  const showMap  = o && o.lat != null && o.lng != null && !!o.courierId && !TERMINAL.includes(o.status);
+
+  if (!showMap) {
+    card.style.display = 'none';
+    if (info) info.style.display = 'none';
+    stopCourierTracking();
+    return;
+  }
+
+  if (_trackLastOid !== o.id) { _trackLastOid = o.id; _trackFitted = false; }
+  card.style.display = 'block';
+
+  if (!_trackMap) {
+    _trackMap = L.map('status-map', { center: [o.lat, o.lng], zoom: 15, zoomControl: true, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_trackMap);
+  }
+  setTimeout(() => _trackMap && _trackMap.invalidateSize(), 60);
+
+  if (!_trackMarkerDest) {
+    _trackMarkerDest = L.marker([o.lat, o.lng], { icon: mkTrackIcon(ICO_DEST, 28), zIndexOffset: 400 }).addTo(_trackMap);
+  } else {
+    _trackMarkerDest.setLatLng([o.lat, o.lng]);
+  }
+
+  if (_trackCourierId !== o.courierId) {
+    stopCourierTracking();
+    _trackCourierId    = o.courierId;
+    _trackCourierUnsub = onSnapshot(doc(db, 'couriers', o.courierId), snap => {
+      if (!snap.exists()) return;
+      const loc = snap.data()?.location;
+      if (loc?.lat != null && loc?.lng != null) updateCourierOnMap(o, loc.lat, loc.lng);
+    });
+  }
+
+  if (info) info.style.display = 'flex';
+}
+
+function updateCourierOnMap(o, lat, lng) {
+  if (!_trackMap) return;
+  if (!_trackMarkerCour) {
+    _trackMarkerCour = L.marker([lat, lng], { icon: mkTrackIcon(ICO_COURIER, 30), zIndexOffset: 800 }).addTo(_trackMap);
+  } else {
+    _trackMarkerCour.setLatLng([lat, lng]);
+  }
+  const pts = [[lat, lng], [o.lat, o.lng]];
+  if (!_trackRouteLine) {
+    _trackRouteLine = L.polyline(pts, { color: '#1a9e4a', weight: 3.5, opacity: .75, dashArray: '8 10' }).addTo(_trackMap);
+  } else {
+    _trackRouteLine.setLatLngs(pts);
+  }
+  if (!_trackFitted) {
+    try { _trackMap.fitBounds(_trackRouteLine.getBounds(), { padding: [34, 34] }); } catch {}
+    _trackFitted = true;
+  }
+  const dist    = haversineKm(lat, lng, o.lat, o.lng);
+  const distTxt = dist < 1 ? Math.round(dist * 1000) + ' м' : dist.toFixed(1) + ' км';
+  const nameEl  = document.getElementById('status-map-info-name');
+  const distEl  = document.getElementById('status-map-info-dist');
+  if (nameEl) nameEl.textContent = o.courierName || 'Курьер';
+  if (distEl) distEl.textContent = distTxt;
+}
+
+function stopCourierTracking() {
+  if (_trackCourierUnsub) { _trackCourierUnsub(); _trackCourierUnsub = null; }
+  _trackCourierId = null;
+  if (_trackMarkerCour) { _trackMarkerCour.remove(); _trackMarkerCour = null; }
+  if (_trackRouteLine)  { _trackRouteLine.remove();  _trackRouteLine  = null; }
+}
+
+function renderStatusPage() {
+  const el = document.getElementById('status-content');
+  if (!el) return;
+
+  let o = null;
+  if (activeOid) o = orders.find(x => x.id === activeOid);
+  if (!o) o = orders.find(x => ['pending','confirmed','preparing','delivering'].includes(x.status));
+  if (!o && orders.length) o = orders[0];
+
+  try { renderStatusMap(o); } catch (e) { console.warn('[renderStatusMap]', e); }
+
+  if (!o) {
+    el.innerHTML = '<div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Нет активных заказов</div><div class="empty-s">После оформления появится здесь</div></div>';
+    return;
+  }
+
+  const c    = SC[o.status] || '#888';
+  const l    = SL[o.status] || o.status;
+  const si   = STEPS.indexOf(o.status);
+  const num  = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+  const pay  = { cash: 'Наличные', card: 'Карта', online: 'Онлайн' }[o.paymentMethod] || o.paymentMethod;
+
+  const checkIco = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const steps = STEPS.map((s, i) => {
+    const cls = i < si ? 'done' : i === si ? 'cur' : '';
+    return `<div class="track-step ${cls}"><div class="track-dot">${i < si ? checkIco : ''}</div><div class="track-lbl">${SL[s]}</div></div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="oc st-${o.status}" style="padding:18px 20px">
+    <div class="oc-head"><div class="oc-num">Заказ ${num}</div><div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10">${l}</div></div>
+    <div class="track">${steps}</div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.76rem">
+      <div><div class="sh-tag" style="margin-bottom:3px">Адрес</div><div style="color:var(--tx)">${o.address || '—'}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Оплата</div><div style="color:var(--tx)">${pay}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Курьер</div><div style="color:var(--tx)">${o.courierName || 'Назначается…'}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Время</div><div style="color:var(--tx)">${fmtDate(o.createdAt)}</div></div>
+    </div>
+    ${o.courierId ? `
+    <button class="chat-trigger" onclick="openChat('${o.id}')">
+      <div class="chat-trigger-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+      <div class="chat-trigger-body">
+        <div class="chat-trigger-title">Чат с курьером</div>
+        <div class="chat-trigger-sub">${escHtml(o.courierName || 'Курьер')} — напишите если есть вопросы</div>
+      </div>
+      ${o.clientUnread > 0 ? `<div class="chat-trigger-badge">${o.clientUnread}</div>` : '<svg class="chat-trigger-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'}
+    </button>` : ''}
+    <div class="divider"></div>
+    <div class="sh-tag" style="margin-bottom:10px">Состав</div>
+    ${(o.items || []).map(i =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b0);font-size:.75rem">
+        <span>${escHtml(i.name)} <span style="color:var(--tx3)">×${i.quantity}</span></span>
+        <span style="font-weight:600">${i.price * i.quantity} см</span>
+      </div>`
+    ).join('')}
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Доставка</span><span>${DFEE} см</span></div>
+    <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)">
+      <span style="font-weight:700;font-size:.8rem">Итого</span>
+      <span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span>
+    </div>
+    ${['pending','confirmed'].includes(o.status) ? `
+    <div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Отменить заказ</button></div>` : ''}
+  </div>`;
+}
+
+
+// ─── 17. Чат с курьером ───────────────────────────────────────
+let chatOid      = null;
+let chatUnsub    = null;
+let chatMessages = [];
+
+window.openChat = async function (oid) {
+  const o = orders.find(x => x.id === oid);
+  if (!o) return;
+  chatOid = oid;
+  document.getElementById('chat-modal-bg')?.classList.add('open');
+
+  const nameEl = document.getElementById('chat-modal-name');
+  if (nameEl) nameEl.textContent = o.courierName || 'Курьер';
+  const avEl = document.getElementById('chat-modal-av');
+  if (avEl) avEl.textContent = (o.courierName || 'К').charAt(0).toUpperCase();
+  const subEl = document.getElementById('chat-modal-sub');
+  if (subEl) subEl.textContent = 'Заказ ' + (o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6));
+
+  try { await updateDoc(doc(db, 'orders', oid), { clientUnread: 0 }); } catch {}
+  listenChatMessages(oid);
+  setTimeout(() => document.getElementById('chat-input')?.focus(), 350);
+};
+
+window.closeChat = function () {
+  document.getElementById('chat-modal-bg')?.classList.remove('open');
+  if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+  chatOid      = null;
+  chatMessages = [];
+};
+
+function listenChatMessages(oid) {
+  if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+  const q = query(collection(db, 'orders', oid, 'messages'), orderBy('createdAt', 'asc'));
+  chatUnsub = onSnapshot(q, snap => {
+    chatMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderChatMessages();
+  });
+}
+
+function renderChatMessages() {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap) return;
+  if (!chatMessages.length) {
+    wrap.innerHTML = `<div class="chat-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+      <div class="chat-empty-t">Сообщений пока нет</div>
+      <div class="chat-empty-s">Напишите курьеру, если есть вопросы</div>
+    </div>`;
+    return;
+  }
+  wrap.innerHTML = chatMessages.map(m => {
+    const mine = m.senderRole === 'client';
+    const time = m.createdAt?.toDate
+      ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `<div class="chat-msg ${mine ? 'chat-msg-me' : 'chat-msg-them'}">${escHtml(m.text)}<span class="chat-msg-time">${time}</span></div>`;
+  }).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+window.sendChatMsg = async function () {
+  const inp = document.getElementById('chat-input');
+  if (!inp || !chatOid) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  const btn = document.getElementById('chat-send-btn');
+  if (btn) btn.disabled = true;
+  try {
+    await addDoc(collection(db, 'orders', chatOid, 'messages'), {
+      text, senderId: CU.uid, senderRole: 'client',
+      senderName: UD?.displayName || 'Клиент', createdAt: serverTimestamp(),
+    });
+    await updateDoc(doc(db, 'orders', chatOid), {
+      courierUnread: increment(1), lastMessage: text.slice(0, 120),
+      lastMessageAt: serverTimestamp(), lastMessageSenderRole: 'client',
+    });
+  } catch { toast('Ошибка отправки', 'err'); }
+  if (btn) btn.disabled = false;
+  inp.focus();
+};
+
+
+// ─── 18. Техническая поддержка ────────────────────────────────
+let _supChatId          = null;
+let _unsubSupMsgs       = null;
+let _supSelectedOrder   = null;
+let _supOrdersCache     = [];
+let _supOrderPickerOpen = false;
+let _supBadgeUnsub      = null;
+
+window.openSupport = function () {
+  if (!CU) return;
+  document.getElementById('supsh-ov')?.classList.add('open');
+  document.getElementById('supsh')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _supChatId = CU.uid;
+  _listenSupportChatUser();
+  _loadSupportOrders();
+};
+
+window.closeSupport = function () {
+  document.getElementById('supsh-ov')?.classList.remove('open');
+  document.getElementById('supsh')?.classList.remove('open');
+  document.body.style.overflow = '';
+  if (_unsubSupMsgs) { _unsubSupMsgs(); _unsubSupMsgs = null; }
+};
+
+function _listenSupportChatUser() {
+  if (_unsubSupMsgs) _unsubSupMsgs();
+  if (!_supChatId) return;
+  const q = query(collection(db, 'supportChats', _supChatId, 'messages'), orderBy('createdAt', 'asc'));
+  _unsubSupMsgs = onSnapshot(q, snap => {
+    _renderSupportMsgsUser(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    updateDoc(doc(db, 'supportChats', _supChatId), { userUnread: 0 }).catch(() => {});
+  }, () => {});
+}
+
+function _renderSupportMsgsUser(msgs) {
+  const el = document.getElementById('supsh-msgs');
+  if (!el) return;
+  if (!msgs.length) {
+    el.innerHTML = `<div class="supsh-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <div class="supsh-empty-t">Нет сообщений</div>
+      <div class="supsh-empty-s">Напишите нам — ответим быстро</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = msgs.map(m => {
+    const isMe = m.senderRole === 'user';
+    const time = m.createdAt?.toDate
+      ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `<div class="supsh-msg ${isMe ? 'supsh-msg-me' : 'supsh-msg-them'}">
+      ${!isMe && m.senderName ? `<span class="supsh-msg-name">${escHtml(m.senderName)}</span>` : ''}
+      ${escHtml(m.text)}<span class="supsh-msg-time">${time}</span>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function _loadSupportOrders() {
+  if (!CU) return;
+
+  // ── Быстрый путь: используем уже загруженный массив orders ──
+  if (orders.length > 0) {
+    _supOrdersCache = orders.slice(0, 10);
+    _renderSupOrderPicker();
+    return;
+  }
+
+  // ── Fallback: прямой запрос в Firestore (если orders ещё пуст) ──
+  try {
+    // Попытка 1: с orderBy (требует composite index)
+    const snap = await getDocs(
+      query(collection(db, 'orders'), where('clientId', '==', CU.uid), orderBy('createdAt', 'desc'), limit(10))
+    );
+    _supOrdersCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    try {
+      // Попытка 2: без orderBy (работает без индекса), сортируем вручную
+      const snap2 = await getDocs(
+        query(collection(db, 'orders'), where('clientId', '==', CU.uid), limit(10))
+      );
+      _supOrdersCache = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+      _supOrdersCache.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+    } catch { _supOrdersCache = []; }
+  }
+  _renderSupOrderPicker();
+}
+
+function _renderSupOrderPicker() {
+  const el = document.getElementById('supsh-order-picker');
+  if (!el) return;
+  const noSel = _supSelectedOrder === null;
+
+  let html = `<button class="supsh-order-item ${noSel ? 'selected' : ''}" onclick="selectSupportOrder(null,null)">
+    <div class="supsh-order-item-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${noSel ? '#fff' : 'currentColor'}" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+    <div class="supsh-order-item-body"><div class="supsh-order-item-num">Без заказа</div><div class="supsh-order-item-meta">Общий вопрос</div></div>
+    ${noSel ? '<svg class="supsh-order-item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+  </button>`;
+
+  _supOrdersCache.forEach(o => {
+    const sel  = _supSelectedOrder === o.id;
+    const num  = o.orderNumber || o.id.slice(-6).toUpperCase();
+    const date = o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })
+      : '';
+    html += `<button class="supsh-order-item ${sel ? 'selected' : ''}" onclick="selectSupportOrder('${o.id}','${escHtml(num)}')">
+      <div class="supsh-order-item-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${sel ? '#fff' : 'currentColor'}" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div>
+      <div class="supsh-order-item-body"><div class="supsh-order-item-num">#${escHtml(num)}</div><div class="supsh-order-item-meta">${date}</div></div>
+      ${sel ? '<svg class="supsh-order-item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    </button>`;
+  });
+  el.innerHTML = html;
+}
+
+window.toggleSupportOrderPicker = function () {
+  _supOrderPickerOpen = !_supOrderPickerOpen;
+  document.getElementById('supsh-order-picker')?.classList.toggle('open', _supOrderPickerOpen);
+  const btn = document.getElementById('supsh-order-btn');
+  if (btn) btn.textContent = _supOrderPickerOpen ? 'Закрыть' : 'Выбрать';
+};
+
+window.selectSupportOrder = function (orderId, orderNum) {
+  _supSelectedOrder = orderId;
+  const valEl = document.getElementById('supsh-order-val');
+  if (valEl) {
+    valEl.textContent = orderId ? `#${orderNum}` : 'Без заказа';
+    valEl.classList.toggle('has-order', !!orderId);
+  }
+  _renderSupOrderPicker();
+  if (_supOrderPickerOpen) toggleSupportOrderPicker();
+};
+
+window.sendSupportMsg = async function () {
+  if (!CU) return;
+  const inp = document.getElementById('supsh-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  _supChatId = CU.uid;
+  const chatData = {
+    userId:                CU.uid,
+    userName:              CU.displayName || 'Пользователь',
+    lastMessage:           text.slice(0, 120),
+    lastMessageAt:         serverTimestamp(),
+    lastMessageSenderRole: 'user',
+    adminUnread:           increment(1),
+    userUnread:            0,
+    updatedAt:             serverTimestamp(),
+  };
+  if (_supSelectedOrder) {
+    const order = _supOrdersCache.find(o => o.id === _supSelectedOrder);
+    if (order) { chatData.orderId = order.id; chatData.orderNumber = order.orderNumber || order.id.slice(-6).toUpperCase(); }
+  }
+  try {
+    await setDoc(doc(db, 'supportChats', _supChatId), chatData, { merge: true });
+    await addDoc(collection(db, 'supportChats', _supChatId, 'messages'), {
+      text, senderId: CU.uid, senderRole: 'user',
+      senderName: CU.displayName || 'Пользователь', createdAt: serverTimestamp(),
+    });
+  } catch { toast('Ошибка отправки', 'err'); }
+};
+
+function listenSupportBadge() {
+  if (_supBadgeUnsub) { _supBadgeUnsub(); _supBadgeUnsub = null; }
+  if (!CU) return;
+  _supBadgeUnsub = onSnapshot(doc(db, 'supportChats', CU.uid), snap => {
+    _updateSupportBadge(snap.exists() ? (snap.data().userUnread || 0) : 0);
+  }, () => {});
+}
+
+function _updateSupportBadge(count) {
+  ['support-nb', 'prof-support-nb', 'support-entry-badge', 'mob-prof-b'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = count > 0 ? 'flex' : 'none'; el.textContent = count; }
+  });
+}
+
+
+// ─── 19. Профиль ──────────────────────────────────────────────
+function showProfContent() {
+  document.getElementById('prof-card-loading')?.remove();
+  document.getElementById('prof-content-loading')?.remove();
+  const rc = document.getElementById('prof-real-content');
+  if (rc) rc.style.display = '';
+}
+
+function renderProfile() {
+  showProfContent();
+  const name  = UD?.displayName || CU.displayName || '';
+  const init  = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const phone = UD?.phone || phoneFromPseudoEmail(CU.email);
+
+  document.getElementById('p-name')?.textContent  && (document.getElementById('p-name').textContent  = name || 'Без имени');
+  document.getElementById('p-phone')?.textContent && (document.getElementById('p-phone').textContent = phone || '—');
+
+  const av = document.getElementById('p-av');
+  if (av) av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+
+  document.getElementById('pf-name')  && (document.getElementById('pf-name').value  = name);
+  document.getElementById('pf-phone') && (document.getElementById('pf-phone').value = phone);
+
+}
+
+function renderGuestProfile() {
+  showProfContent();
+  const av = document.getElementById('sb-av');
+  if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+  const nm = document.getElementById('sb-uname');
+  if (nm) nm.textContent = 'Гость';
+
+  const profUserSection = document.getElementById('prof-user-section');
+  if (profUserSection) {
+    profUserSection.innerHTML = `
+      <div style="max-width:400px;margin:24px auto 60px;text-align:center;padding:0 4px">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--acc)">👤</div>
+        <div style="font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);margin-bottom:8px">Гостевой режим</div>
+        <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Для просмотра профиля и истории заказов войдите или зарегистрируйтесь.</div>
+        <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-size:.78rem;font-family:var(--fd);font-weight:800;padding:13px 32px;cursor:pointer;width:100%;max-width:260px">
+          Войти / Зарегистрироваться
+        </button>
+      </div>`;
+  }
+
+  const ordPage = document.getElementById('page-orders');
+  if (ordPage) {
+    ordPage.innerHTML = `<div style="text-align:center;padding:60px 20px">
+      <div style="font-size:3rem;margin-bottom:14px">📋</div>
+      <div style="font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px">Заказы недоступны</div>
+      <div style="font-size:.76rem;color:var(--tx3);margin-bottom:24px">Войдите, чтобы увидеть историю заказов</div>
+      <button onclick="goLogin()" style="background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.74rem;font-family:var(--fs);font-weight:700;padding:10px 28px;cursor:pointer">Войти</button>
+    </div>`;
+  }
+}
+
+window.saveProfile = async function () {
+  const name = document.getElementById('pf-name')?.value.trim();
+  try {
+    const saveData = {
+      displayName: name,
+      updatedAt:   serverTimestamp(),
+    };
+    await setDoc(doc(db, 'users', CU.uid), saveData, { merge: true });
+    UD = { ...UD, ...saveData };
+    renderSB(); renderProfile();
+    toast('Профиль сохранён', 'ok');
+  } catch { toast('Ошибка', 'err'); }
+};
+
+window.uploadAvUI = async function (inp) {
+  const f = inp.files[0];
+  if (!f) return;
+  if (f.size > 2 * 1024 * 1024) { toast('Файл слишком большой (макс 2 МБ)', 'err'); return; }
+  toast('Загрузка…');
+  try {
+    const sr  = sRef(storage, `avatars/${CU.uid}`);
+    await uploadBytes(sr, f);
+    const url = await getDownloadURL(sr);
+    await setDoc(doc(db, 'users', CU.uid), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
+    UD.avatarUrl = url;
+    renderSB(); renderProfile();
+    toast('Фото обновлено', 'ok');
+  } catch { toast('Ошибка загрузки', 'err'); }
+};
+
+
+// ─── 20. Адреса профиля ───────────────────────────────────────
+let _profAddrs = [];
+
+window.openAddrModal      = function () { openProfAddrModal(); };
+
+window.openProfileAddrs = async function () {
+  if (!requireAuth('Войдите, чтобы добавить адрес')) return;
+  document.getElementById('paddr-bg')?.classList.add('open');
+  await _loadProfAddrs();
+};
+
+window.closeProfileAddrs = function () {
+  document.getElementById('paddr-bg')?.classList.remove('open');
+};
+
+async function _loadProfAddrs() {
+  if (!CU) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'users', CU.uid, 'addresses'), orderBy('createdAt', 'asc')));
+    _profAddrs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderProfAddrs();
+  } catch (e) { console.error('ProfAddrs:', e); }
+}
+
+function _renderProfAddrs() {
+  const list = document.getElementById('paddr-list');
+  if (!list) return;
+  const esc  = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  list.innerHTML = !_profAddrs.length
+    ? '<div class="paddr-empty">Адресов нет</div>'
+    : _profAddrs.map(a => `
+      <div class="paddr-item">
+        <div class="paddr-item-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="paddr-item-text">${esc(a.text)}</div>
+        <button class="paddr-item-del" onclick="deleteProfAddr('${a.id}')" title="Удалить">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>`).join('');
+
+  const sub = document.getElementById('prof-addr-display');
+  if (sub) {
+    sub.textContent     = _profAddrs.length > 0 ? _profAddrs[0].text : 'Указать адрес →';
+    sub.style.color     = _profAddrs.length > 0 ? 'var(--tx2)' : 'var(--acc)';
+    sub.style.fontWeight = _profAddrs.length > 0 ? '500' : '600';
+  }
+}
+
+// addaddr — структура через sheet.js (Sheet 'addaddr')
+window.openAddAddrSheet = function () {
+  const inp = document.getElementById('addaddr-inp');
+  if (inp) inp.value = '';
+  Sheet.open('addaddr');
+  setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 320);
+};
+
+window.closeAddAddrSheet = () => Sheet.close('addaddr');
+
+window.saveProfileAddr = async function () {
+  if (!CU) return;
+  const text = document.getElementById('addaddr-inp')?.value.trim();
+  if (!text) { toast('Введите адрес', 'warn'); return; }
+  const btn = document.getElementById('addaddr-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await addDoc(collection(db, 'users', CU.uid, 'addresses'), { text, createdAt: serverTimestamp() });
+    closeAddAddrSheet();
+    toast('Адрес добавлен', 'ok');
+    await _loadProfAddrs();
+  } catch { toast('Ошибка сохранения', 'err'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; } }
+};
+
+window.deleteProfAddr = async function (id) {
+  if (!CU) return;
+  try {
+    await deleteDoc(doc(db, 'users', CU.uid, 'addresses', id));
+    await _loadProfAddrs();
+  } catch { toast('Ошибка удаления', 'err'); }
+};
+
+function checkAddressBanner(uid) {
+  if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
+  if (!uid) {
+    window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: false } }));
+    return;
+  }
+  const q = query(collection(db, 'users', uid, 'addresses'));
+  _addrBannerUnsub = onSnapshot(q,
+    snap  => window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: !snap.empty } })),
+    _err  => window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: true } }))
+  );
+}
+
+
+// ─── 22. Выбор города ─────────────────────────────────────────
+// DOM-структура и open/close управляются через sheet.js (Sheet 'city')
+window.openCitySheet  = () => Sheet.open('city');
+window.closeCitySheet = () => Sheet.close('city');
+
+async function _loadCities() {
+  const list = document.getElementById('citysh-list');
+  if (!list) return;
+  list.innerHTML = '<div class="citysh-empty">Загружаем города…</div>';
+  try {
+    const snap  = await getDocs(query(collection(db, 'cities'), orderBy('order')));
+    const cities = snap.docs.length
+      ? snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      : [{ id: 'dushanbe', name: 'Душанбе', order: 1, active: true, region: 'Столица' }];
+    _renderCities(cities);
+  } catch {
+    _renderCities([{ id: 'dushanbe', name: 'Душанбе', order: 1, active: true, region: 'Столица' }]);
+  }
+}
+
+function _renderCities(cities) {
+  const list = document.getElementById('citysh-list');
+  if (!list) return;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  list.innerHTML = cities.map(c => {
+    const active = c.active !== false;
+    const sel    = active && c.id === _selectedCityId;
+    const icoClr = sel ? '#fff' : active ? 'var(--acc)' : 'var(--tx3)';
+    return `<button class="citysh-item${sel ? ' selected' : ''}${!active ? ' inactive' : ''}"
+        data-id="${esc(c.id)}" data-name="${esc(c.name)}"
+        ${!active ? 'disabled' : `onclick="selectCity(this.dataset.id, this.dataset.name)"`}>
+      <div class="citysh-item-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${icoClr}" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <div class="citysh-item-body">
+        <div class="citysh-item-name">${esc(c.name)}</div>
+        ${c.region ? `<div class="citysh-item-sub">${esc(c.region)}</div>` : ''}
+      </div>
+      ${!active
+        ? '<div class="citysh-item-soon">Скоро</div>'
+        : `<div class="citysh-item-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`}
+    </button>`;
+  }).join('');
+}
+
+window.selectCity = function (id, name) {
+  _selectedCityId   = id;
+  _selectedCityName = name;
+  localStorage.setItem('selectedCityId',   id);
+  localStorage.setItem('selectedCityName', name);
+
+  const tbName = document.getElementById('tb-city-name');
+  if (tbName) tbName.textContent = name;
+
+  document.querySelectorAll('.citysh-item').forEach(el => {
+    const sel    = el.dataset.id === id;
+    const icoSvg = el.querySelector('.citysh-item-ico svg');
+    el.classList.toggle('selected', sel);
+    if (icoSvg) icoSvg.setAttribute('stroke', sel ? '#fff' : 'var(--acc)');
+    const check = el.querySelector('.citysh-item-check');
+    if (check) check.style.opacity = sel ? '1' : '0';
+  });
+
+  loadStores();
+  loadGenCats();
+  setTimeout(closeCitySheet, 260);
+};
+
+// Геттеры выбранного города (для других модулей)
+window.getSelectedCityId   = () => _selectedCityId;
+window.getSelectedCityName = () => _selectedCityName;
