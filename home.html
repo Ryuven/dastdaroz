@@ -1572,15 +1572,7 @@ select.addr-inp{cursor:pointer}
 
             <label class="addr-lbl">Хидмати расонидан</label>
             <div class="delivery-tabs" id="delivery-tabs">
-              <div class="dtab" data-svc="mavsimi" style="cursor:default;pointer-events:none">
-                <img class="dtab-logo-sq" src="/storage/delivery-service/mavsimi_rason_mini.png" alt="Мавсими Расон"
-                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <div class="dtab-logo-fb" style="display:none">МР</div>
-                <div class="dtab-info">
-                  <div class="dtab-name">Мавсими Расон</div>
-                  <div class="dtab-sub">Хидмати расонидан</div>
-                </div>
-              </div>
+              <div class="dtab-loading" style="font-size:.65rem;color:var(--tx3);padding:8px 4px">Загрузка служб доставки…</div>
             </div>
 
             <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">

@@ -68,6 +68,8 @@ let storeCatFilter   = 'all';
 let jsonMenuData     = null;
 let jsonProdsMap     = {};
 let deliveryService  = 'mavsimi';
+let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
+let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'mavsimiOrders'
 
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
@@ -286,7 +288,7 @@ onAuthStateChanged(auth, async u => {
     CU    = null;
     UD    = null;
     if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
-    await Promise.all([loadProds(), loadCats(), loadStores(), loadGenCats()]);
+    await Promise.all([loadProds(), loadCats(), loadStores(), loadGenCats(), loadDeliveryServices()]);
     renderSB();
     renderGuestBanner();
     renderGuestProfile();
@@ -297,7 +299,7 @@ onAuthStateChanged(auth, async u => {
   GUEST = false;
   CU    = u;
   await loadUD();
-  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadGenCats()]);
+  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadGenCats(), loadDeliveryServices()]);
   renderSB();
   renderProfile();
   renderCart();
@@ -418,6 +420,54 @@ window.selectDeliveryService = function (svc) {
     el.classList.toggle('active', el.dataset.svc === svc);
   });
 };
+
+// ── Курьерские службы из Firestore ────────────────────────────
+async function loadDeliveryServices() {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'deliveryServices'),
+        where('active', '==', true),
+        orderBy('order', 'asc'))
+    );
+    deliveryServices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    // Fallback — два жёстко заданных сервиса если Firestore не ответил
+    deliveryServices = [
+      { id: 'mavsimi',   name: 'Мавсими Расон',      subtitle: 'Хидмати расонидан',         logoUrl: '/storage/delivery-service/mavsimi_rason_mini.png',   active: true, order: 1 },
+      { id: 'dastdaroz', name: 'Dastdaroz Delivery',  subtitle: 'Бета · Собственная доставка', logoUrl: '/storage/delivery-service/dastdaroz_delivery_mini.png', active: true, order: 2 },
+    ];
+  }
+  renderDeliveryTabs();
+}
+
+function renderDeliveryTabs() {
+  const container = document.getElementById('delivery-tabs');
+  if (!container) return;
+
+  if (!deliveryServices.length) {
+    container.innerHTML = '<div style="font-size:.65rem;color:var(--tx3);padding:8px 4px">Нет доступных служб доставки</div>';
+    return;
+  }
+
+  // Выбираем первый сервис по умолчанию если текущий не найден
+  if (!deliveryServices.find(s => s.id === deliveryService)) {
+    deliveryService = deliveryServices[0].id;
+  }
+
+  container.innerHTML = deliveryServices.map(svc => {
+    const isBeta = svc.id === 'dastdaroz';
+    return `<div class="dtab ${deliveryService === svc.id ? 'active' : ''}" data-svc="${svc.id}" onclick="selectDeliveryService('${svc.id}')">
+      <img class="dtab-logo-sq" src="${escHtml(svc.logoUrl || '')}" alt="${escHtml(svc.name)}"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="dtab-logo-fb" style="display:none">${escHtml((svc.name || '').slice(0, 2).toUpperCase())}</div>
+      <div class="dtab-info">
+        <div class="dtab-name">${escHtml(svc.name)}${isBeta ? ' <span style="font-size:.48rem;background:var(--acc);color:#fff;border-radius:4px;padding:1px 4px;vertical-align:middle">β</span>' : ''}</div>
+        <div class="dtab-sub">${escHtml(svc.subtitle || '')}</div>
+      </div>
+      <div class="dtab-radio"></div>
+    </div>`;
+  }).join('');
+}
 
 
 // ─── 7. Сайдбар ───────────────────────────────────────────────
@@ -1405,7 +1455,8 @@ window.doCheckout = async function () {
       updatedAt:       serverTimestamp(),
     };
 
-    const ref = await addDoc(collection(db, 'orders'), orderData);
+    // Создаём заказ в коллекции бронированных заказов
+    const ref = await addDoc(collection(db, 'bookedOrders'), orderData);
 
     // Очистка корзины
     const b = writeBatch(db);
@@ -1418,6 +1469,7 @@ window.doCheckout = async function () {
     const newOrder = {
       id: ref.id,
       ...orderData,
+      _col: 'bookedOrders',
       createdAt: { toDate: () => new Date() }, // псевдо-timestamp для fmtDate
       reservedUntil,
     };
@@ -1444,35 +1496,66 @@ window.doCheckout = async function () {
   }
 };
 
-/** Подтверждение бронирования → статус pending */
+/** Подтверждение бронирования:
+ *  - удаляем из bookedOrders
+ *  - создаём в dastdarozOrders или mavsimiOrders (зависит от deliveryService)
+ */
 window.confirmReservation = async function (oid) {
   const btn = document.getElementById('booking-confirm-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:13px;height:13px"></div> Подтверждаем…'; }
   try {
-    await updateDoc(doc(db, 'orders', oid), {
-      status: 'pending',
-      updatedAt: serverTimestamp(),
-    });
+    // Находим заказ в памяти (он лежит в bookedOrders)
+    const booked = orders.find(x => x.id === oid);
+    if (!booked) throw new Error('Заказ не найден');
+
+    // Целевая коллекция по выбранной службе
+    const svc      = booked.deliveryService || 'dastdaroz';
+    const targetCol = svc === 'mavsimi' ? 'mavsimiOrders' : 'dastdarozOrders';
+
+    // Данные для целевой коллекции (без локальных полей)
+    const { _col, ...orderFields } = booked;
+    const confirmedData = {
+      ...orderFields,
+      status:       'pending',
+      confirmedAt:  serverTimestamp(),
+      updatedAt:    serverTimestamp(),
+    };
+    delete confirmedData.id; // addDoc сам создаст id, мы используем setDoc с тем же id
+
+    // Транзакция: записываем в целевую, удаляем из bookedOrders
+    await setDoc(doc(db, targetCol, oid), confirmedData);
+    await deleteDoc(doc(db, 'bookedOrders', oid));
+
     // Обновляем в памяти
-    const o = orders.find(x => x.id === oid);
-    if (o) o.status = 'pending';
+    const idx = orders.findIndex(x => x.id === oid);
+    if (idx >= 0) {
+      orders[idx] = { ...orders[idx], status: 'pending', _col: targetCol };
+    }
+    activeOid        = oid;
+    activeCollection = targetCol;
 
     if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
     closeOrderModal();
+
+    // Для dastdaroz запускаем live-слежение
+    if (targetCol === 'dastdarozOrders') {
+      listenLive(oid, 'dastdarozOrders');
+    }
+
     await loadOrders();
     toast('Заказ подтверждён! ✅ Ожидайте курьера', 'ok');
     setTimeout(() => { activeOid = oid; goPage('status'); renderStatusPage(); }, 350);
   } catch (e) {
-    toast('Ошибка подтверждения', 'err');
+    toast('Ошибка подтверждения: ' + e.message, 'err');
     if (btn) { btn.disabled = false; btn.innerHTML = 'Подтвердить заказ'; }
   }
 };
 
-/** Отмена бронирования */
+/** Отмена бронирования (статус reserved → бронь ещё не подтверждена) */
 window.cancelReservation = async function (oid) {
   if (!confirm('Отменить бронирование?')) return;
   try {
-    await updateDoc(doc(db, 'orders', oid), {
+    await updateDoc(doc(db, 'bookedOrders', oid), {
       status: 'cancelled',
       updatedAt: serverTimestamp(),
     });
@@ -1605,21 +1688,43 @@ window.selectCartAddr = function (text) {
 
 // ─── 15. Заказы ───────────────────────────────────────────────
 async function loadOrders() {
-  try {
-    const q = query(collection(db, 'orders'), where('clientId', '==', CU.uid), orderBy('createdAt', 'desc'));
-    const s = await getDocs(q);
-    orders  = s.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    try {
-      const q2 = query(collection(db, 'orders'), where('clientId', '==', CU.uid));
-      const s2 = await getDocs(q2);
-      orders   = s2.docs.map(d => ({ id: d.id, ...d.data() }));
-      orders.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
-    } catch { orders = []; }
-  }
+  if (!CU?.uid) return;
+  const uid = CU.uid;
 
-  const live = orders.find(o => ['reserved','pending', 'confirmed', 'preparing', 'delivering'].includes(o.status));
-  if (live) { activeOid = live.id; if (!unsubLive && live.status !== 'reserved') listenLive(live.id); }
+  const safeQuery = async (col) => {
+    try {
+      const q = query(collection(db, col), where('clientId', '==', uid), orderBy('createdAt', 'desc'));
+      const s = await getDocs(q);
+      return s.docs.map(d => ({ id: d.id, ...d.data(), _col: col }));
+    } catch {
+      try {
+        // fallback без orderBy (если нет индекса)
+        const q2 = query(collection(db, col), where('clientId', '==', uid));
+        const s2 = await getDocs(q2);
+        return s2.docs.map(d => ({ id: d.id, ...d.data(), _col: col }));
+      } catch { return []; }
+    }
+  };
+
+  const [booked, dast, mav] = await Promise.all([
+    safeQuery('bookedOrders'),
+    safeQuery('dastdarozOrders'),
+    safeQuery('mavsimiOrders'),
+  ]);
+
+  orders = [...booked, ...dast, ...mav].sort(
+    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+  );
+
+  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  if (live) {
+    activeOid        = live.id;
+    activeCollection = live._col;
+    // Live-слежение только для dastdaroz (mavsimi — через бэкенд в будущем)
+    if (!unsubLive && live.status !== 'reserved' && live._col === 'dastdarozOrders') {
+      listenLive(live.id, 'dastdarozOrders');
+    }
+  }
 
   renderOrders();
   renderOrdersBadge();
@@ -1910,7 +2015,11 @@ window.openOrderModal = function (oid) {
     </div>` : ''}`;
 
   document.getElementById('order-modal-bg').classList.add('open');
-  if (isActive && activeOid !== o.id) { activeOid = o.id; listenLive(o.id); }
+  if (isActive && activeOid !== o.id) {
+    activeOid        = o.id;
+    activeCollection = o._col || 'dastdarozOrders';
+    if (o._col === 'dastdarozOrders') listenLive(o.id, 'dastdarozOrders');
+  }
 };
 
 window.closeOrderModal = function (e) {
@@ -1951,7 +2060,9 @@ window.trackO          = function (oid) { activeOid = oid; goPage('status'); ren
 window.cancelO = async function (id) {
   if (!confirm('Отменить заказ?')) return;
   try {
-    await updateDoc(doc(db, 'orders', id), { status: 'cancelled', updatedAt: serverTimestamp() });
+    const o   = orders.find(x => x.id === id);
+    const col = o?._col || 'dastdarozOrders';
+    await updateDoc(doc(db, col, id), { status: 'cancelled', updatedAt: serverTimestamp() });
     toast('Заказ отменён', 'ok');
     await loadOrders();
   } catch { toast('Ошибка', 'err'); }
@@ -1986,14 +2097,14 @@ function renderLiveBanner() {
   </div>`;
 }
 
-function listenLive(oid) {
+function listenLive(oid, col = 'dastdarozOrders') {
   if (unsubLive) { unsubLive(); unsubLive = null; }
-  unsubLive = onSnapshot(doc(db, 'orders', oid), snap => {
+  unsubLive = onSnapshot(doc(db, col, oid), snap => {
     if (!snap.exists()) return;
-    const o   = { id: snap.id, ...snap.data() };
+    const o   = { id: snap.id, ...snap.data(), _col: col };
     const idx = orders.findIndex(x => x.id === oid);
     if (idx >= 0) orders[idx] = o; else orders.unshift(o);
-    if (activeOid === oid || !activeOid) activeOid = oid;
+    if (activeOid === oid || !activeOid) { activeOid = oid; activeCollection = col; }
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
     if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
 
