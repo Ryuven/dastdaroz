@@ -424,16 +424,21 @@ window.selectDeliveryService = function (svc) {
 // ── Курьерские службы из Firestore ────────────────────────────
 async function loadDeliveryServices() {
   try {
+    // Простой запрос без orderBy — не требует составного индекса
     const snap = await getDocs(
-      query(collection(db, 'deliveryServices'),
-        where('active', '==', true),
-        orderBy('order', 'asc'))
+      query(collection(db, 'deliveryServices'), where('active', '==', true))
     );
-    deliveryServices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!snap.empty) {
+      deliveryServices = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    } else {
+      throw new Error('empty');
+    }
   } catch {
-    // Fallback — два жёстко заданных сервиса если Firestore не ответил
+    // Fallback — хардкод если Firestore пуст или недоступен
     deliveryServices = [
-      { id: 'mavsimi',   name: 'Мавсими Расон',      subtitle: 'Хидмати расонидан',         logoUrl: '/storage/delivery-service/mavsimi_rason_mini.png',   active: true, order: 1 },
+      { id: 'mavsimi',   name: 'Мавсими Расон',      subtitle: 'Хидмати расонидан',          logoUrl: '/storage/delivery-service/mavsimi_rason_mini.png',    active: true, order: 1 },
       { id: 'dastdaroz', name: 'Dastdaroz Delivery',  subtitle: 'Бета · Собственная доставка', logoUrl: '/storage/delivery-service/dastdaroz_delivery_mini.png', active: true, order: 2 },
     ];
   }
@@ -1509,18 +1514,28 @@ window.confirmReservation = async function (oid) {
     if (!booked) throw new Error('Заказ не найден');
 
     // Целевая коллекция по выбранной службе
-    const svc      = booked.deliveryService || 'dastdaroz';
+    const svc       = booked.deliveryService || 'dastdaroz';
     const targetCol = svc === 'mavsimi' ? 'mavsimiOrders' : 'dastdarozOrders';
 
     // Данные для целевой коллекции (без локальных полей)
-    const { _col, ...orderFields } = booked;
+    const { _col, id: _id, ...orderFields } = booked;
+
+    // Защита от псевдо-timestamp: если createdAt — объект с функцией (локальная заглушка),
+    // а не настоящий Firestore Timestamp, заменяем на serverTimestamp().
+    const safeCreatedAt = (orderFields.createdAt && typeof orderFields.createdAt.toMillis === 'function')
+      ? orderFields.createdAt
+      : serverTimestamp();
+
+    // reservedUntil может быть JS Date (если заказ ещё не был перечитан из Firestore) —
+    // Firebase умеет сериализовать Date → Timestamp, оставляем как есть.
+
     const confirmedData = {
       ...orderFields,
-      status:       'pending',
-      confirmedAt:  serverTimestamp(),
-      updatedAt:    serverTimestamp(),
+      createdAt:   safeCreatedAt,   // ← реальный TS или serverTimestamp()
+      status:      'pending',
+      confirmedAt: serverTimestamp(),
+      updatedAt:   serverTimestamp(),
     };
-    delete confirmedData.id; // addDoc сам создаст id, мы используем setDoc с тем же id
 
     // Транзакция: записываем в целевую, удаляем из bookedOrders
     await setDoc(doc(db, targetCol, oid), confirmedData);
