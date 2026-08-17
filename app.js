@@ -271,12 +271,28 @@ function _initSheets() {
   const addaddrBody = Sheet.body('addaddr');
   addaddrBody.style.cssText = 'padding:0 20px';
   addaddrBody.innerHTML = `
-    <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
-    <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
-      placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
-    <button class="addaddr-save" id="addaddr-save-btn" onclick="saveProfileAddr()">
-      Сохранить
-    </button>`;
+    <div id="addaddr-step1">
+      <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
+      <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
+        placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
+      <button class="addaddr-save" id="addaddr-next-btn" onclick="openAddrMapPicker()">
+        Далее — указать на карте →
+      </button>
+    </div>
+    <div id="addaddr-step2" style="display:none">
+      <p class="addaddr-map-hint">📍 Нажмите на карту или перетащите метку точно на ваш адрес, затем подтвердите</p>
+      <div id="addaddr-map" class="addaddr-map-wrap"></div>
+      <div class="addaddr-map-coords-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="addaddr-map-coords-txt" id="addaddr-map-coords-txt">Загрузка…</span>
+      </div>
+      <div class="addaddr-map-btns">
+        <button class="addaddr-back-btn" onclick="backToAddrText()">← Назад</button>
+        <button class="addaddr-save addaddr-save-flex" id="addaddr-save-btn" onclick="saveProfileAddr()">
+          Подтвердить и сохранить
+        </button>
+      </div>
+    </div>`;
 }
 
 _initSheets();
@@ -1674,15 +1690,20 @@ function _renderCartAddrList(addrs) {
   }
 
   list.innerHTML = addrs.map(a => {
-    const sel = a.text === current;
+    const sel     = a.text === current;
+    const hasCoord = a.lat != null && a.lng != null;
     return `<button class="caddrsh-item${sel ? ' selected' : ''}"
-        data-text="${escAttr(a.text)}" onclick="selectCartAddr(this.dataset.text)">
+        data-text="${escAttr(a.text)}"
+        data-lat="${hasCoord ? a.lat : ''}"
+        data-lng="${hasCoord ? a.lng : ''}"
+        onclick="selectCartAddr(this.dataset.text, this.dataset.lat, this.dataset.lng)">
       <div class="caddrsh-item-ico">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${sel ? '#fff' : 'var(--acc)'}" stroke-width="1.8">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
         </svg>
       </div>
       <div class="caddrsh-item-text">${esc(a.text)}</div>
+      ${!hasCoord ? `<div class="caddrsh-item-nocoord" title="Координаты не указаны">!</div>` : ''}
       <div class="caddrsh-item-check">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
@@ -1690,9 +1711,16 @@ function _renderCartAddrList(addrs) {
   }).join('');
 }
 
-window.selectCartAddr = function (text) {
+window.selectCartAddr = function (text, lat, lng) {
   const inp = document.getElementById('cart-addr');
   if (inp) inp.value = text;
+
+  // Записываем координаты (пустая строка → parseFloat вернёт NaN → null в doCheckout)
+  const latInp = document.getElementById('cart-lat');
+  if (latInp) latInp.value = lat || '';
+  const lngInp = document.getElementById('cart-lng');
+  if (lngInp) lngInp.value = lng || '';
+
   const display = document.getElementById('cart-addr-display');
   if (display) display.textContent = text;
   const card = document.getElementById('cart-addr-card');
@@ -2693,7 +2721,13 @@ function _renderProfAddrs() {
     : _profAddrs.map(a => `
       <div class="paddr-item">
         <div class="paddr-item-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-        <div class="paddr-item-text">${esc(a.text)}</div>
+        <div class="paddr-item-info">
+          <div class="paddr-item-text">${esc(a.text)}</div>
+          ${a.lat != null && a.lng != null
+            ? `<div class="paddr-item-coords paddr-item-coords--ok">${(+a.lat).toFixed(5)}, ${(+a.lng).toFixed(5)}</div>`
+            : `<div class="paddr-item-coords paddr-item-coords--missing">⚠ Без координат</div>`
+          }
+        </div>
         <button class="paddr-item-del" onclick="deleteProfAddr('${a.id}')" title="Удалить">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
@@ -2708,28 +2742,143 @@ function _renderProfAddrs() {
 }
 
 // addaddr — структура через sheet.js (Sheet 'addaddr')
+
+// ── Карта выбора координат адреса ─────────────────────────────
+let _addrPickerMap    = null;
+let _addrPickerMarker = null;
+let _addrPickerLat    = null;
+let _addrPickerLng    = null;
+
+const _ADDR_DEFAULT_LAT = 38.5598;  // Душанбе
+const _ADDR_DEFAULT_LNG = 68.7870;
+
+window.openAddrMapPicker = function () {
+  const text = document.getElementById('addaddr-inp')?.value.trim();
+  if (!text) { toast('Введите адрес', 'warn'); return; }
+
+  document.getElementById('addaddr-step1').style.display = 'none';
+  document.getElementById('addaddr-step2').style.display = '';
+
+  setTimeout(_initAddrPickerMap, 200);
+};
+
+function _initAddrPickerMap() {
+  if (_addrPickerMap) {
+    _addrPickerMap.invalidateSize();
+    return;
+  }
+
+  _addrPickerMap = L.map('addaddr-map', {
+    center: [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
+    zoom: 14,
+    zoomControl: true,
+    attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
+    .addTo(_addrPickerMap);
+
+  // Кастомный пин-иконка
+  const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="44" viewBox="0 0 32 44">
+    <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 28 16 28S32 27 32 16C32 7.163 24.837 0 16 0z" fill="var(--acc,#7c3aed)"/>
+    <circle cx="16" cy="16" r="7" fill="#fff"/>
+  </svg>`;
+  const pinIcon = L.divIcon({
+    className: '',
+    html: pinSvg,
+    iconSize:   [32, 44],
+    iconAnchor: [16, 44],
+    popupAnchor: [0, -44]
+  });
+
+  _addrPickerLat = _ADDR_DEFAULT_LAT;
+  _addrPickerLng = _ADDR_DEFAULT_LNG;
+
+  _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], {
+    draggable: true,
+    icon: pinIcon
+  }).addTo(_addrPickerMap);
+
+  _addrPickerMarker.on('dragend', e => {
+    const p = e.target.getLatLng();
+    _addrPickerLat = p.lat;
+    _addrPickerLng = p.lng;
+    _renderAddrPickerCoords();
+  });
+
+  _addrPickerMap.on('click', e => {
+    _addrPickerMarker.setLatLng(e.latlng);
+    _addrPickerLat = e.latlng.lat;
+    _addrPickerLng = e.latlng.lng;
+    _renderAddrPickerCoords();
+  });
+
+  _renderAddrPickerCoords();
+}
+
+function _renderAddrPickerCoords() {
+  const el = document.getElementById('addaddr-map-coords-txt');
+  if (!el) return;
+  if (_addrPickerLat !== null && _addrPickerLng !== null) {
+    el.textContent = `${_addrPickerLat.toFixed(5)}, ${_addrPickerLng.toFixed(5)}`;
+  }
+}
+
+window.backToAddrText = function () {
+  document.getElementById('addaddr-step1').style.display = '';
+  document.getElementById('addaddr-step2').style.display = 'none';
+};
+
+function _destroyAddrPickerMap() {
+  if (_addrPickerMap) { _addrPickerMap.remove(); _addrPickerMap = null; }
+  _addrPickerMarker = null;
+  _addrPickerLat    = null;
+  _addrPickerLng    = null;
+}
+
 window.openAddAddrSheet = function () {
   const inp = document.getElementById('addaddr-inp');
   if (inp) inp.value = '';
+  // Сброс на шаг 1 и уничтожение карты если была
+  const s1 = document.getElementById('addaddr-step1');
+  const s2 = document.getElementById('addaddr-step2');
+  if (s1) s1.style.display = '';
+  if (s2) s2.style.display = 'none';
+  _destroyAddrPickerMap();
   Sheet.open('addaddr');
   setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 320);
 };
 
-window.closeAddAddrSheet = () => Sheet.close('addaddr');
+window.closeAddAddrSheet = () => {
+  _destroyAddrPickerMap();
+  Sheet.close('addaddr');
+};
 
 window.saveProfileAddr = async function () {
   if (!CU) return;
   const text = document.getElementById('addaddr-inp')?.value.trim();
   if (!text) { toast('Введите адрес', 'warn'); return; }
+  if (_addrPickerLat === null || _addrPickerLng === null) {
+    toast('Укажите точку на карте', 'warn'); return;
+  }
   const btn = document.getElementById('addaddr-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   try {
-    await addDoc(collection(db, 'users', CU.uid, 'addresses'), { text, createdAt: serverTimestamp() });
-    closeAddAddrSheet();
+    await addDoc(collection(db, 'users', CU.uid, 'addresses'), {
+      text,
+      lat: _addrPickerLat,
+      lng: _addrPickerLng,
+      createdAt: serverTimestamp()
+    });
+    closeAddAddrSheet();           // уничтожает карту и закрывает шит
     toast('Адрес добавлен', 'ok');
     await _loadProfAddrs();
-  } catch { toast('Ошибка сохранения', 'err'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; } }
+  } catch (e) {
+    console.error('saveProfileAddr:', e);
+    toast('Ошибка сохранения', 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Подтвердить и сохранить'; }
+  }
 };
 
 window.deleteProfAddr = async function (id) {

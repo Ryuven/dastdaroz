@@ -1324,6 +1324,22 @@ select.addr-inp{cursor:pointer}
 .addaddr-save{width:100%;margin-top:14px;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;transition:opacity .13s}
 .addaddr-save:active{opacity:.85}
 .addaddr-save:disabled{opacity:.5;cursor:default}
+.addaddr-map-hint{font-size:.72rem;color:var(--tx3);line-height:1.5;margin-bottom:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--b0);border-radius:9px}
+.addaddr-map-wrap{width:calc(100% + 40px);height:310px;margin:0 -20px 14px;border-radius:0;overflow:hidden;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0)}
+.addaddr-map-coords-row{display:flex;align-items:center;gap:7px;padding:9px 12px;background:var(--s2);border:1.5px solid var(--accg);border-radius:10px;margin-bottom:12px}
+.addaddr-map-coords-txt{font-size:.72rem;font-weight:700;color:var(--tx);font-family:var(--fs);letter-spacing:.02em}
+.addaddr-map-btns{display:flex;gap:10px;margin-bottom:6px}
+.addaddr-back-btn{flex:0 0 auto;padding:13px 16px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;font-family:var(--fd);font-weight:700;font-size:.8rem;color:var(--tx2);cursor:pointer;transition:all .13s;white-space:nowrap}
+.addaddr-back-btn:hover{border-color:var(--acc);color:var(--acc)}
+.addaddr-save-flex{flex:1}
+/* Адреса профиля — инфо-блок с координатами */
+.paddr-item-info{flex:1;min-width:0}
+.paddr-item-text{font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
+.paddr-item-coords{font-size:.62rem;color:var(--tx3);margin-top:2px;font-weight:500;letter-spacing:.01em}
+.paddr-item-coords--ok{color:var(--acc)}
+.paddr-item-coords--missing{color:#f59e0b}
+/* Корзина — иконка отсутствия координат */
+.caddrsh-item-nocoord{width:18px;height:18px;border-radius:50%;background:#f59e0b;color:#fff;font-size:.58rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;margin-right:4px}
 
 /* ══ CART ADDRESS SHEET (контент) — структура через sheet.js ═ */
 .caddrsh-list{overflow-y:auto;flex:1}
@@ -1560,6 +1576,8 @@ select.addr-inp{cursor:pointer}
               <svg class="cart-addr-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
             <input type="hidden" id="cart-addr"/>
+            <input type="hidden" id="cart-lat"/>
+            <input type="hidden" id="cart-lng"/>
 
             <!-- Комментарий -->
             <label class="cart-note-lbl">
