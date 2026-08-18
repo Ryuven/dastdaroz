@@ -1317,21 +1317,29 @@ select.addr-inp{cursor:pointer}
 .paddr-empty{padding:32px 20px;text-align:center;font-size:.76rem;color:var(--tx3)}
 
 /* ══ ADD ADDRESS SHEET (контент) — структура через sheet.js ══ */
+/* Шаг 1: Карта */
+.addaddr-step{display:flex;flex-direction:column}
+.addaddr-map-tip{font-size:.7rem;font-weight:600;color:var(--tx3);padding:10px 14px;display:flex;align-items:center;gap:7px;flex-shrink:0;border-bottom:1px solid var(--b0);background:var(--s2);line-height:1.4}
+#addaddr-map{height:268px;flex-shrink:0;background:var(--s2)}
+.addaddr-map-bottom{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.addaddr-coords-badge{display:flex;align-items:center;gap:7px;padding:9px 12px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.72rem;font-weight:600;color:var(--tx3);transition:all .18s}
+.addaddr-coords-badge.has-coords{border-color:var(--accg);color:var(--tx);background:var(--accd)}
+.addaddr-coords-badge.has-coords svg{stroke:var(--acc)}
+.addaddr-btn-primary{width:100%;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .13s}
+.addaddr-btn-primary:active{opacity:.82}
+.addaddr-btn-primary:disabled{opacity:.5;cursor:default}
+/* Шаг 2: Текст */
+.addaddr-step2-inner{padding:16px 20px 22px;display:flex;flex-direction:column;gap:14px}
+.addaddr-sel-point{display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--accd);border:1.5px solid var(--accg);border-radius:11px}
+.addaddr-sel-coords-txt{font-size:.72rem;font-weight:700;color:var(--acc);font-family:var(--fs)}
 .addaddr-lbl{font-size:.48rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;display:block}
 .addaddr-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.84rem;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;resize:none}
 .addaddr-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
 .addaddr-inp::placeholder{color:var(--tx3)}
-.addaddr-save{width:100%;margin-top:14px;padding:14px;background:var(--acc);border:none;border-radius:13px;font-family:var(--fd);font-weight:900;font-size:.84rem;color:#fff;cursor:pointer;transition:opacity .13s}
-.addaddr-save:active{opacity:.85}
-.addaddr-save:disabled{opacity:.5;cursor:default}
-.addaddr-map-hint{font-size:.72rem;color:var(--tx3);line-height:1.5;margin-bottom:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--b0);border-radius:9px}
-.addaddr-map-wrap{width:calc(100% + 40px);height:310px;margin:0 -20px 14px;border-radius:0;overflow:hidden;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0)}
-.addaddr-map-coords-row{display:flex;align-items:center;gap:7px;padding:9px 12px;background:var(--s2);border:1.5px solid var(--accg);border-radius:10px;margin-bottom:12px}
-.addaddr-map-coords-txt{font-size:.72rem;font-weight:700;color:var(--tx);font-family:var(--fs);letter-spacing:.02em}
-.addaddr-map-btns{display:flex;gap:10px;margin-bottom:6px}
-.addaddr-back-btn{flex:0 0 auto;padding:13px 16px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;font-family:var(--fd);font-weight:700;font-size:.8rem;color:var(--tx2);cursor:pointer;transition:all .13s;white-space:nowrap}
-.addaddr-back-btn:hover{border-color:var(--acc);color:var(--acc)}
-.addaddr-save-flex{flex:1}
+.addaddr-act-row{display:flex;gap:10px;align-items:stretch}
+.addaddr-btn-secondary{flex:0 0 auto;padding:13px 16px;background:var(--s2);border:1.5px solid var(--b0);border-radius:13px;font-family:var(--fd);font-weight:700;font-size:.8rem;color:var(--tx2);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .13s;white-space:nowrap}
+.addaddr-btn-secondary:hover{border-color:var(--acc);color:var(--acc)}
+.addaddr-btn-grow{flex:1}
 /* Адреса профиля — инфо-блок с координатами */
 .paddr-item-info{flex:1;min-width:0}
 .paddr-item-text{font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}

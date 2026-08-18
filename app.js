@@ -267,30 +267,47 @@ function _initSheets() {
     </div>`;
 
   // ── Add new address ────────────────────────────────────────
-  Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710 });
+  Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710, onOpen: _onAddrSheetOpen });
   const addaddrBody = Sheet.body('addaddr');
-  addaddrBody.style.cssText = 'padding:0 20px';
+  addaddrBody.style.cssText = 'padding:0;overflow:hidden';
   addaddrBody.innerHTML = `
-    <div id="addaddr-step1">
-      <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
-      <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
-        placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
-      <button class="addaddr-save" id="addaddr-next-btn" onclick="openAddrMapPicker()">
-        Далее — указать на карте →
-      </button>
-    </div>
-    <div id="addaddr-step2" style="display:none">
-      <p class="addaddr-map-hint">📍 Нажмите на карту или перетащите метку точно на ваш адрес, затем подтвердите</p>
-      <div id="addaddr-map" class="addaddr-map-wrap"></div>
-      <div class="addaddr-map-coords-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span class="addaddr-map-coords-txt" id="addaddr-map-coords-txt">Загрузка…</span>
+    <div id="addaddr-step1" class="addaddr-step">
+      <div class="addaddr-map-tip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Нажмите на карту или перетащите метку на нужное место
       </div>
-      <div class="addaddr-map-btns">
-        <button class="addaddr-back-btn" onclick="backToAddrText()">← Назад</button>
-        <button class="addaddr-save addaddr-save-flex" id="addaddr-save-btn" onclick="saveProfileAddr()">
-          Подтвердить и сохранить
+      <div id="addaddr-map"></div>
+      <div class="addaddr-map-bottom">
+        <div class="addaddr-coords-badge" id="addaddr-coords-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="addaddr-map-coords-txt">Укажите точку на карте</span>
+        </div>
+        <button class="addaddr-btn-primary" onclick="goToAddrTextStep()">
+          Далее — ввести адрес
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+      </div>
+    </div>
+    <div id="addaddr-step2" class="addaddr-step" style="display:none">
+      <div class="addaddr-step2-inner">
+        <div class="addaddr-sel-point">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="addaddr-sel-coords" class="addaddr-sel-coords-txt"></span>
+        </div>
+        <div>
+          <label class="addaddr-lbl" for="addaddr-inp">Полный адрес</label>
+          <textarea class="addaddr-inp" id="addaddr-inp" rows="3"
+            placeholder="Например: ул. Рудаки 42, кв. 7…"></textarea>
+        </div>
+        <div class="addaddr-act-row">
+          <button class="addaddr-btn-secondary" onclick="goToAddrMapStep()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            Карта
+          </button>
+          <button class="addaddr-btn-primary addaddr-btn-grow" id="addaddr-save-btn" onclick="saveProfileAddr()">
+            Сохранить
+          </button>
+        </div>
       </div>
     </div>`;
 }
@@ -2752,52 +2769,51 @@ let _addrPickerLng    = null;
 const _ADDR_DEFAULT_LAT = 38.5598;  // Душанбе
 const _ADDR_DEFAULT_LNG = 68.7870;
 
-window.openAddrMapPicker = function () {
-  const text = document.getElementById('addaddr-inp')?.value.trim();
-  if (!text) { toast('Введите адрес', 'warn'); return; }
-
-  document.getElementById('addaddr-step1').style.display = 'none';
-  document.getElementById('addaddr-step2').style.display = '';
-
-  setTimeout(_initAddrPickerMap, 200);
-};
+// Вызывается Sheet-ом после завершения анимации открытия
+function _onAddrSheetOpen() {
+  const s1 = document.getElementById('addaddr-step1');
+  const s2 = document.getElementById('addaddr-step2');
+  if (s1) s1.style.display = '';
+  if (s2) s2.style.display = 'none';
+  // Даём шиту полностью отрисоваться, потом инициализируем карту
+  setTimeout(_initAddrPickerMap, 320);
+}
 
 function _initAddrPickerMap() {
+  const mapEl = document.getElementById('addaddr-map');
+  if (!mapEl) return;
+
+  // Если карта уже есть — просто обновляем размер
   if (_addrPickerMap) {
     _addrPickerMap.invalidateSize();
     return;
   }
 
   _addrPickerMap = L.map('addaddr-map', {
-    center: [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
-    zoom: 14,
-    zoomControl: true,
+    center:           [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
+    zoom:             14,
+    zoomControl:      false,
     attributionControl: false
   });
+
+  // Кнопки зума — снизу справа, чтобы не перекрывать hint
+  L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
     .addTo(_addrPickerMap);
 
-  // Кастомный пин-иконка
-  const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="44" viewBox="0 0 32 44">
-    <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 28 16 28S32 27 32 16C32 7.163 24.837 0 16 0z" fill="var(--acc,#7c3aed)"/>
-    <circle cx="16" cy="16" r="7" fill="#fff"/>
+  // Пин-иконка
+  const pinHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="display:block">
+    <path d="M15 0C6.716 0 0 6.716 0 15c0 10.32 15 27 15 27S30 25.32 30 15C30 6.716 23.284 0 15 0z" fill="var(--acc,#7c3aed)"/>
+    <circle cx="15" cy="15" r="6.5" fill="#fff"/>
   </svg>`;
-  const pinIcon = L.divIcon({
-    className: '',
-    html: pinSvg,
-    iconSize:   [32, 44],
-    iconAnchor: [16, 44],
-    popupAnchor: [0, -44]
-  });
+  const pinIcon = L.divIcon({ className: '', html: pinHtml, iconSize: [30, 42], iconAnchor: [15, 42] });
 
   _addrPickerLat = _ADDR_DEFAULT_LAT;
   _addrPickerLng = _ADDR_DEFAULT_LNG;
 
-  _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], {
-    draggable: true,
-    icon: pinIcon
-  }).addTo(_addrPickerMap);
+  _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], { draggable: true, icon: pinIcon })
+    .addTo(_addrPickerMap);
 
   _addrPickerMarker.on('dragend', e => {
     const p = e.target.getLatLng();
@@ -2814,19 +2830,42 @@ function _initAddrPickerMap() {
   });
 
   _renderAddrPickerCoords();
+
+  // Несколько попыток invalidateSize на случай если анимация ещё идёт
+  setTimeout(() => _addrPickerMap?.invalidateSize(), 100);
+  setTimeout(() => _addrPickerMap?.invalidateSize(), 400);
 }
 
 function _renderAddrPickerCoords() {
-  const el = document.getElementById('addaddr-map-coords-txt');
-  if (!el) return;
-  if (_addrPickerLat !== null && _addrPickerLng !== null) {
-    el.textContent = `${_addrPickerLat.toFixed(5)}, ${_addrPickerLng.toFixed(5)}`;
+  const txt = document.getElementById('addaddr-map-coords-txt');
+  if (txt && _addrPickerLat !== null) {
+    txt.textContent = `${_addrPickerLat.toFixed(5)}, ${_addrPickerLng.toFixed(5)}`;
   }
+  // Подсвечиваем бейдж когда координата выбрана
+  const badge = document.getElementById('addaddr-coords-badge');
+  if (badge) badge.classList.toggle('has-coords', _addrPickerLat !== null);
 }
 
-window.backToAddrText = function () {
+// Шаг 1 → Шаг 2: карта → ввод текста
+window.goToAddrTextStep = function () {
+  if (_addrPickerLat === null || _addrPickerLng === null) {
+    toast('Укажите точку на карте', 'warn');
+    return;
+  }
+  // Показываем выбранные координаты в шаге 2
+  const sel = document.getElementById('addaddr-sel-coords');
+  if (sel) sel.textContent = `${_addrPickerLat.toFixed(5)}, ${_addrPickerLng.toFixed(5)}`;
+
+  document.getElementById('addaddr-step1').style.display = 'none';
+  document.getElementById('addaddr-step2').style.display = '';
+  setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 180);
+};
+
+// Шаг 2 → Шаг 1: назад к карте
+window.goToAddrMapStep = function () {
   document.getElementById('addaddr-step1').style.display = '';
   document.getElementById('addaddr-step2').style.display = 'none';
+  setTimeout(() => _addrPickerMap?.invalidateSize(), 120);
 };
 
 function _destroyAddrPickerMap() {
@@ -2839,14 +2878,9 @@ function _destroyAddrPickerMap() {
 window.openAddAddrSheet = function () {
   const inp = document.getElementById('addaddr-inp');
   if (inp) inp.value = '';
-  // Сброс на шаг 1 и уничтожение карты если была
-  const s1 = document.getElementById('addaddr-step1');
-  const s2 = document.getElementById('addaddr-step2');
-  if (s1) s1.style.display = '';
-  if (s2) s2.style.display = 'none';
   _destroyAddrPickerMap();
   Sheet.open('addaddr');
-  setTimeout(() => document.getElementById('addaddr-inp')?.focus(), 320);
+  // _onAddrSheetOpen инициирует карту после анимации открытия
 };
 
 window.closeAddAddrSheet = () => {
@@ -2870,14 +2904,14 @@ window.saveProfileAddr = async function () {
       lng: _addrPickerLng,
       createdAt: serverTimestamp()
     });
-    closeAddAddrSheet();           // уничтожает карту и закрывает шит
+    closeAddAddrSheet();
     toast('Адрес добавлен', 'ok');
     await _loadProfAddrs();
   } catch (e) {
     console.error('saveProfileAddr:', e);
     toast('Ошибка сохранения', 'err');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Подтвердить и сохранить'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; }
   }
 };
 
