@@ -269,14 +269,14 @@ function _initSheets() {
   // ── Add new address ────────────────────────────────────────
   Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710, onOpen: _onAddrSheetOpen });
   const addaddrBody = Sheet.body('addaddr');
-  addaddrBody.style.cssText = 'padding:0;overflow:hidden';
+  addaddrBody.style.padding = '0';
   addaddrBody.innerHTML = `
     <div id="addaddr-step1" class="addaddr-step">
       <div class="addaddr-map-tip">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Нажмите на карту или перетащите метку на нужное место
       </div>
-      <div id="addaddr-map"></div>
+      <div class="addaddr-map-container"><div id="addaddr-map"></div></div>
       <div class="addaddr-map-bottom">
         <div class="addaddr-coords-badge" id="addaddr-coords-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2783,16 +2783,22 @@ function _initAddrPickerMap() {
   const mapEl = document.getElementById('addaddr-map');
   if (!mapEl) return;
 
-  // Если карта уже есть — просто обновляем размер
+  // Если карта уже создана — просто обновляем размер
   if (_addrPickerMap) {
     _addrPickerMap.invalidateSize();
     return;
   }
 
+  // Ждём реальных размеров (sheet анимация могла ещё идти)
+  if (!mapEl.offsetWidth || !mapEl.offsetHeight) {
+    setTimeout(_initAddrPickerMap, 200);
+    return;
+  }
+
   _addrPickerMap = L.map('addaddr-map', {
-    center:           [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
-    zoom:             14,
-    zoomControl:      false,
+    center:             [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
+    zoom:               14,
+    zoomControl:        false,
     attributionControl: false
   });
 
@@ -2831,9 +2837,12 @@ function _initAddrPickerMap() {
 
   _renderAddrPickerCoords();
 
-  // Несколько попыток invalidateSize на случай если анимация ещё идёт
-  setTimeout(() => _addrPickerMap?.invalidateSize(), 100);
-  setTimeout(() => _addrPickerMap?.invalidateSize(), 400);
+  // Принудительно пересчитываем размер после рендера
+  requestAnimationFrame(() => {
+    _addrPickerMap?.invalidateSize();
+    setTimeout(() => _addrPickerMap?.invalidateSize(), 250);
+    setTimeout(() => _addrPickerMap?.invalidateSize(), 600);
+  });
 }
 
 function _renderAddrPickerCoords() {
@@ -2880,7 +2889,9 @@ window.openAddAddrSheet = function () {
   if (inp) inp.value = '';
   _destroyAddrPickerMap();
   Sheet.open('addaddr');
-  // _onAddrSheetOpen инициирует карту после анимации открытия
+  // Запасной таймер — если onOpen стреляет до завершения анимации,
+  // _initAddrPickerMap сам проверит offsetWidth и ретраится
+  setTimeout(_initAddrPickerMap, 500);
 };
 
 window.closeAddAddrSheet = () => {
