@@ -269,20 +269,14 @@ function _initSheets() {
   // ── Add new address ────────────────────────────────────────
   Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710, onOpen: _onAddrSheetOpen });
   const addaddrBody = Sheet.body('addaddr');
-  addaddrBody.style.padding = '0';
+  addaddrBody.style.cssText = 'padding:0;overflow:hidden';
   addaddrBody.innerHTML = `
     <div id="addaddr-step1" class="addaddr-step">
       <div class="addaddr-map-tip">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Нажмите на карту или перетащите метку на нужное место
       </div>
-      <div class="addaddr-map-container">
-        <div id="addaddr-map"></div>
-        <div class="addaddr-map-loader" id="addaddr-map-loader">
-          <div class="addaddr-map-loader-spinner"></div>
-          <span class="addaddr-map-loader-txt">Загрузка карты…</span>
-        </div>
-      </div>
+      <div id="addaddr-map"></div>
       <div class="addaddr-map-bottom">
         <div class="addaddr-coords-badge" id="addaddr-coords-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2235,7 +2229,7 @@ function renderStatusMap(o) {
 
   if (!_trackMap) {
     _trackMap = L.map('status-map', { center: [o.lat, o.lng], zoom: 15, zoomControl: true, attributionControl: false });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(_trackMap);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_trackMap);
   }
   setTimeout(() => _trackMap && _trackMap.invalidateSize(), 60);
 
@@ -2787,72 +2781,80 @@ function _onAddrSheetOpen() {
 
 function _initAddrPickerMap() {
   const mapEl = document.getElementById('addaddr-map');
-  if (!mapEl) return;
+  if (!mapEl) {
+    console.error('[addaddr] #addaddr-map не найден в DOM');
+    return;
+  }
 
-  // Если карта уже создана — просто обновляем размер
+  // Если карта уже есть — просто обновляем размер
   if (_addrPickerMap) {
     _addrPickerMap.invalidateSize();
     return;
   }
 
-  // Ждём реальных размеров (sheet анимация могла ещё идти)
-  if (!mapEl.offsetWidth || !mapEl.offsetHeight) {
-    setTimeout(_initAddrPickerMap, 200);
+  // Leaflet не загрузился (CDN недоступен)
+  if (typeof L === 'undefined') {
+    console.error('[addaddr] Leaflet (L) не загружен — CDN недоступен');
+    mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--tx3);font-size:.8rem;font-weight:600;gap:6px">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      'Карта недоступна — нет соединения</div>';
     return;
   }
 
-  _addrPickerMap = L.map('addaddr-map', {
-    center:             [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
-    zoom:               14,
-    zoomControl:        false,
-    attributionControl: false
-  });
+  try {
+    _addrPickerMap = L.map('addaddr-map', {
+      center:             [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
+      zoom:               14,
+      zoomControl:        false,
+      attributionControl: false
+    });
 
-  // Кнопки зума — снизу справа, чтобы не перекрывать hint
-  L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
+    // Кнопки зума — снизу справа, чтобы не перекрывать hint
+    L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' })
-    .on('tileload', () => {
-      const loader = document.getElementById('addaddr-map-loader');
-      if (loader) loader.classList.add('hidden');
-    })
-    .addTo(_addrPickerMap);
+    // 2GIS тайлы — надёжно работают в СНГ/ЦА
+    L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 19 })
+      .addTo(_addrPickerMap);
 
-  // Пин-иконка
-  const pinHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="display:block">
-    <path d="M15 0C6.716 0 0 6.716 0 15c0 10.32 15 27 15 27S30 25.32 30 15C30 6.716 23.284 0 15 0z" fill="var(--acc,#7c3aed)"/>
-    <circle cx="15" cy="15" r="6.5" fill="#fff"/>
-  </svg>`;
-  const pinIcon = L.divIcon({ className: '', html: pinHtml, iconSize: [30, 42], iconAnchor: [15, 42] });
+    // Пин-иконка
+    const pinHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="display:block">
+      <path d="M15 0C6.716 0 0 6.716 0 15c0 10.32 15 27 15 27S30 25.32 30 15C30 6.716 23.284 0 15 0z" fill="var(--acc,#7c3aed)"/>
+      <circle cx="15" cy="15" r="6.5" fill="#fff"/>
+    </svg>`;
+    const pinIcon = L.divIcon({ className: '', html: pinHtml, iconSize: [30, 42], iconAnchor: [15, 42] });
 
-  _addrPickerLat = _ADDR_DEFAULT_LAT;
-  _addrPickerLng = _ADDR_DEFAULT_LNG;
+    _addrPickerLat = _ADDR_DEFAULT_LAT;
+    _addrPickerLng = _ADDR_DEFAULT_LNG;
 
-  _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], { draggable: true, icon: pinIcon })
-    .addTo(_addrPickerMap);
+    _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], { draggable: true, icon: pinIcon })
+      .addTo(_addrPickerMap);
 
-  _addrPickerMarker.on('dragend', e => {
-    const p = e.target.getLatLng();
-    _addrPickerLat = p.lat;
-    _addrPickerLng = p.lng;
+    _addrPickerMarker.on('dragend', e => {
+      const p = e.target.getLatLng();
+      _addrPickerLat = p.lat;
+      _addrPickerLng = p.lng;
+      _renderAddrPickerCoords();
+    });
+
+    _addrPickerMap.on('click', e => {
+      _addrPickerMarker.setLatLng(e.latlng);
+      _addrPickerLat = e.latlng.lat;
+      _addrPickerLng = e.latlng.lng;
+      _renderAddrPickerCoords();
+    });
+
     _renderAddrPickerCoords();
-  });
 
-  _addrPickerMap.on('click', e => {
-    _addrPickerMarker.setLatLng(e.latlng);
-    _addrPickerLat = e.latlng.lat;
-    _addrPickerLng = e.latlng.lng;
-    _renderAddrPickerCoords();
-  });
+    // Несколько попыток invalidateSize на случай если анимация ещё идёт
+    setTimeout(() => _addrPickerMap?.invalidateSize(), 100);
+    setTimeout(() => _addrPickerMap?.invalidateSize(), 400);
 
-  _renderAddrPickerCoords();
-
-  // Принудительно пересчитываем размер после рендера
-  requestAnimationFrame(() => {
-    _addrPickerMap?.invalidateSize();
-    setTimeout(() => _addrPickerMap?.invalidateSize(), 250);
-    setTimeout(() => _addrPickerMap?.invalidateSize(), 600);
-  });
+  } catch (e) {
+    console.error('[addaddr] Ошибка инициализации карты:', e);
+    mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--tx3);font-size:.8rem;font-weight:600;gap:6px">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      'Не удалось загрузить карту</div>';
+  }
 }
 
 function _renderAddrPickerCoords() {
@@ -2892,9 +2894,6 @@ function _destroyAddrPickerMap() {
   _addrPickerMarker = null;
   _addrPickerLat    = null;
   _addrPickerLng    = null;
-  // Сброс лоадера для следующего открытия
-  const loader = document.getElementById('addaddr-map-loader');
-  if (loader) loader.classList.remove('hidden');
 }
 
 window.openAddAddrSheet = function () {
@@ -2902,9 +2901,7 @@ window.openAddAddrSheet = function () {
   if (inp) inp.value = '';
   _destroyAddrPickerMap();
   Sheet.open('addaddr');
-  // Запасной таймер — если onOpen стреляет до завершения анимации,
-  // _initAddrPickerMap сам проверит offsetWidth и ретраится
-  setTimeout(_initAddrPickerMap, 500);
+  // _onAddrSheetOpen инициирует карту после анимации открытия
 };
 
 window.closeAddAddrSheet = () => {
