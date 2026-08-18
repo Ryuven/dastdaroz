@@ -63,12 +63,12 @@
 ║  --tx2   #3d5244  — второстепенный                               ║
 ║  --tx3   #7a9882  — подписи / плейсхолдеры                       ║
 ║  --b0    rgba(0,0,0,.07)  — бордер                               ║
-║  --fd    'Nunito'  — заголовки (font-weight 700-900)             ║
+║  --fd    'Unbounded' — заголовки (font-weight 700-900)           ║
 ║  --fs    'Inter'   — текст                                       ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 -->
-<html lang="tg">
+<html lang="ru">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
@@ -77,14 +77,14 @@
 <title>Новости - dastdaroz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;900&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
 <style>
 :root{
   --acc:#1a9e4a;--acc2:#22c55e;--accd:rgba(26,158,74,.09);--accg:rgba(26,158,74,.2);
   --bg:#f3f7f4;--s1:#ffffff;--s2:#edf4ef;
   --b0:rgba(0,0,0,.07);--b1:rgba(0,0,0,.15);
   --tx:#171f1a;--tx2:#3d5244;--tx3:#7a9882;--txd:#b0c4b8;
-  --fd:'Unbounded',sans-serif;--fs:'Unbounded',sans-serif;
+  --fd:'Unbounded',sans-serif;--fs:'Inter',system-ui,sans-serif;
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
   --ease:cubic-bezier(.32,0,.18,1);
@@ -245,8 +245,8 @@ a{color:inherit;text-decoration:none}
   color:var(--tx3);
 }
 .ci-body{flex:1;min-width:0}
-.ci-val{font-size:.8rem;font-weight:600;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ci-sub{font-size:.58rem;color:var(--tx3);margin-top:1px}
+.ci-val{font-family:var(--fd);font-size:.8rem;font-weight:700;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-sub{font-family:var(--fd);font-size:.55rem;font-weight:700;letter-spacing:.03em;color:var(--tx3);margin-top:1px}
 .ci-arrow{color:var(--txd);flex-shrink:0}
 
 /* ── SOCIALS ── */
@@ -383,12 +383,6 @@ a{color:inherit;text-decoration:none}
 .news-section-title{font-family:var(--fd);font-weight:700;font-size:.7rem;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 8px}
 
 /* Статья */
-.art-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s}
-.art-overlay.open{opacity:1;pointer-events:auto}
-.art-sheet{width:100%;height:93svh;background:var(--bg);border-radius:22px 22px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s var(--ease);overflow:hidden}
-.art-overlay.open .art-sheet{transform:translateY(0)}
-.art-handle{width:38px;height:4px;border-radius:2px;background:var(--b1);margin:12px auto 0;flex-shrink:0}
-.art-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .art-cover{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--s2)}
 .art-cover-ph{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--s2),var(--accd));display:flex;align-items:center;justify-content:center;color:var(--txd)}
 .art-body{padding:20px 20px 48px}
@@ -535,12 +529,12 @@ a{color:inherit;text-decoration:none}
       </div>
     </div>
 
-    <a href="mailto:info@galelium.com" class="contact-item clickable">
+    <a href="mailto:info@dastdaroz.shop" class="contact-item clickable">
       <div class="ci-icon">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
       <div class="ci-body">
-        <div class="ci-val">info@galelium.com</div>
+        <div class="ci-val">info@dastdaroz.shop</div>
       </div>
     </a>
 
@@ -610,7 +604,7 @@ a{color:inherit;text-decoration:none}
         <polyline points="16 17 21 12 16 7"/>
         <line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
-      Выход
+      Выйти
     </button>
 
   </div>
@@ -626,7 +620,7 @@ const SEARCH_PAGES = [
   // { title: 'Главная',        path: 'index.html'   },
   // { title: 'Каталог',        path: 'catalog.html' },
   // { title: 'О нас',          path: 'about.html'   },
-  // { title: 'Фармоишҳо',      path: 'orders.html'  },
+  // { title: 'Заказы',          path: 'orders.html'  },
 ];
 // ════════════════════════════════════════════════════════════════
 
@@ -840,10 +834,6 @@ btnLogout.addEventListener('click', async () => {
 });
 </script>
 
-<!-- ── ARTICLE BOTTOM SHEET (только для этой страницы) ── -->
-<div class="art-overlay" id="art-overlay">
-  <div class="art-sheet">
-    <div class="art-handle"></div>
     <div class="art-scroll">
       <div id="art-inner"></div>
     </div>
@@ -852,6 +842,7 @@ btnLogout.addEventListener('click', async () => {
 
 <script type="module">
 // ═══ НОВОСТИ — Firebase Firestore ════════════════════════════════
+import { Sheet } from './sheet.js';
 import {
   initializeApp, getApps, getApp
 } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
@@ -871,6 +862,9 @@ const cfg = {
 const app = getApps().length ? getApp() : initializeApp(cfg);
 const db  = getFirestore(app);
 
+// ── Sheet для статьи (полный экран, 100svh через sheet.js) ──
+Sheet.define({ id: 'article', title: '', zIndex: 400 });
+
 let allArticles = [];
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -881,8 +875,9 @@ function fmtDate(ts){
 }
 
 function cover(url, bigCls, phCls){
-  if (url) return `<img class="${bigCls}" src="${esc(url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')">`;
-  return `<div class="${phCls}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`;
+  const phSvg = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+  if (url) return `<img class="${bigCls}" src="${esc(url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="${phCls}" style="display:none">${phSvg}</div>`;
+  return `<div class="${phCls}">${phSvg}</div>`;
 }
 
 function renderNews(articles, isSearch = false){
@@ -973,47 +968,53 @@ async function loadNews(){
 }
 
 // ── Статья ───────────────────────────────────────────────────────
-const artOverlay = document.getElementById('art-overlay');
-
 window.openArticle = function(id){
   const a = allArticles.find(x => x.id === id);
   if (!a) return;
 
-  document.getElementById('art-inner').innerHTML = `
-    ${cover(a.coverUrl,'art-cover','art-cover-ph')}
-    <div class="art-body">
-      ${a.category ? `<div class="news-cat">${esc(a.category)}</div>` : ''}
-      <div class="art-title">${esc(a.title)}</div>
-      ${a.subtitle ? `<div class="art-sub">${esc(a.subtitle)}</div>` : ''}
-      <div class="art-meta">
-        <div class="art-meta-item">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          ${esc(a.author||'Редакция')}
-        </div>
-        <div class="art-meta-item">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          ${a.readingTime||3} мин
-        </div>
-        <div class="art-meta-item">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          ${fmtDate(a.createdAt)}
-        </div>
-      </div>
-      <div class="art-text">${esc(a.content)}</div>
-      <div class="art-views">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        ${(a.views||0)+1} прочитали
-      </div>
-    </div>`;
+  // Поддержка разных названий поля с текстом статьи
+  const bodyText = a.content || a.text || a.body || a.description || '';
 
-  artOverlay.classList.add('open');
-  artOverlay.querySelector('.art-scroll').scrollTop = 0;
+  try {
+    const coverHtml  = cover(a.coverUrl,'art-cover','art-cover-ph');
+    const catHtml    = a.category ? `<div class="news-cat">${esc(a.category)}</div>` : '';
+    const subHtml    = a.subtitle  ? `<div class="art-sub">${esc(a.subtitle)}</div>`  : '';
+    const dateStr    = fmtDate(a.createdAt);
+    const viewsCount = (a.views||0) + 1;
+    const textHtml   = bodyText
+      ? `<div class="art-text">${esc(bodyText)}</div>`
+      : `<div class="art-text" style="color:var(--txd);font-style:italic;font-size:.8rem">Текст статьи не добавлен</div>`;
+
+    const html = coverHtml
+      + '<div class="art-body">'
+      +   catHtml
+      +   `<div class="art-title">${esc(a.title)}</div>`
+      +   subHtml
+      +   '<div class="art-meta">'
+      +     `<div class="art-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${esc(a.author||'Редакция')}</div>`
+      +     `<div class="art-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${a.readingTime||3} мин</div>`
+      +   (dateStr ? `<div class="art-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${dateStr}</div>` : '')
+      +   '</div>'
+      +   textHtml
+      +   `<div class="art-views"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${viewsCount} прочитали</div>`
+      + '</div>';
+
+    Sheet.body('article').innerHTML = html;
+  } catch(err) {
+    console.error('openArticle render error:', err);
+    Sheet.body('article').innerHTML =
+      '<div class="art-body"><div class="art-title">' + esc(a.title||'') + '</div>'
+      + '<p style="color:var(--tx3);font-size:.82rem;margin-top:12px">Не удалось отобразить статью</p></div>';
+  }
+
+  Sheet.setTitle('article', a.title || 'Статья');
+  Sheet.body('article').scrollTop = 0;
+  Sheet.open('article');
 
   updateDoc(doc(db,'news',id), {views:increment(1), updatedAt:serverTimestamp()}).catch(()=>{});
 };
 
-artOverlay.addEventListener('click', e => { if (e.target === artOverlay) artOverlay.classList.remove('open'); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') artOverlay.classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') Sheet.close('article'); });
 
 loadNews();
 </script>
