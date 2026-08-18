@@ -1318,10 +1318,10 @@ select.addr-inp{cursor:pointer}
 
 /* ══ ADD ADDRESS SHEET (контент) — структура через sheet.js ══ */
 /* Шаг 1: Карта */
-.addaddr-step{display:flex;flex-direction:column}
+.addaddr-step{display:flex;flex-direction:column;flex:1;min-height:0}
 .addaddr-map-tip{font-size:.7rem;font-weight:600;color:var(--tx3);padding:10px 14px;display:flex;align-items:center;gap:7px;flex-shrink:0;border-bottom:1px solid var(--b0);background:var(--s2);line-height:1.4}
-#addaddr-map{height:268px;flex-shrink:0;background:var(--s2)}
-.addaddr-map-bottom{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px}
+#addaddr-map{flex:1;min-height:0;background:var(--s2)}
+.addaddr-map-bottom{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
 .addaddr-coords-badge{display:flex;align-items:center;gap:7px;padding:9px 12px;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;font-size:.72rem;font-weight:600;color:var(--tx3);transition:all .18s}
 .addaddr-coords-badge.has-coords{border-color:var(--accg);color:var(--tx);background:var(--accd)}
 .addaddr-coords-badge.has-coords svg{stroke:var(--acc)}

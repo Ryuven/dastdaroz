@@ -269,7 +269,7 @@ function _initSheets() {
   // ── Add new address ────────────────────────────────────────
   Sheet.define({ id: 'addaddr', title: 'Новый адрес', zIndex: 710, onOpen: _onAddrSheetOpen });
   const addaddrBody = Sheet.body('addaddr');
-  addaddrBody.style.cssText = 'padding:0;overflow:hidden';
+  addaddrBody.style.cssText = 'padding:0;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0';
   addaddrBody.innerHTML = `
     <div id="addaddr-step1" class="addaddr-step">
       <div class="addaddr-map-tip">
@@ -2812,8 +2812,8 @@ function _initAddrPickerMap() {
     // Кнопки зума — снизу справа, чтобы не перекрывать hint
     L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
 
-    // 2GIS тайлы — надёжно работают в СНГ/ЦА
-    L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 19 })
+    // CartoDB Voyager — бесплатно, без API-ключа, стабильно по всему миру
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' })
       .addTo(_addrPickerMap);
 
     // Пин-иконка
