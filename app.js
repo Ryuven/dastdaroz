@@ -251,6 +251,17 @@ function initSwipeToClose(sheetEl, closeFn, handleEl) {
 // ─── 5. Инициализация sheets (sheet.js) ──────────────────────
 function _initSheets() {
 
+  // ── Liked products ─────────────────────────────────────────
+  Sheet.define({ id: 'likes', title: 'Понравившиеся товары', zIndex: 700 });
+  Sheet.body('likes').innerHTML = `
+    <div class="likesh-empty">
+      <div class="likesh-empty-ico">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </div>
+      <div class="likesh-empty-title">Скоро добавим эту функцию</div>
+      <div class="likesh-empty-sub">Здесь будут отображаться товары, которые вам понравились</div>
+    </div>`;
+
   // ── City selector ──────────────────────────────────────────
   Sheet.define({ id: 'city', title: 'Выбор города', zIndex: 700, onOpen: _loadCities });
   Sheet.body('city').innerHTML = `
@@ -2962,6 +2973,8 @@ function checkAddressBanner(uid) {
 // DOM-структура и open/close управляются через sheet.js (Sheet 'city')
 window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
+window.openLikesSheet = () => Sheet.open('likes');
+window.closeLikesSheet= () => Sheet.close('likes');
 
 async function _loadCities() {
   const list = document.getElementById('citysh-list');

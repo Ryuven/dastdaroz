@@ -1318,6 +1318,10 @@ select.addr-inp{cursor:pointer}
 
 /* ══ ADD ADDRESS SHEET (контент) — структура через sheet.js ══ */
 /* Шаг 1: Карта */
+.likesh-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:52px 24px;text-align:center}
+.likesh-empty-ico{width:56px;height:56px;border-radius:16px;background:var(--redd);border:1.5px solid rgba(220,38,38,.15);display:flex;align-items:center;justify-content:center}
+.likesh-empty-title{font-size:.9rem;font-weight:700;color:var(--tx)}
+.likesh-empty-sub{font-size:.72rem;color:var(--tx3);line-height:1.5;max-width:220px}
 .addaddr-step{display:flex;flex-direction:column;flex:1;min-height:0}
 .addaddr-map-tip{font-size:.7rem;font-weight:600;color:var(--tx3);padding:10px 14px;display:flex;align-items:center;gap:7px;flex-shrink:0;border-bottom:1px solid var(--b0);background:var(--s2);line-height:1.4}
 #addaddr-map{flex:1;min-height:0;background:var(--s2)}
@@ -1815,6 +1819,19 @@ select.addr-inp{cursor:pointer}
         </div>
 
 
+
+        <!-- Понравившиеся товары -->
+        <div class="prof-section-lbl">Избранное</div>
+        <button class="prof-row prof-group-single" onclick="openLikesSheet()">
+          <div class="prof-row-icon" style="background:var(--redd)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </div>
+          <div class="prof-row-body">
+            <div class="prof-row-title">Понравившиеся товары</div>
+            <div class="prof-row-sub">Сохранённые позиции</div>
+          </div>
+          <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
 
         <!-- Заказы (только авторизованным) -->
         <div class="prof-section-lbl pn-guest-hidden">Заказы</div>
