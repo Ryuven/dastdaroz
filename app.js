@@ -276,7 +276,13 @@ function _initSheets() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Нажмите на карту или перетащите метку на нужное место
       </div>
-      <div class="addaddr-map-container"><div id="addaddr-map"></div></div>
+      <div class="addaddr-map-container">
+        <div id="addaddr-map"></div>
+        <div class="addaddr-map-loader" id="addaddr-map-loader">
+          <div class="addaddr-map-loader-spinner"></div>
+          <span class="addaddr-map-loader-txt">Загрузка карты…</span>
+        </div>
+      </div>
       <div class="addaddr-map-bottom">
         <div class="addaddr-coords-badge" id="addaddr-coords-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2229,7 +2235,7 @@ function renderStatusMap(o) {
 
   if (!_trackMap) {
     _trackMap = L.map('status-map', { center: [o.lat, o.lng], zoom: 15, zoomControl: true, attributionControl: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_trackMap);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(_trackMap);
   }
   setTimeout(() => _trackMap && _trackMap.invalidateSize(), 60);
 
@@ -2805,7 +2811,11 @@ function _initAddrPickerMap() {
   // Кнопки зума — снизу справа, чтобы не перекрывать hint
   L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' })
+    .on('tileload', () => {
+      const loader = document.getElementById('addaddr-map-loader');
+      if (loader) loader.classList.add('hidden');
+    })
     .addTo(_addrPickerMap);
 
   // Пин-иконка
@@ -2882,6 +2892,9 @@ function _destroyAddrPickerMap() {
   _addrPickerMarker = null;
   _addrPickerLat    = null;
   _addrPickerLng    = null;
+  // Сброс лоадера для следующего открытия
+  const loader = document.getElementById('addaddr-map-loader');
+  if (loader) loader.classList.remove('hidden');
 }
 
 window.openAddAddrSheet = function () {
