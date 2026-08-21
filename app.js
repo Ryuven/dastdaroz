@@ -5,7 +5,7 @@
 //  Разделы:
 //    1. Импорты
 //    2. Состояние приложения
-//    3. Константы и данные
+//    3. Константы
 //    4. Утилиты
 //    5. Auth / инициализация
 //    6. Навигация
@@ -76,7 +76,7 @@ let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душан�
 let _addrBannerUnsub  = null;
 
 
-// ─── 3. Константы и статические данные ───────────────────────
+// ─── 3. Константы ────────────────────────────────────────────
 const DFEE = 7; // стоимость доставки (сомони)
 
 // Лейблы статусов заказа
@@ -120,41 +120,7 @@ const CAT_SVG = {
   default:    { color: '#64748b', bg: 'rgba(100,116,139,.1)', svg: `<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill="#64748b" opacity=".15"/><circle cx="16" cy="16" r="6" fill="#64748b" opacity=".5"/></svg>` },
 };
 
-// Fallback-данные категорий (Firestore имеет приоритет)
-const GENERAL_CATS = [
-  { id: 'american',      nameRu: 'Американская',  nameTj: 'Амрикоӣ',      icon: 'storage/general-catalogs/american.png',      order: 1  },
-  { id: 'asian',         nameRu: 'Азиатская',     nameTj: 'Осиёӣ',        icon: 'storage/general-catalogs/asian.png',         order: 2  },
-  { id: 'baby',          nameRu: 'Детское',       nameTj: 'Барои кӯдак',  icon: 'storage/general-catalogs/baby.png',          order: 3  },
-  { id: 'bakery',        nameRu: 'Выпечка',       nameTj: 'Нонвойӣ',      icon: 'storage/general-catalogs/bakery.png',        order: 4  },
-  { id: 'bbq',           nameRu: 'Барбекю',       nameTj: 'Барбекю',      icon: 'storage/general-catalogs/bbq.png',           order: 5  },
-  { id: 'beauty',        nameRu: 'Красота',       nameTj: 'Зебоӣ',        icon: 'storage/general-catalogs/beauty.png',        order: 6  },
-  { id: 'breakfast',     nameRu: 'Завтрак',       nameTj: 'Наҳорӣ',       icon: 'storage/general-catalogs/breakfast.png',     order: 7  },
-  { id: 'bubble-tea',    nameRu: 'Бабл-ти',       nameTj: 'Бабл-ти',      icon: 'storage/general-catalogs/bubble-tea.png',    order: 8  },
-  { id: 'burgers',       nameRu: 'Бургеры',       nameTj: 'Бургер',       icon: 'storage/general-catalogs/burgers.png',       order: 9  },
-  { id: 'coffee',        nameRu: 'Кофе',          nameTj: 'Қаҳва',        icon: 'storage/general-catalogs/coffee.png',        order: 10 },
-  { id: 'desserts',      nameRu: 'Десерты',       nameTj: 'Десерт',       icon: 'storage/general-catalogs/desserts.png',      order: 11 },
-  { id: 'fast-food',     nameRu: 'Фастфуд',       nameTj: 'Фастфуд',      icon: 'storage/general-catalogs/fast-food.png',     order: 12 },
-  { id: 'flowers',       nameRu: 'Цветы',         nameTj: 'Гулҳо',        icon: 'storage/general-catalogs/flowers.png',       order: 13 },
-  { id: 'gifts',         nameRu: 'Подарки',       nameTj: 'Тӯҳфаҳо',      icon: 'storage/general-catalogs/gifts.png',         order: 14 },
-  { id: 'halal',         nameRu: 'Халяль',        nameTj: 'Ҳалол',        icon: 'storage/general-catalogs/halal.png',         order: 15 },
-  { id: 'healthy',       nameRu: 'Здоровое',      nameTj: 'Солим',        icon: 'storage/general-catalogs/healthy.png',       order: 16 },
-  { id: 'ice-cream',     nameRu: 'Мороженое',     nameTj: 'Яхмос',        icon: 'storage/general-catalogs/ice-cream.png',     order: 17 },
-  { id: 'italian',       nameRu: 'Итальянская',   nameTj: 'Италиявӣ',     icon: 'storage/general-catalogs/italian.png',       order: 18 },
-  { id: 'japanese',      nameRu: 'Японская',      nameTj: 'Японӣ',        icon: 'storage/general-catalogs/japanese.png',      order: 19 },
-  { id: 'korean',        nameRu: 'Корейская',     nameTj: 'Кореягӣ',      icon: 'storage/general-catalogs/korean.png',        order: 20 },
-  { id: 'mexican',       nameRu: 'Мексиканская',  nameTj: 'Мексикагӣ',    icon: 'storage/general-catalogs/mexican.png',       order: 21 },
-  { id: 'pharmacy',      nameRu: 'Аптека',        nameTj: 'Дорухона',     icon: 'storage/general-catalogs/pharmacy.png',      order: 22 },
-  { id: 'pizza',         nameRu: 'Пицца',         nameTj: 'Питса',        icon: 'storage/general-catalogs/pizza.png',         order: 23 },
-  { id: 'retail',        nameRu: 'Магазины',      nameTj: 'Мағозаҳо',     icon: 'storage/general-catalogs/retail.png',        order: 24 },
-  { id: 'salads',        nameRu: 'Салаты',        nameTj: 'Салатҳо',      icon: 'storage/general-catalogs/salads.png',        order: 25 },
-  { id: 'seafood',       nameRu: 'Морепродукты',  nameTj: 'Мевои баҳр',   icon: 'storage/general-catalogs/seafood.png',       order: 26 },
-  { id: 'soup',          nameRu: 'Супы',          nameTj: 'Шӯрбо',        icon: 'storage/general-catalogs/soup.png',          order: 27 },
-  { id: 'street-food',   nameRu: 'Уличная еда',   nameTj: 'Хӯроки кӯча',  icon: 'storage/general-catalogs/street-food.png',   order: 28 },
-  { id: 'sushi',         nameRu: 'Суши',          nameTj: 'Суши',         icon: 'storage/general-catalogs/sushi.png',         order: 29 },
-  { id: 'sweets',        nameRu: 'Сладости',      nameTj: 'Ширинӣ',       icon: 'storage/general-catalogs/sweets.png',        order: 30 },
-  { id: 'vegan',         nameRu: 'Веганское',     nameTj: 'Веган',        icon: 'storage/general-catalogs/vegan.png',         order: 31 },
-  { id: 'wings',         nameRu: 'Крылышки',      nameTj: 'Болҳо',        icon: 'storage/general-catalogs/wings.png',         order: 32 },
-];
+
 
 
 // ─── 4. Утилиты ───────────────────────────────────────────────
@@ -710,10 +676,11 @@ async function loadGenCats() {
         !c.cityIds.length || c.cityIds.includes(_selectedCityId)
       );
     } else {
-      genCats = [...GENERAL_CATS];
+      genCats = [];
     }
-  } catch {
-    genCats = [...GENERAL_CATS];
+  } catch (e) {
+    console.warn('loadGenCats error:', e?.message);
+    genCats = [];
   }
   renderGenCats();
   renderCatalogGenCats();
@@ -745,29 +712,21 @@ function renderGenCats() {
 }
 
 function renderCatalogGenCats() {
-  // Каталог временно отключён — страница показывает «Скоро»
+  const el = document.getElementById('gen-cat-grid');
+  if (!el) return;
+  if (!genCats.length) { el.innerHTML = ''; return; }
+  el.innerHTML = genCats.map(c => `
+    <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
+      <div class="gen-cat-img-wrap">
+        <img class="gen-cat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
+      </div>
+      <div class="gen-cat-name">${c.nameRu}</div>
+    </button>`).join('');
 }
 
 window.onGenCatClick = function (id) { goPage('catalog'); };
 
-// Seeding утилита (запустить один раз из консоли: await seedGeneralCats())
-window.seedGeneralCats = async function () {
-  try {
-    const batch = writeBatch(db);
-    GENERAL_CATS.forEach(c => {
-      batch.set(doc(db, 'generalCategories', c.id), {
-        nameRu: c.nameRu, nameTj: c.nameTj, icon: c.icon, order: c.order, active: true,
-      });
-    });
-    await batch.commit();
-    genCats = [...GENERAL_CATS];
-    renderGenCats();
-    renderCatalogGenCats();
-    console.log('✅ seedGeneralCats: записано', GENERAL_CATS.length, 'категорий');
-  } catch (e) {
-    console.error('❌ seedGeneralCats:', e);
-  }
-};
+
 
 
 // ─── 9. Магазины / Ритейлеры ─────────────────────────────────
