@@ -271,26 +271,6 @@ function _initSheets() {
     const b = Sheet.body('support');
     b.style.cssText = 'overflow:hidden;display:flex;flex-direction:column;padding:0;flex:1';
     b.innerHTML = `
-      <div class="supsh-sub" id="supsh-sub">Ответим быстро</div>
-      <div class="supsh-order-strip">
-        <div class="supsh-order-ico">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        </div>
-        <div class="supsh-order-body">
-          <div class="supsh-order-lbl">Заказ</div>
-          <div class="supsh-order-val" id="supsh-order-val">Без заказа</div>
-        </div>
-        <button class="supsh-order-btn" id="supsh-order-btn" onclick="toggleSupportOrderPicker()">Выбрать</button>
-      </div>
-      <div class="supsh-order-picker" id="supsh-order-picker"></div>
-      <a class="supsh-tg-strip" href="https://t.me/dastdaroz_bot" target="_blank" rel="noopener noreferrer">
-        <div class="supsh-tg-body">
-          <div class="supsh-tg-title">Также доступна поддержка в <span>@dastdaroz_bot</span></div>
-        </div>
-        <div class="supsh-tg-ico">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M21.73 3.27L2.56 10.7c-1.26.49-1.25 1.17-.23 1.48l4.87 1.52 11.29-7.12c.53-.32 1.02-.15.62.2L8.83 16.72l-.37 5.15c.54 0 .78-.25 1.08-.54l2.59-2.51 5.09 3.76c.94.52 1.61.25 1.84-.87l3.33-15.71c.35-1.39-.53-2.02-1.66-1.73z"/></svg>
-        </div>
-      </a>
       <div class="supsh-msgs" id="supsh-msgs">
         <div class="supsh-empty">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -393,6 +373,36 @@ function _initSheets() {
           </button>
         </div>
       </div>
+    </div>`;
+
+  // ── Alif Pay ───────────────────────────────────────────────
+  Sheet.define({ id: 'alifpay', title: 'Alif Pay', zIndex: 710 });
+  Sheet.body('alifpay').innerHTML = `
+    <div class="paysh-coming">
+      <div class="paysh-coming-img-wrap">
+        <img src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
+      </div>
+      <div class="paysh-coming-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Скоро доступно
+      </div>
+      <div class="paysh-coming-title">Alif Pay</div>
+      <div class="paysh-coming-sub">Оплата через Alif Pay появится совсем скоро. Следите за обновлениями!</div>
+    </div>`;
+
+  // ── Google Pay ─────────────────────────────────────────────
+  Sheet.define({ id: 'googlepay', title: 'Google Pay', zIndex: 710 });
+  Sheet.body('googlepay').innerHTML = `
+    <div class="paysh-coming">
+      <div class="paysh-coming-img-wrap">
+        <img src="https://dastdaroz.shop/storage/others/googlepay.png" alt="Google Pay"/>
+      </div>
+      <div class="paysh-coming-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Скоро доступно
+      </div>
+      <div class="paysh-coming-title">Google Pay</div>
+      <div class="paysh-coming-sub">Оплата через Google Pay появится совсем скоро. Следите за обновлениями!</div>
     </div>`;
 }
 
@@ -2107,6 +2117,16 @@ window.openOrderModal = function (oid) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           Подтвердить заказ
         </button>
+        <div class="booking-pay-row">
+          <button class="booking-btn-pay" onclick="openAlifPaySheet()">
+            <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
+            Alif Pay
+          </button>
+          <button class="booking-btn-pay" onclick="openGooglePaySheet()">
+            <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/googlepay.png" alt="Google Pay"/>
+            Google Pay
+          </button>
+        </div>
         <button class="booking-btn-cancel" onclick="cancelReservation('${o.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Отменить бронь
@@ -3092,6 +3112,10 @@ window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
 window.openLikesSheet = () => Sheet.open('likes');
 window.closeLikesSheet= () => Sheet.close('likes');
+
+// ─── Оплата (Alif Pay / Google Pay) ────────────────────────
+window.openAlifPaySheet   = () => Sheet.open('alifpay');
+window.openGooglePaySheet = () => Sheet.open('googlepay');
 
 async function _loadCities() {
   const list = document.getElementById('citysh-list');
