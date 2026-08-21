@@ -634,16 +634,7 @@ select.addr-inp{cursor:pointer}
 .sup-entry-arrow{color:var(--tx3);flex-shrink:0}
 
 /* ══ SUPPORT CHAT SHEET (citysh-style) ══════════════════════ */
-.supsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
-.supsh-ov.open{opacity:1;pointer-events:all}
-.supsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:22px 22px 0 0;height:96svh;transform:translateY(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;overflow:hidden;will-change:transform}
-.supsh.open{transform:translateY(0)}
-.supsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
-.supsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
-.supsh-title{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
-.supsh-sub{font-size:.64rem;color:var(--tx3);margin-top:1px}
-.supsh-close{background:var(--s2);border:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .13s;flex-shrink:0}
-.supsh-close:hover{background:var(--s3)}
+.supsh-sub{font-size:.64rem;color:var(--tx3);padding:3px 18px 6px;border-bottom:1px solid var(--b0);flex-shrink:0}
 /* Order strip */
 .supsh-order-strip{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--b0);flex-shrink:0;background:var(--s2)}
 .supsh-order-ico{width:30px;height:30px;border-radius:9px;background:var(--accd);border:1px solid var(--accg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--acc)}
@@ -1269,16 +1260,6 @@ select.addr-inp{cursor:pointer}
 .app-bar-close:active{background:var(--b0,#e5e7eb)}
 
 
-.ptn-bg{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
-.ptn-bg.open{opacity:1;pointer-events:all}
-.ptn-sheet{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:560px;max-height:94svh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
-.ptn-bg.open .ptn-sheet{transform:translateY(0)}
-.ptn-drag{width:36px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 4px;flex-shrink:0;touch-action:none}
-.ptn-head{display:flex;align-items:center;padding:4px 16px 14px;flex-shrink:0;border-bottom:1px solid var(--b0);gap:10px}
-.ptn-title{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);flex:1;letter-spacing:-.02em}
-.ptn-close{width:32px;height:32px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;transition:background .15s}
-.ptn-close:hover{background:var(--s3)}
-.ptn-body{flex:1;overflow-y:auto;padding:20px 16px 32px;-webkit-overflow-scrolling:touch}
 .pf-lbl{font-size:.74rem;color:var(--tx2);margin-bottom:7px;display:block;font-weight:500}
 .pf-inp{width:100%;background:var(--s2);border:1.5px solid var(--b0);border-radius:12px;color:var(--tx);font-family:var(--fs);font-size:.92rem;padding:13px 16px;outline:none;transition:border-color .15s,box-shadow .15s;box-sizing:border-box;margin-bottom:15px}
 .pf-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
@@ -1639,6 +1620,7 @@ select.addr-inp{cursor:pointer}
             <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
           </svg>
           Бронированные
+          <span id="bookings-nb" style="display:none;background:var(--teal);color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:1px 6px;line-height:1.6"></span>
         </button>
       </div>
 
@@ -1977,63 +1959,7 @@ select.addr-inp{cursor:pointer}
 </div>
 
 <!-- ══ SUPPORT CHAT SHEET ══ -->
-<div class="supsh-ov" id="supsh-ov" onclick="closeSupport()"></div>
-<div class="supsh" id="supsh">
-  <div class="supsh-drag"></div>
-  <div class="supsh-head">
-    <div>
-      <div class="supsh-title">Чат с поддержкой</div>
-      <div class="supsh-sub" id="supsh-sub">Ответим быстро</div>
-    </div>
-    <button class="supsh-close" onclick="closeSupport()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-
-  <!-- Order strip (default: no order) -->
-  <div class="supsh-order-strip">
-    <div class="supsh-order-ico">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-    </div>
-    <div class="supsh-order-body">
-      <div class="supsh-order-lbl">Заказ</div>
-      <div class="supsh-order-val" id="supsh-order-val">Без заказа</div>
-    </div>
-    <button class="supsh-order-btn" id="supsh-order-btn" onclick="toggleSupportOrderPicker()">Выбрать</button>
-  </div>
-
-  <!-- Order list picker (hidden by default) -->
-  <div class="supsh-order-picker" id="supsh-order-picker"></div>
-
-  <!-- Telegram support link -->
-  <a class="supsh-tg-strip" href="https://t.me/dastdaroz_bot" target="_blank" rel="noopener noreferrer">
-    <div class="supsh-tg-body">
-      <div class="supsh-tg-title">Также доступна поддержка в <span>@dastdaroz_bot</span></div>
-    </div>
-    <div class="supsh-tg-ico">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M21.73 3.27L2.56 10.7c-1.26.49-1.25 1.17-.23 1.48l4.87 1.52 11.29-7.12c.53-.32 1.02-.15.62.2L8.83 16.72l-.37 5.15c.54 0 .78-.25 1.08-.54l2.59-2.51 5.09 3.76c.94.52 1.61.25 1.84-.87l3.33-15.71c.35-1.39-.53-2.02-1.66-1.73z"/></svg>
-    </div>
-  </a>
-
-  <!-- Messages -->
-  <div class="supsh-msgs" id="supsh-msgs">
-    <div class="supsh-empty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      <div class="supsh-empty-t">Нет сообщений</div>
-      <div class="supsh-empty-s">Напишите нам — ответим быстро</div>
-    </div>
-  </div>
-
-  <!-- Input -->
-  <div class="supsh-input-row">
-    <textarea class="supsh-input" id="supsh-input" rows="1" placeholder="Написать сообщение…"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSupportMsg();}"></textarea>
-    <button class="supsh-send" onclick="sendSupportMsg()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    </button>
-  </div>
-</div>
+<!-- support-sheet → sheet.js (Sheet.define 'support') -->
 
 <!-- PRODUCT MODAL -->
 <div class="p-modal-bg" id="prod-modal-bg" onclick="closeProdModal(event)">
@@ -2056,41 +1982,7 @@ select.addr-inp{cursor:pointer}
   </button>
 </div>
 <!-- ══ PARTNER SHEET ══ -->
-<div class="ptn-bg" id="ptn-bg" onclick="if(event.target===this)closePartnerSheet()">
-  <div class="ptn-sheet" id="ptn-sheet">
-    <div id="ptn-drag-handle" style="padding:4px 0 0;cursor:grab;flex-shrink:0"><div class="ptn-drag"></div></div>
-    <div class="ptn-head">
-      <div class="ptn-title">Партнерство</div>
-      <button class="ptn-close" onclick="closePartnerSheet()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="ptn-body">
-      <label class="pf-lbl">Название компании</label>
-      <input class="pf-inp" id="pf-company" type="text" placeholder="ООО …" autocomplete="organization"/>
-      <label class="pf-lbl">Название ресторана</label>
-      <input class="pf-inp" id="pf-restaurant" type="text" placeholder="…"/>
-      <label class="pf-lbl">Адрес</label>
-      <input class="pf-inp" id="pf-address" type="text" placeholder="г. Душанбе, ул…" autocomplete="street-address"/>
-      <label class="pf-lbl">Телефон менеджера</label>
-      <div class="pf-phone-row" id="pf-phone-wrap">
-        <span class="pf-pfx">+992</span>
-        <input class="pf-tel" id="pf-phone" type="tel" placeholder="977178800" inputmode="numeric" maxlength="9"/>
-      </div>
-      <label class="pf-lbl">Доп. телефон (необязательно)</label>
-      <div class="pf-phone-row">
-        <span class="pf-pfx">+992</span>
-        <input class="pf-tel" id="pf-phone2" type="tel" placeholder="XX XXX XX XX" inputmode="numeric" maxlength="9"/>
-      </div>
-      <label class="pf-lbl">Комментарий (необязательно)</label>
-      <textarea class="pf-ta" id="pf-comment" placeholder="Напишите комментарий…"></textarea>
-      <button class="pf-btn" id="pf-submit-btn" onclick="submitPartnerForm()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Отправить
-      </button>
-    </div>
-  </div>
-</div>
+<!-- partner-sheet → sheet.js (Sheet.define 'partner') -->
 <!-- ══ CART: PAYMENT METHOD SELECTOR ══ -->
 <!-- ══ ADDRESS BANNER LOGIC ══ -->
 
@@ -2138,12 +2030,7 @@ if (!/DastdarozApp/i.test(navigator.userAgent)) {
   setTimeout(function(){document.getElementById('app-bar').classList.add('show')}, 800);
 }
 
-window.openPartnerSheet = function() {
-  document.getElementById('ptn-bg').classList.add('open');
-};
-window.closePartnerSheet = function() {
-  document.getElementById('ptn-bg').classList.remove('open');
-};
+// openPartnerSheet / closePartnerSheet → app.js (Sheet)
 window.submitPartnerForm = async function() {
   const company  = (document.getElementById('pf-company').value   || '').trim();
   const restaurant=(document.getElementById('pf-restaurant').value|| '').trim();

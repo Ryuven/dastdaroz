@@ -263,21 +263,77 @@ function _initSheets() {
     </div>`;
 
   // ── Bookings (бронированные) ──────────────────────────────
-  Sheet.define({ id: 'bookings', title: 'Бронированные', zIndex: 700 });
-  Sheet.body('bookings').innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 24px;text-align:center">
-      <div style="width:64px;height:64px;border-radius:18px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7">
-          <rect x="3" y="4" width="18" height="18" rx="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
-        </svg>
+  Sheet.define({ id: 'bookings', title: 'Бронированные', zIndex: 700, onOpen: renderBookingsSheet });
+
+  // ── Support chat ────────────────────────────────────────────
+  Sheet.define({ id: 'support', title: 'Чат с поддержкой', zIndex: 700 });
+  (function(){
+    const b = Sheet.body('support');
+    b.style.cssText = 'overflow:hidden;display:flex;flex-direction:column;padding:0;flex:1';
+    b.innerHTML = `
+      <div class="supsh-sub" id="supsh-sub">Ответим быстро</div>
+      <div class="supsh-order-strip">
+        <div class="supsh-order-ico">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <div class="supsh-order-body">
+          <div class="supsh-order-lbl">Заказ</div>
+          <div class="supsh-order-val" id="supsh-order-val">Без заказа</div>
+        </div>
+        <button class="supsh-order-btn" id="supsh-order-btn" onclick="toggleSupportOrderPicker()">Выбрать</button>
       </div>
-      <div style="font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);letter-spacing:-.02em">Скоро</div>
-      <div style="font-size:.78rem;color:var(--tx3);line-height:1.6;max-width:220px">Функция бронирования находится в разработке. Следите за обновлениями!</div>
-    </div>`;
+      <div class="supsh-order-picker" id="supsh-order-picker"></div>
+      <a class="supsh-tg-strip" href="https://t.me/dastdaroz_bot" target="_blank" rel="noopener noreferrer">
+        <div class="supsh-tg-body">
+          <div class="supsh-tg-title">Также доступна поддержка в <span>@dastdaroz_bot</span></div>
+        </div>
+        <div class="supsh-tg-ico">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M21.73 3.27L2.56 10.7c-1.26.49-1.25 1.17-.23 1.48l4.87 1.52 11.29-7.12c.53-.32 1.02-.15.62.2L8.83 16.72l-.37 5.15c.54 0 .78-.25 1.08-.54l2.59-2.51 5.09 3.76c.94.52 1.61.25 1.84-.87l3.33-15.71c.35-1.39-.53-2.02-1.66-1.73z"/></svg>
+        </div>
+      </a>
+      <div class="supsh-msgs" id="supsh-msgs">
+        <div class="supsh-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <div class="supsh-empty-t">Нет сообщений</div>
+          <div class="supsh-empty-s">Напишите нам — ответим быстро</div>
+        </div>
+      </div>
+      <div class="supsh-input-row">
+        <textarea class="supsh-input" id="supsh-input" rows="1" placeholder="Написать сообщение…"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSupportMsg();}"></textarea>
+        <button class="supsh-send" onclick="sendSupportMsg()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>`;
+  })();
+
+  // ── Partner application ───────────────────────────────────
+  Sheet.define({ id: 'partner', title: 'Партнерство', zIndex: 800 });
+  Sheet.body('partner').style.cssText = 'padding:20px 16px 32px;overflow-y:auto;-webkit-overflow-scrolling:touch';
+  Sheet.body('partner').innerHTML = `
+    <label class="pf-lbl">Название компании</label>
+    <input class="pf-inp" id="pf-company" type="text" placeholder="ООО …" autocomplete="organization"/>
+    <label class="pf-lbl">Название ресторана</label>
+    <input class="pf-inp" id="pf-restaurant" type="text" placeholder="…"/>
+    <label class="pf-lbl">Адрес</label>
+    <input class="pf-inp" id="pf-address" type="text" placeholder="г. Душанбе, ул…" autocomplete="street-address"/>
+    <label class="pf-lbl">Телефон менеджера</label>
+    <div class="pf-phone-row" id="pf-phone-wrap">
+      <span class="pf-pfx">+992</span>
+      <input class="pf-tel" id="pf-phone" type="tel" placeholder="977178800" inputmode="numeric" maxlength="9"/>
+    </div>
+    <label class="pf-lbl">Доп. телефон (необязательно)</label>
+    <div class="pf-phone-row">
+      <span class="pf-pfx">+992</span>
+      <input class="pf-tel" id="pf-phone2" type="tel" placeholder="XX XXX XX XX" inputmode="numeric" maxlength="9"/>
+    </div>
+    <label class="pf-lbl">Комментарий (необязательно)</label>
+    <textarea class="pf-ta" id="pf-comment" placeholder="Напишите комментарий…"></textarea>
+    <button class="pf-btn" id="pf-submit-btn" onclick="submitPartnerForm()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Отправить
+    </button>`;
 
   // ── City selector ──────────────────────────────────────────
   Sheet.define({ id: 'city', title: 'Выбор города', zIndex: 700, onOpen: _loadCities });
@@ -422,11 +478,6 @@ function requireAuth(msg) {
 
 // DOMContentLoaded: регистрируем свайпы и инициализируем UI
 document.addEventListener('DOMContentLoaded', () => {
-  initSwipeToClose(
-    document.getElementById('ptn-sheet'),
-    () => typeof closePartnerSheet === 'function' && closePartnerSheet(),
-    document.getElementById('ptn-drag-handle')
-  );
   initSwipeToClose(
     document.getElementById('bs-city'),
     () => closeCitySheet(),
@@ -1538,11 +1589,8 @@ window.doCheckout = async function () {
 
     toast('Заказ забронирован! 🔒 У вас 10 минут', 'ok');
 
-    // Переходим на страницу заказов и открываем модалку бронирования
-    setTimeout(() => {
-      goPage('orders');
-      setTimeout(() => openOrderModal(ref.id), 200);
-    }, 350);
+    // Сразу открываем модалку бронирования
+    setTimeout(() => openOrderModal(ref.id), 350);
 
     // Параллельно обновляем из Firestore
     loadOrders().catch(() => {});
@@ -1840,10 +1888,64 @@ window.setOTab = function (tab, btn) {
 };
 
 function filterOrders() {
-  if (currentOTab === 'active')    return orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  if (currentOTab === 'active')    return orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
   if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
   if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
-  return orders;
+  return orders.filter(o => o.status !== 'reserved');
+}
+
+function renderBookingsSheet() {
+  const body    = Sheet.body('bookings');
+  const reserved = orders.filter(o => o.status === 'reserved');
+
+  if (!reserved.length) {
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 24px;text-align:center">
+        <div style="width:54px;height:54px;border-radius:16px;background:var(--teal-d);border:1.5px solid rgba(13,148,136,.18);display:flex;align-items:center;justify-content:center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.7">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+          </svg>
+        </div>
+        <div style="font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx)">Нет бронирований</div>
+        <div style="font-size:.74rem;color:var(--tx3);line-height:1.55;max-width:210px">Оформляете заказ из корзины — бронь появится здесь</div>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = reserved.map(o => {
+    const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
+    const items = (o.items || []).map(i => `${escHtml(i.name)} ×${i.quantity}`).join(', ');
+    const ru    = o.reservedUntil instanceof Date
+      ? o.reservedUntil
+      : (o.reservedUntil?.toDate?.() ?? new Date());
+    const secsTotal = Math.max(0, Math.floor((ru.getTime() - Date.now()) / 1000));
+    const mins = Math.floor(secsTotal / 60);
+    const secs = secsTotal % 60;
+    const timeLeft = secsTotal > 0
+      ? `${mins}:${String(secs).padStart(2, '0')} осталось`
+      : 'Время истекло';
+
+    return `<div class="oc st-reserved" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
+      <div class="oc-head">
+        <div class="oc-num">Бронь ${num}</div>
+        <div class="oc-status" style="color:var(--teal);border-color:rgba(13,148,136,.28);background:var(--teal-d)">🔒 Забронирован</div>
+      </div>
+      <div class="oc-items">${items}</div>
+      <div class="oc-footer">
+        <div>
+          <div class="oc-total">${o.total} см</div>
+          <div class="oc-meta" style="color:var(--teal)">⏱ ${timeLeft}</div>
+        </div>
+        <div class="oc-actions">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderOrders() {
@@ -1878,11 +1980,14 @@ function renderOrders() {
 }
 
 function renderOrdersBadge() {
-  const act = orders.filter(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status)).length;
+  const act  = orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status)).length;
+  const resv = orders.filter(o => o.status === 'reserved').length;
   ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
   });
+  const bb = document.getElementById('bookings-nb');
+  if (bb) { bb.style.display = resv > 0 ? '' : 'none'; bb.textContent = resv; }
 }
 
 window.openOrderModal = function (oid) {
@@ -2464,18 +2569,14 @@ let _supBadgeUnsub      = null;
 
 window.openSupport = function () {
   if (!CU) return;
-  document.getElementById('supsh-ov')?.classList.add('open');
-  document.getElementById('supsh')?.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  Sheet.open('support');
   _supChatId = CU.uid;
   _listenSupportChatUser();
   _loadSupportOrders();
 };
 
 window.closeSupport = function () {
-  document.getElementById('supsh-ov')?.classList.remove('open');
-  document.getElementById('supsh')?.classList.remove('open');
-  document.body.style.overflow = '';
+  Sheet.close('support');
   if (_unsubSupMsgs) { _unsubSupMsgs(); _unsubSupMsgs = null; }
 };
 
@@ -2980,7 +3081,13 @@ function checkAddressBanner(uid) {
 
 // ─── 22. Выбор города ─────────────────────────────────────────
 // DOM-структура и open/close управляются через sheet.js (Sheet 'city')
-window.openBookingsSheet = () => Sheet.open('bookings');
+window.openPartnerSheet  = () => Sheet.open('partner');
+window.closePartnerSheet = () => Sheet.close('partner');
+window.openBookingsSheet = () => {
+  const r = orders.find(o => o.status === 'reserved');
+  if (r) { openOrderModal(r.id); }
+  else   { Sheet.open('bookings'); }
+};
 window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
 window.openLikesSheet = () => Sheet.open('likes');
