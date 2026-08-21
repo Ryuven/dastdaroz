@@ -634,9 +634,9 @@ select.addr-inp{cursor:pointer}
 .sup-entry-arrow{color:var(--tx3);flex-shrink:0}
 
 /* ══ SUPPORT CHAT SHEET (citysh-style) ══════════════════════ */
-.supsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .28s}
+.supsh-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
 .supsh-ov.open{opacity:1;pointer-events:all}
-.supsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:22px 22px 0 0;height:90svh;transform:translateY(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;overflow:hidden;will-change:transform}
+.supsh{position:fixed;left:0;right:0;bottom:0;z-index:701;background:var(--s1);border-radius:22px 22px 0 0;height:96svh;transform:translateY(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;overflow:hidden;will-change:transform}
 .supsh.open{transform:translateY(0)}
 .supsh-drag{width:36px;height:4px;border-radius:99px;background:var(--b1);margin:10px auto 0;flex-shrink:0}
 .supsh-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--b0);flex-shrink:0}
@@ -668,13 +668,16 @@ select.addr-inp{cursor:pointer}
 .supsh-order-item-check{color:var(--acc);flex-shrink:0;opacity:0;transition:opacity .13s}
 .supsh-order-item.selected .supsh-order-item-check{opacity:1}
 /* Messages */
-.supsh-msgs{flex:1;overflow-y:auto;padding:14px 16px 8px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
-.supsh-msg{max-width:80%;padding:9px 13px;border-radius:16px;font-size:.82rem;line-height:1.44;word-wrap:break-word;white-space:pre-wrap}
-.supsh-msg-them{align-self:flex-start;background:var(--s2);color:var(--tx);border-bottom-left-radius:4px}
-.supsh-msg-me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:4px}
-.supsh-msg-name{font-size:.58rem;font-weight:700;color:var(--acc2);margin-bottom:3px;display:block}
+.supsh-msgs{flex:1;overflow-y:auto;padding:14px 16px 8px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}
+.supsh-msg-wrap{display:flex;flex-direction:column;max-width:80%}
+.supsh-msg-wrap-them{align-self:flex-start;align-items:flex-start}
+.supsh-msg-wrap-me{align-self:flex-end;align-items:flex-end}
+.supsh-msg-name{font-size:.58rem;font-weight:700;color:var(--acc2);margin-bottom:3px;padding:0 2px}
+.supsh-msg{padding:9px 13px;border-radius:16px;font-size:.82rem;line-height:1.44;word-break:break-word;white-space:pre-wrap}
+.supsh-msg-them{background:var(--s2);color:var(--tx);border-bottom-left-radius:4px}
+.supsh-msg-me{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:4px}
 .supsh-msg-time{font-size:.58rem;opacity:.62;margin-top:4px;display:block}
-.supsh-msg-me .supsh-msg-time{text-align:right}
+.supsh-msg-wrap-me .supsh-msg-time{text-align:right}
 .supsh-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--tx3);padding:40px 20px;text-align:center}
 .supsh-empty svg{opacity:.3;margin-bottom:4px}
 .supsh-empty-t{font-weight:700;font-size:.82rem;color:var(--tx2)}
@@ -687,13 +690,12 @@ select.addr-inp{cursor:pointer}
 .supsh-send:active{transform:scale(.9)}
 
 /* ── TELEGRAM SUPPORT BANNER ── */
-.supsh-tg-strip{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:1px solid var(--b0);flex-shrink:0;background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(37,99,235,.03));text-decoration:none}
-.supsh-tg-ico{width:36px;height:36px;border-radius:10px;background:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,.28)}
+.supsh-tg-strip{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;border-bottom:1px solid var(--b0);flex-shrink:0;text-decoration:none;background:var(--s2);transition:background .13s}
+.supsh-tg-strip:hover{background:var(--s3)}
 .supsh-tg-body{flex:1;min-width:0}
-.supsh-tg-title{font-size:.75rem;font-weight:700;color:var(--tx);line-height:1.2}
-.supsh-tg-sub{font-size:.62rem;color:var(--tx3);margin-top:2px}
-.supsh-tg-arrow{display:flex;align-items:center;gap:5px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:.62rem;font-weight:700;padding:6px 11px;cursor:pointer;white-space:nowrap;font-family:var(--fs);flex-shrink:0;transition:opacity .14s;text-decoration:none}
-.supsh-tg-arrow:hover{opacity:.88}
+.supsh-tg-title{font-size:.65rem;color:var(--tx3);line-height:1.3}
+.supsh-tg-title span{color:#2563eb;font-weight:700}
+.supsh-tg-ico{width:28px;height:28px;border-radius:8px;background:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 5px rgba(37,99,235,.28)}
 
 /* Кнопка "Чат с курьером" на странице статуса */
 .chat-trigger{display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--s1);border:1.5px solid var(--accg);border-radius:16px;cursor:pointer;margin-top:14px;transition:all .15s;text-align:left;width:100%;box-sizing:border-box;font-family:var(--fs)}
@@ -1527,39 +1529,47 @@ select.addr-inp{cursor:pointer}
     <!-- CATALOG -->
     <div class="page" id="page-catalog">
       <div class="sh"><div><div class="sh-tag">Общее</div><div class="sh-title">Каталог</div></div></div>
-      <!-- General category icon grid (3 columns) — populated by JS via renderCatalogGenCats() -->
-      <div id="gen-cat-grid-wrap">
-        <div class="gcat-grid" id="gen-cat-grid">
-          <!-- 15 skeletons matching actual category count -->
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
-          <div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px 24px;text-align:center">
+        <div style="width:64px;height:64px;border-radius:18px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
         </div>
+        <div style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--tx);letter-spacing:-.02em">Скоро</div>
+        <div style="font-size:.78rem;color:var(--tx3);line-height:1.65;max-width:210px">Общий каталог находится в разработке. Следите за обновлениями!</div>
       </div>
     </div>
 
     <!-- CART -->
     <div class="page" id="page-cart">
-      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Сабад</div></div><button class="sh-link" style="color:var(--red)" onclick="clearCartUI()">Очистить</button></div>
+      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Сабад</div></div><button class="sh-link" id="cart-clear-btn" style="color:var(--red);display:none" onclick="clearCartUI()">Очистить</button></div>
       <div class="cart-layout">
         <div id="cart-list">
           <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
           <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:58%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:34%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
           <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:66%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:44%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
         </div>
-        <div id="cart-sum" style="min-width:0;max-width:100%;display:flex;flex-direction:column;gap:8px">
+
+        <!-- Скелетон Чека — виден только во время загрузки -->
+        <div id="cart-sum-skl" style="display:flex;flex-direction:column;gap:8px;margin-top:2px">
+          <div class="cs">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+              <div class="skl-block" style="width:30px;height:30px;border-radius:8px;flex-shrink:0"></div>
+              <div class="skl-block" style="height:10px;width:48px"></div>
+              <div class="skl-block" style="height:8px;width:60px;margin-left:auto"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:9px"><div class="skl-block" style="height:8px;width:52px"></div><div class="skl-block" style="height:8px;width:58px"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:9px"><div class="skl-block" style="height:8px;width:64px"></div><div class="skl-block" style="height:8px;width:44px"></div></div>
+            <div style="display:flex;justify-content:space-between;padding-top:14px;border-top:1.5px solid var(--b0)">
+              <div class="skl-block" style="height:11px;width:48px"></div>
+              <div class="skl-block" style="height:14px;width:72px"></div>
+            </div>
+          </div>
+          <div class="skl-block" style="height:44px;border-radius:10px"></div>
+        </div>
+
+        <div id="cart-sum" style="min-width:0;max-width:100%;display:none;flex-direction:column;gap:8px">
 
           <!-- ══ Карточка 1: Итого (суммы) ══ -->
           <div class="cs">
@@ -1618,13 +1628,20 @@ select.addr-inp{cursor:pointer}
 
     <!-- ORDERS -->
     <div class="page" id="page-orders">
-      <div class="sh"><div><div class="sh-tag">История</div><div class="sh-title">Мои <em>заказы</em></div></div></div>
-      <div class="order-tabs">
-        <button class="otab active" onclick="setOTab('all',this)">Все</button>
-        <button class="otab" onclick="setOTab('active',this)">Фаъол</button>
-        <button class="otab" onclick="setOTab('delivered',this)">Расонида шуд</button>
-        <button class="otab" onclick="setOTab('cancelled',this)">Бекор</button>
+      <div class="sh" style="align-items:center">
+        <div><div class="sh-tag">История</div><div class="sh-title">Мои <em>заказы</em></div></div>
+        <button onclick="openBookingsSheet()" title="Бронированные" style="display:flex;align-items:center;gap:7px;padding:8px 14px;background:var(--s1);border:1.5px solid var(--b0);border-radius:11px;cursor:pointer;color:var(--tx3);font-size:.7rem;font-family:var(--fs);font-weight:600;transition:all .15s;white-space:nowrap;flex-shrink:0" onmouseover="this.style.borderColor='var(--accg)';this.style.color='var(--acc)';this.style.background='var(--accd)'" onmouseout="this.style.borderColor='var(--b0)';this.style.color='var(--tx3)';this.style.background='var(--s1)'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+          </svg>
+          Бронированные
+        </button>
       </div>
+
       <div id="orders-list">
         <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:50%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:82px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:82%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:58%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:54px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:120px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
         <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:44%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:76px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:76%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:64%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:48px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:110px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
@@ -1990,17 +2007,12 @@ select.addr-inp{cursor:pointer}
 
   <!-- Telegram support link -->
   <a class="supsh-tg-strip" href="https://t.me/dastdaroz_bot" target="_blank" rel="noopener noreferrer">
-    <div class="supsh-tg-ico">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M21.73 3.27L2.56 10.7c-1.26.49-1.25 1.17-.23 1.48l4.87 1.52 11.29-7.12c.53-.32 1.02-.15.62.2L8.83 16.72l-.37 5.15c.54 0 .78-.25 1.08-.54l2.59-2.51 5.09 3.76c.94.52 1.61.25 1.84-.87l3.33-15.71c.35-1.39-.53-2.02-1.66-1.73z"/></svg>
-    </div>
     <div class="supsh-tg-body">
-      <div class="supsh-tg-title">Telegram поддержка</div>
-      <div class="supsh-tg-sub">@dastdaroz_bot — ответим быстро</div>
+      <div class="supsh-tg-title">Также доступна поддержка в <span>@dastdaroz_bot</span></div>
     </div>
-    <span class="supsh-tg-arrow">
-      Написать
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </span>
+    <div class="supsh-tg-ico">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9"><path d="M21.73 3.27L2.56 10.7c-1.26.49-1.25 1.17-.23 1.48l4.87 1.52 11.29-7.12c.53-.32 1.02-.15.62.2L8.83 16.72l-.37 5.15c.54 0 .78-.25 1.08-.54l2.59-2.51 5.09 3.76c.94.52 1.61.25 1.84-.87l3.33-15.71c.35-1.39-.53-2.02-1.66-1.73z"/></svg>
+    </div>
   </a>
 
   <!-- Messages -->

@@ -262,6 +262,23 @@ function _initSheets() {
       <div class="likesh-empty-sub">Здесь будут отображаться товары, которые вам понравились</div>
     </div>`;
 
+  // ── Bookings (бронированные) ──────────────────────────────
+  Sheet.define({ id: 'bookings', title: 'Бронированные', zIndex: 700 });
+  Sheet.body('bookings').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 24px;text-align:center">
+      <div style="width:64px;height:64px;border-radius:18px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+        </svg>
+      </div>
+      <div style="font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);letter-spacing:-.02em">Скоро</div>
+      <div style="font-size:.78rem;color:var(--tx3);line-height:1.6;max-width:220px">Функция бронирования находится в разработке. Следите за обновлениями!</div>
+    </div>`;
+
   // ── City selector ──────────────────────────────────────────
   Sheet.define({ id: 'city', title: 'Выбор города', zIndex: 700, onOpen: _loadCities });
   Sheet.body('city').innerHTML = `
@@ -650,12 +667,7 @@ function showGenCatsSkeleton() {
       '<div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>'
     ).join('');
   }
-  const grid = document.getElementById('gen-cat-grid');
-  if (grid) {
-    grid.innerHTML = Array(9).fill(
-      '<div class="gcat-skl-wrap"><div class="gcat-skl-img"></div><div class="gcat-skl-lbl"></div></div>'
-    ).join('');
-  }
+  // gen-cat-grid удалён (каталог «Скоро»)
 }
 
 function renderGenCats() {
@@ -672,16 +684,7 @@ function renderGenCats() {
 }
 
 function renderCatalogGenCats() {
-  const el = document.getElementById('gen-cat-grid');
-  if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
-  el.innerHTML = genCats.map(c => `
-    <div class="gcat-item" id="gcat-${c.id}" data-gencat="${c.id}">
-      <div class="gcat-img-wrap">
-        <img class="gcat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
-      </div>
-      <div class="gcat-name">${c.nameRu}</div>
-    </div>`).join('');
+  // Каталог временно отключён — страница показывает «Скоро»
 }
 
 window.onGenCatClick = function (id) { goPage('catalog'); };
@@ -1402,7 +1405,11 @@ function renderCart() {
   }
 
   if (!cart.length) {
-    el.innerHTML = `<div class="ci ci-empty"><div class="ci-empty-txt"><div class="ci-empty-t">Корзина пуста</div></div></div>`;
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:6px;text-align:center">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--b1)" stroke-width="1.4"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <div class="ci-empty-t" style="margin-top:6px">Корзина пуста</div>
+      <div class="ci-empty-s">Добавьте товары из каталога</div>
+    </div>`;
     _setCartFooter(false);
   } else {
     el.innerHTML = cart.map(i => {
@@ -1433,10 +1440,12 @@ function renderCart() {
 }
 
 function _setCartFooter(active) {
-  const cs = document.getElementById('cart-sum');
-  const cb = document.getElementById('checkout-btn');
-  if (cs) cs.style.opacity = active ? '1' : '.5';
-  if (cb) cb.disabled = !active;
+  const skl = document.getElementById('cart-sum-skl');
+  const cs  = document.getElementById('cart-sum');
+  const cb  = document.getElementById('cart-clear-btn');
+  if (skl) skl.style.display = 'none';                       // скелетон всегда скрываем после загрузки
+  if (cs)  cs.style.display  = active ? 'flex' : 'none';
+  if (cb)  cb.style.display  = active ? ''     : 'none';
 }
 
 function updateBadges() {
@@ -2496,9 +2505,9 @@ function _renderSupportMsgsUser(msgs) {
     const time = m.createdAt?.toDate
       ? m.createdAt.toDate().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
       : '';
-    return `<div class="supsh-msg ${isMe ? 'supsh-msg-me' : 'supsh-msg-them'}">
-      ${!isMe && m.senderName ? `<span class="supsh-msg-name">${escHtml(m.senderName)}</span>` : ''}
-      ${escHtml(m.text)}<span class="supsh-msg-time">${time}</span>
+    return `<div class="supsh-msg-wrap ${isMe ? 'supsh-msg-wrap-me' : 'supsh-msg-wrap-them'}">
+      ${!isMe && m.senderName ? `<div class="supsh-msg-name">${escHtml(m.senderName)}</div>` : ''}
+      <div class="supsh-msg ${isMe ? 'supsh-msg-me' : 'supsh-msg-them'}">${escHtml(m.text)}<span class="supsh-msg-time">${time}</span></div>
     </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
@@ -2971,6 +2980,7 @@ function checkAddressBanner(uid) {
 
 // ─── 22. Выбор города ─────────────────────────────────────────
 // DOM-структура и open/close управляются через sheet.js (Sheet 'city')
+window.openBookingsSheet = () => Sheet.open('bookings');
 window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
 window.openLikesSheet = () => Sheet.open('likes');
