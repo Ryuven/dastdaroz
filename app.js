@@ -27,7 +27,8 @@
 
 // ─── 1. Импорты ──────────────────────────────────────────────
 import { auth, db, storage, ORDER_STATUS } from './firebase.js';
-import { Sheet } from './sheet.js';
+import { Sheet }    from './sheet.js';
+import { SheetPdf } from './sheet-pdf.js';
 
 import {
   onAuthStateChanged,
@@ -373,6 +374,14 @@ function _initSheets() {
 }
 
 _initSheets();
+
+// ─── Публичная оферта (PDF sheet) ─────────────────────────────
+SheetPdf.define({
+  id:     'oferta',
+  title:  'Публичная оферта',
+  url:    'https://dastdaroz.shop/help/terms.pdf',
+  zIndex: 700,
+});
 
 // ─── 5. Auth / Инициализация ──────────────────────────────────
 onAuthStateChanged(auth, async u => {
@@ -807,6 +816,7 @@ window.openStore = window.openRetailer; // алиас для совместим�
 
 // Открыть каталог конкретной точки ритейлера
 window.openRetailerCatalog = async function (rid, locId, locAddr) {
+  document.getElementById('pages').scrollTop = 0;
   storeCatFilter = 'all';
   jsonMenuData   = null;
   jsonProdsMap   = {};
@@ -818,25 +828,48 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   // Кнопка назад → возврат к списку точек
   const backBtn = document.querySelector('.store-cat-back');
   if (backBtn) {
+    backBtn.style.display = '';
     backBtn.onclick = () => openRetailer(rid);
     backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> К точкам магазина`;
   }
 
-  // Заголовок: баннер ритейлера + адрес точки
+  // Заголовок: доп-баннер (если есть) или дефолтный hero
   if (hdrEl && activeStore) {
-    const imgUrl = activeStore.imageUrl || '';
-    hdrEl.innerHTML = `
-      <div class="store-cat-header">
-        ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
-        <div class="store-cat-header-overlay"></div>
-        <div class="store-cat-header-body">
-          <div class="store-cat-header-tag">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+    if (activeStore.extraBannerUrl) {
+      // Прячем внешнюю кнопку — она внутри баннера
+      if (backBtn) backBtn.style.display = 'none';
+      hdrEl.innerHTML = `
+        <div class="ret-xbanner-wrap">
+          <div class="ret-xbanner">
+            <img src="${activeStore.extraBannerUrl}" alt="${activeStore.name}">
+            <button class="ret-xbanner-back" onclick="openRetailer('${rid}')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            </button>
+            <div class="ret-xbanner-body">
+              <div class="ret-xbanner-tag">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+              </div>
+              <div class="ret-xbanner-name">${activeStore.name}</div>
+              ${activeStore.description ? `<div class="ret-xbanner-desc">${activeStore.description}</div>` : ''}
+            </div>
           </div>
-          <div class="store-cat-header-name">${activeStore.name}</div>
-          ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
-        </div>
-      </div>`;
+        </div>`;
+    } else {
+      // Дефолтный hero с внешней кнопкой назад
+      const imgUrl = activeStore.imageUrl || '';
+      hdrEl.innerHTML = `
+        <div class="store-cat-header">
+          ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
+          <div class="store-cat-header-overlay"></div>
+          <div class="store-cat-header-body">
+            <div class="store-cat-header-tag">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+            </div>
+            <div class="store-cat-header-name">${activeStore.name}</div>
+            ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
+          </div>
+        </div>`;
+    }
   }
 
   // Скелетон при загрузке
@@ -892,24 +925,43 @@ async function renderRetailerPage(retailer) {
   const prodsEl = document.getElementById('store-prods');
   if (!hdrEl) return;
 
-  const imgUrl = retailer.imageUrl || '';
-  hdrEl.innerHTML = `
-    <div class="store-cat-header">
-      ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
-      <div class="store-cat-header-overlay"></div>
-      <div class="store-cat-header-body">
-        <div class="store-cat-header-tag">Ритейлер · ${_selectedCityName}</div>
-        <div class="store-cat-header-name">${retailer.name}</div>
-        ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
-      </div>
-    </div>`;
+  // ── Хедер: доп-баннер (16:9) или дефолтный hero ──────────
+  const extBack = document.querySelector('.store-cat-back');
+  if (retailer.extraBannerUrl) {
+    // Прячем внешнюю кнопку — она внутри баннера
+    if (extBack) extBack.style.display = 'none';
+    hdrEl.innerHTML = `
+      <div class="ret-xbanner-wrap">
+        <div class="ret-xbanner">
+          <img src="${retailer.extraBannerUrl}" alt="${retailer.name}">
+          <button class="ret-xbanner-back" onclick="goPage('home')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </button>
+          <div class="ret-xbanner-body">
+            <div class="ret-xbanner-tag">Ритейлер · ${_selectedCityName}</div>
+            <div class="ret-xbanner-name">${retailer.name}</div>
+            ${retailer.description ? `<div class="ret-xbanner-desc">${retailer.description}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  } else {
+    // Показываем внешнюю кнопку для дефолтного hero
+    if (extBack) extBack.style.display = '';
+    const imgUrl = retailer.imageUrl || '';
+    hdrEl.innerHTML = `
+      <div class="store-cat-header">
+        ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
+        <div class="store-cat-header-overlay"></div>
+        <div class="store-cat-header-body">
+          <div class="store-cat-header-tag">Ритейлер · ${_selectedCityName}</div>
+          <div class="store-cat-header-name">${retailer.name}</div>
+          ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
+        </div>
+      </div>`;
+  }
 
   if (catsEl)  catsEl.innerHTML  = '';
   if (prodsEl) prodsEl.innerHTML = `
-    ${retailer.extraBannerUrl ? `
-    <div class="ret-extra-banner" style="grid-column:1/-1">
-      <img src="${retailer.extraBannerUrl}" alt="${retailer.name} баннер">
-    </div>` : ''}
     <div style="grid-column:1/-1">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -3079,6 +3131,8 @@ window.closeLikesSheet= () => Sheet.close('likes');
 // ─── Оплата (Alif Pay / Google Pay) ────────────────────────
 window.openAlifPaySheet   = () => Sheet.open('alifpay');
 window.openGooglePaySheet = () => Sheet.open('googlepay');
+window.openOfertaSheet    = () => SheetPdf.open('oferta');
+window.closeOfertaSheet   = () => SheetPdf.close('oferta');
 
 async function _loadCities() {
   const list = document.getElementById('citysh-list');
