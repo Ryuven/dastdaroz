@@ -906,6 +906,10 @@ async function renderRetailerPage(retailer) {
 
   if (catsEl)  catsEl.innerHTML  = '';
   if (prodsEl) prodsEl.innerHTML = `
+    ${retailer.extraBannerUrl ? `
+    <div class="ret-extra-banner" style="grid-column:1/-1">
+      <img src="${retailer.extraBannerUrl}" alt="${retailer.name} баннер">
+    </div>` : ''}
     <div style="grid-column:1/-1">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1503,7 +1507,7 @@ window.doCheckout = async function () {
   try {
     const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
     const oNum          = nextOrderNum();
-    const payMethod     = document.getElementById('cart-pay')?.value || 'cash';
+    const payMethod     = 'online';
     const reservedUntil = new Date(Date.now() + BOOKING_DURATION_MS);
 
     const orderData = {
@@ -1970,7 +1974,7 @@ window.openOrderModal = function (oid) {
   const c        = SC[o.status] || '#888';
   const l        = SL[o.status] || o.status;
   const si       = STEPS.indexOf(o.status);
-  const pay      = { cash: 'Наличные 💵', card: 'Карта 💳', online: 'Онлайн 📱' }[o.paymentMethod] || o.paymentMethod;
+  const pay      = 'Онлайн 📱';
   const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
   const sub      = (o.items || []).reduce((s, i) => s + i.price * i.quantity, 0);
   const delivery = o.total - sub;
@@ -2408,7 +2412,7 @@ function renderStatusPage() {
   const l    = SL[o.status] || o.status;
   const si   = STEPS.indexOf(o.status);
   const num  = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
-  const pay  = { cash: 'Наличные', card: 'Карта', online: 'Онлайн' }[o.paymentMethod] || o.paymentMethod;
+  const pay  = 'Онлайн';
 
   const checkIco = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
   const steps = STEPS.map((s, i) => {
