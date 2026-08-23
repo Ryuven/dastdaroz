@@ -371,6 +371,11 @@ function _initSheets() {
       <div class="paysh-coming-title">Google Pay</div>
       <div class="paysh-coming-sub">Оплата через Google Pay появится совсем скоро. Следите за обновлениями!</div>
     </div>`;
+
+  // ── Карточка товара ────────────────────────────────────────
+  Sheet.define({ id: 'product', title: 'Товар', zIndex: 700 });
+  const _prodShBody = Sheet.body('product');
+  _prodShBody.style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
 }
 
 _initSheets();
@@ -1195,8 +1200,7 @@ window.openProdModal = function (pid) {
   const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
   if (!p) return;
   renderProdModal(p);
-  document.getElementById('prod-modal-bg').classList.add('open');
-  document.getElementById('prod-modal-scroll').scrollTop = 0;
+  Sheet.open('product');
 };
 
 function renderProdModal(p) {
@@ -1243,10 +1247,10 @@ function renderProdModal(p) {
          </div>`
       : `<button class="pm-add-btn" onclick="pmAdd('${p.id}')">Добавить в корзину</button>`;
 
-  document.getElementById('prod-modal-inner').innerHTML = `
+  const _psBody = Sheet.body('product');
+  _psBody.innerHTML = `
     <div class="pm-hero">
       ${heroHtml}
-      <button class="pm-close" onclick="closeProdModal()">✕</button>
       ${unavail ? '<div class="pm-badge-unavail">Нет в наличии</div>' : ''}
       ${storeBadge}
     </div>
@@ -1264,6 +1268,7 @@ function renderProdModal(p) {
         ${buyHtml}
       </div>
     </div>`;
+  _psBody.scrollTop = 0;
 }
 
 window.pmAdd   = async function (pid) { await addToCart(pid); const p = prods.find(x => x.id === pid); if (p) renderProdModal(p); };
@@ -1291,9 +1296,8 @@ window.pmMinus = async function (pid) {
   }
 };
 
-window.closeProdModal = function (e) {
-  if (e && e.target !== document.getElementById('prod-modal-bg')) return;
-  document.getElementById('prod-modal-bg').classList.remove('open');
+window.closeProdModal = function () {
+  Sheet.close('product');
 };
 
 window.pcPlus  = async function (pid) { await addToCart(pid); };

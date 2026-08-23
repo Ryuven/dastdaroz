@@ -871,13 +871,13 @@ select.addr-inp{cursor:pointer}
 .p-modal-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 
 /* Hero */
-.pm-hero{position:relative;width:100%;background:var(--s2);overflow:hidden;flex-shrink:0}
-.pm-hero-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;transition:transform .4s ease}
-.pm-hero-ph{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;opacity:.12}
+.pm-hero{position:relative;width:100%;background:var(--s1);flex-shrink:0;padding:0 14px 14px;border-bottom:1px solid var(--b0)}
+.pm-hero-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:16px;transition:transform .4s ease}
+.pm-hero-ph{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;opacity:.12;border-radius:16px;background:var(--s2)}
 .pm-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.3);backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .15s}
 .pm-close:hover{background:rgba(0,0,0,.5)}
-.pm-badge-unavail{position:absolute;top:14px;left:14px;background:rgba(239,68,68,.9);backdrop-filter:blur(8px);color:#fff;font-size:.5rem;font-weight:800;padding:5px 12px;border-radius:99px;letter-spacing:.1em;text-transform:uppercase}
-.pm-badge-store{position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,.45);backdrop-filter:blur(10px);color:#fff;font-size:.52rem;font-weight:600;padding:4px 10px;border-radius:8px;display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.12)}
+.pm-badge-unavail{position:absolute;top:14px;left:28px;background:rgba(239,68,68,.9);backdrop-filter:blur(8px);color:#fff;font-size:.5rem;font-weight:800;padding:5px 12px;border-radius:99px;letter-spacing:.1em;text-transform:uppercase}
+.pm-badge-store{position:absolute;bottom:28px;left:28px;background:rgba(0,0,0,.45);backdrop-filter:blur(10px);color:#fff;font-size:.52rem;font-weight:600;padding:4px 10px;border-radius:8px;display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.12)}
 
 /* Body */
 .pm-body{padding:22px 20px 40px;display:flex;flex-direction:column;gap:0}
@@ -911,7 +911,7 @@ select.addr-inp{cursor:pointer}
 .pm-nut-lbl{font-size:.46rem;color:var(--tx3);margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
 
 /* Price + controls */
-.pm-buy-row{position:sticky;bottom:0;background:var(--s1);padding:14px 0 0;margin-top:4px;border-top:1px solid var(--b0)}
+.pm-buy-row{position:sticky;bottom:0;background:var(--s1);padding:14px 0 16px;margin-top:4px;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0)}
 .pm-price-line{display:flex;align-items:baseline;gap:6px;margin-bottom:14px}
 .pm-price{font-family:var(--fd);font-weight:900;font-size:2rem;color:var(--tx);letter-spacing:-.03em;line-height:1}
 .pm-price-unit{font-size:.72rem;color:var(--tx3);font-weight:400}
@@ -2065,16 +2065,6 @@ select.addr-inp{cursor:pointer}
 
 <!-- ══ SUPPORT CHAT SHEET ══ -->
 <!-- support-sheet → sheet.js (Sheet.define 'support') -->
-
-<!-- PRODUCT MODAL -->
-<div class="p-modal-bg" id="prod-modal-bg" onclick="closeProdModal(event)">
-  <div class="p-modal" id="prod-modal">
-    <div class="p-modal-drag"></div>
-    <div class="p-modal-scroll" id="prod-modal-scroll">
-      <div id="prod-modal-inner"></div>
-    </div>
-  </div>
-</div>
 
 <!-- ADDRESS MAP MODAL -->
 <!-- ══ APP INSTALL BANNER ══ -->
