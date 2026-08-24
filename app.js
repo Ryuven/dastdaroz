@@ -1226,26 +1226,27 @@ function renderProdModal(p) {
   if (p.volume)  chips.push({ label: p.volume + ' мл' });
   if (p.brand)   chips.push({ label: p.brand });
   if (p.country) chips.push({ label: p.country });
-  if (cname && !chips.find(c => c.label === cname)) chips.unshift({ label: cname });
 
   const chipsHtml = chips.length
     ? `<div class="pm-chips">${chips.map(c => `<span class="pm-chip">${c.label}</span>`).join('')}</div>`
     : '';
 
   const buyHtml = unavail
-    ? `<button class="pm-add-btn" disabled>Нет в наличии</button>`
+    ? `<div class="pm-addrow">
+         <button class="pm-addrow-add" disabled>Нет в наличии</button>
+       </div>`
     : qty > 0
-      ? `<div class="pm-buy-wrap">
-           <div class="pm-qty-box">
-             <button class="pm-qty-btn" onclick="pmMinus('${p.id}')">−</button>
-             <div class="pm-qty-num" id="pm-qty-${p.id}">${qty}</div>
-             <button class="pm-qty-btn" onclick="pmPlus('${p.id}')">+</button>
+      ? `<div class="pm-addrow">
+           <button class="pm-addrow-side" onclick="pmMinus('${p.id}')">−</button>
+           <div class="pm-addrow-mid">
+             <span class="pm-addrow-num" id="pm-qty-${p.id}">${qty}</span>
+             <span class="pm-addrow-price">${p.price * qty} см</span>
            </div>
-           <button class="pm-go-cart" onclick="closeProdModal();goPage('cart')">
-             В корзину — ${p.price * qty} см
-           </button>
+           <button class="pm-addrow-side" onclick="pmPlus('${p.id}')">+</button>
          </div>`
-      : `<button class="pm-add-btn" onclick="pmAdd('${p.id}')">Добавить в корзину</button>`;
+      : `<div class="pm-addrow">
+           <button class="pm-addrow-add" onclick="pmAdd('${p.id}')">Добавить в корзину</button>
+         </div>`;
 
   const _psBody = Sheet.body('product');
   _psBody.innerHTML = `
@@ -1255,18 +1256,12 @@ function renderProdModal(p) {
       ${storeBadge}
     </div>
     <div class="pm-body">
-      <div class="pm-cat-line"><div class="pm-cat-dot"></div><div class="pm-cat-lbl">${cname || 'Товары'}</div></div>
       <div class="pm-name">${p.name}</div>
+      <div class="pm-price-row"><span class="pm-price">${p.price}</span><span class="pm-price-unit">сом</span></div>
       ${p.description ? `<div class="pm-desc">${p.description}</div>` : ''}
       ${chipsHtml}
-      <div class="pm-div"></div>
-      <div class="pm-buy-row">
-        <div class="pm-price-line">
-          <div class="pm-price">${p.price}</div>
-          <div class="pm-price-unit">см</div>
-        </div>
-        ${buyHtml}
-      </div>
+      ${buyHtml}
+      <div class="pm-disclaimer">Изображение товара может отличаться от фактического внешнего вида</div>
     </div>`;
   _psBody.scrollTop = 0;
 }
@@ -1279,8 +1274,8 @@ window.pmPlus  = async function (pid) {
   const qEl = document.getElementById(`pm-qty-${pid}`);
   if (qEl) {
     qEl.textContent = qty;
-    const goBtn = document.querySelector('.pm-go-cart');
-    if (goBtn && p) goBtn.textContent = ` В корзину — ${p.price * qty} см`;
+    const priceEl = document.querySelector('.pm-addrow-price');
+    if (priceEl && p) priceEl.textContent = `${p.price * qty} см`;
   } else if (p) { renderProdModal(p); }
 };
 window.pmMinus = async function (pid) {
@@ -1291,9 +1286,9 @@ window.pmMinus = async function (pid) {
   const qEl = document.getElementById(`pm-qty-${pid}`);
   if (qEl) {
     qEl.textContent = qty;
-    const goBtn = document.querySelector('.pm-go-cart');
-    if (goBtn && p) goBtn.textContent = ` В корзину — ${p.price * qty} см`;
-  }
+    const priceEl = document.querySelector('.pm-addrow-price');
+    if (priceEl && p) priceEl.textContent = `${p.price * qty} см`;
+  } else if (p) { renderProdModal(p); }
 };
 
 window.closeProdModal = function () {

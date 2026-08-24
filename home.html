@@ -886,7 +886,10 @@ select.addr-inp{cursor:pointer}
 .pm-cat-line{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .pm-cat-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex-shrink:0}
 .pm-cat-lbl{font-size:.52rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
-.pm-name{font-family:var(--fd);font-weight:900;font-size:1.55rem;color:var(--tx);line-height:1.08;letter-spacing:-.025em;margin-bottom:10px}
+.pm-name{font-family:var(--fd);font-weight:900;font-size:1.55rem;color:var(--tx);line-height:1.08;letter-spacing:-.025em;margin-bottom:8px}
+.pm-price-row{display:flex;align-items:baseline;gap:5px;margin-bottom:16px}
+.pm-price{font-family:var(--fd);font-weight:900;font-size:1.7rem;color:var(--acc);letter-spacing:-.03em;line-height:1}
+.pm-price-unit{font-size:.72rem;color:var(--tx3);font-weight:600}
 .pm-rating{display:flex;align-items:center;gap:6px;margin-bottom:14px}
 .pm-stars{display:flex;gap:1px}
 .pm-star{font-size:.72rem}
@@ -910,23 +913,19 @@ select.addr-inp{cursor:pointer}
 .pm-nut-val{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx);letter-spacing:-.02em}
 .pm-nut-lbl{font-size:.46rem;color:var(--tx3);margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
 
-/* Price + controls */
-.pm-buy-row{position:sticky;bottom:0;background:var(--s1);padding:14px 0 16px;margin-top:4px;border-top:1px solid var(--b0);border-bottom:1px solid var(--b0)}
-.pm-price-line{display:flex;align-items:baseline;gap:6px;margin-bottom:14px}
-.pm-price{font-family:var(--fd);font-weight:900;font-size:2rem;color:var(--tx);letter-spacing:-.03em;line-height:1}
-.pm-price-unit{font-size:.72rem;color:var(--tx3);font-weight:400}
-.pm-price-per{font-size:.62rem;color:var(--tx3)}
-.pm-buy-wrap{display:flex;gap:10px;align-items:stretch}
-.pm-qty-box{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--b1);border-radius:14px;overflow:hidden;flex-shrink:0}
-.pm-qty-btn{width:42px;height:48px;background:none;border:none;cursor:pointer;font-size:1.3rem;font-weight:700;color:var(--tx3);display:flex;align-items:center;justify-content:center;transition:color .13s,background .13s}
-.pm-qty-btn:hover{color:var(--acc);background:var(--accd)}
-.pm-qty-num{min-width:32px;text-align:center;font-size:.9rem;font-weight:800;color:var(--tx);border-inline:1px solid var(--b0)}
-.pm-add-btn{flex:1;height:48px;background:var(--accg);border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s,transform .12s;letter-spacing:-.01em;box-shadow:0 6px 20px rgba(26,158,74,.3)}
-.pm-add-btn:hover{opacity:.92;transform:translateY(-1px)}
-.pm-add-btn:active{transform:scale(.97);opacity:1}
-.pm-add-btn:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
-.pm-go-cart{flex:1;height:48px;background:var(--s2);border:1.5px solid var(--accg);border-radius:14px;color:var(--acc);font-family:var(--fd);font-weight:800;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .14s}
-.pm-go-cart:hover{background:var(--accd)}
+/* ── Новая кнопка добавления в корзину ── */
+.pm-addrow{display:flex;align-items:center;gap:9px;margin-top:0;padding-bottom:10px}
+.pm-addrow-add{flex:1;height:52px;background:var(--acc);border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.92rem;cursor:pointer;display:flex;align-items:center;justify-content:center;letter-spacing:-.01em;box-shadow:0 6px 22px rgba(26,158,74,.28);transition:opacity .15s,transform .12s}
+.pm-addrow-add:not(:disabled):hover{opacity:.9;transform:translateY(-1px)}
+.pm-addrow-add:not(:disabled):active{transform:scale(.97)}
+.pm-addrow-add:disabled{background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3)}
+.pm-addrow-side{width:52px;height:52px;border-radius:14px;background:var(--acc);color:#fff;border:none;font-size:1.55rem;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(26,158,74,.22);transition:opacity .13s,transform .12s}
+.pm-addrow-side:hover{opacity:.88}
+.pm-addrow-side:active{transform:scale(.88)}
+.pm-addrow-mid{flex:1;height:52px;background:var(--s2);border:1.5px solid var(--b0);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.pm-addrow-num{font-family:var(--fd);font-weight:900;font-size:1.2rem;color:var(--tx);letter-spacing:-.02em;line-height:1}
+.pm-addrow-price{font-size:.62rem;color:var(--tx3);font-weight:700}
+.pm-disclaimer{font-size:.58rem;color:var(--tx3);text-align:center;line-height:1.5;margin-top:10px;opacity:.7}
 /* ── ADDRESS MODAL ── */
 /* ── (старый addr-modal удалён — используется paddr-bg в профиле) ── */
 
