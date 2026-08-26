@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Тест оплаты — Alif Pay</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:#f3f7f4;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:460px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+  .logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+  .logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#1a9e4a,#22c55e);border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{color:#fff}
+  .logo-text{font-weight:900;font-size:1rem;color:#171f1a}
+  h1{font-size:1.1rem;font-weight:800;color:#171f1a;margin-bottom:6px}
+  .sub{font-size:.78rem;color:#7a9882;margin-bottom:24px;line-height:1.5}
+  label{display:block;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7a9882;margin-bottom:6px}
+  input,textarea{width:100%;background:#f3f7f4;border:1.5px solid #e0ede3;border-radius:10px;color:#171f1a;font-family:inherit;font-size:.88rem;padding:11px 14px;outline:none;transition:border-color .15s;margin-bottom:14px}
+  input:focus,textarea:focus{border-color:#1a9e4a;box-shadow:0 0 0 3px rgba(26,158,74,.09)}
+  textarea{resize:none;min-height:80px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{width:100%;padding:14px;background:linear-gradient(135deg,#1a9e4a,#22c55e);border:none;border-radius:12px;color:#fff;font-weight:900;font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(26,158,74,.28);transition:opacity .15s;margin-top:4px}
+  .btn:hover{opacity:.9}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .spin{width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .7s linear infinite;flex-shrink:0}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .result{margin-top:18px;border-radius:12px;padding:14px 16px;font-size:.8rem;line-height:1.6;display:none}
+  .result.ok{background:#f0faf3;border:1.5px solid rgba(26,158,74,.2);color:#155724}
+  .result.err{background:#fff5f5;border:1.5px solid rgba(220,38,38,.2);color:#991b1b}
+  .result a{color:#1a9e4a;font-weight:700;word-break:break-all}
+  .divider{height:1px;background:#e0ede3;margin:20px 0}
+  .hint{background:#f3f7f4;border-radius:10px;padding:12px 14px;font-size:.72rem;color:#7a9882;line-height:1.7}
+  .hint strong{color:#171f1a}
+  .tag{display:inline-flex;align-items:center;gap:5px;background:rgba(26,158,74,.1);border:1px solid rgba(26,158,74,.2);border-radius:99px;padding:3px 10px;font-size:.62rem;font-weight:700;color:#1a9e4a;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </div>
+    <span class="logo-text">dastdaroz — тест оплаты</span>
+  </div>
+
+  <div class="tag">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+    Тестовая среда Алифа
+  </div>
+
+  <h1>Проверка платёжного флоу</h1>
+  <p class="sub">Заполни данные → нажми кнопку → попадёшь на страницу оплаты Алифа</p>
+
+  <label>ID клиента</label>
+  <input type="text" id="clientId" value="test_user_001" placeholder="Firebase UID или test_user_001"/>
+
+  <label>Адрес доставки</label>
+  <input type="text" id="address" value="ул. Рудаки 1, Душанбе" placeholder="ул. Рудаки 1"/>
+
+  <div class="row">
+    <div>
+      <label>Телефон</label>
+      <input type="text" id="phone" value="+992900000001" placeholder="+992900000001"/>
+    </div>
+    <div>
+      <label>Город (cityId)</label>
+      <input type="text" id="cityId" value="dushanbe" placeholder="dushanbe"/>
+    </div>
+  </div>
+
+  <label>Product ID (из Firestore)</label>
+  <input type="text" id="productId" value="3f9099WpGHx4XYr66UaZ" placeholder="ID товара из Firestore"/>
+
+  <label>Количество</label>
+  <input type="number" id="quantity" value="1" min="1"/>
+
+  <button class="btn" id="pay-btn" onclick="doTest()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+    </svg>
+    Инициировать платёж
+  </button>
+
+  <div class="result" id="result"></div>
+
+  <div class="divider"></div>
+
+  <div class="hint">
+    <strong>Тестовые данные карты (Корти Милли)</strong><br/>
+    Номер: <strong>5058 2702 8378 9872</strong><br/>
+    Срок: <strong>26/11</strong> &nbsp;|&nbsp; CVV: <strong>340</strong><br/>
+    OTP: <strong>12345</strong> (статический для теста)
+  </div>
+</div>
+
+<script>
+const API = 'https://api.dastdaroz.shop/api/payment/init';
+
+async function doTest() {
+  const btn    = document.getElementById('pay-btn');
+  const result = document.getElementById('result');
+
+  const clientId  = document.getElementById('clientId').value.trim();
+  const address   = document.getElementById('address').value.trim();
+  const phone     = document.getElementById('phone').value.trim();
+  const cityId    = document.getElementById('cityId').value.trim();
+  const productId = document.getElementById('productId').value.trim();
+  const quantity  = parseInt(document.getElementById('quantity').value) || 1;
+
+  if (!clientId || !address || !productId) {
+    showResult('err', '❌ Заполни все обязательные поля');
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<div class="spin"></div> Запрос к Алифу…';
+  result.style.display = 'none';
+
+  try {
+    const resp = await fetch(API, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId,
+        address,
+        cityId:      cityId || null,
+        clientPhone: phone  || null,
+        items: [{ productId, quantity }],
+      }),
+    });
+
+    const data = await resp.json();
+
+    if (data.paymentUrl) {
+      showResult('ok',
+        `✅ Успех! Переходим к оплате…<br/>
+         <a href="${data.paymentUrl}" target="_blank">${data.paymentUrl}</a><br/><br/>
+         <strong>Заказ:</strong> ${data.orderId}<br/>
+         <strong>Сумма:</strong> ${data.order?.total} см`
+      );
+      setTimeout(() => { window.location.href = data.paymentUrl; }, 1200);
+    } else {
+      showResult('err', `❌ Ошибка: ${data.error || JSON.stringify(data)}`);
+    }
+  } catch(e) {
+    showResult('err', `❌ Сеть / CORS: ${e.message}<br/>Проверь что бэкенд добавил твой origin в CORS`);
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Инициировать платёж`;
+  }
+}
+
+function showResult(type, html) {
+  const el = document.getElementById('result');
+  el.className = 'result ' + type;
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>
