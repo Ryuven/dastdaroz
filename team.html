@@ -77,6 +77,13 @@
 <title>Команда — dastdaroz</title>
 <meta name="description" content="Команда Dastdaroz: Ибодло Абдусаломов (CEO, Генеральный директор) и Фируз Мирзоев (COO, Операционный директор). Сервис доставки в Таджикистане."/>
 <link rel="canonical" href="https://dastdaroz.shop/team.html"/>
+<!-- Open Graph — базовые (перезаписываются JS ниже при заходе на #конкретного-участника) -->
+<meta property="og:type"        content="website"/>
+<meta property="og:site_name"   content="dastdaroz"/>
+<meta property="og:title"       content="Команда — dastdaroz"/>
+<meta property="og:description" content="Команда Dastdaroz: Ибодло Абдусаломов (CEO), Фируз Мирзоев (COO), Сиёвуш Мирзоев (CMO). Сервис доставки в Таджикистане."/>
+<meta property="og:image"       content="https://dastdaroz.shop/storage/images/ibodlo_abdusalomov.jpg"/>
+<meta property="og:url"         content="https://dastdaroz.shop/team.html"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap"/>
@@ -475,63 +482,150 @@ a{color:inherit;text-decoration:none}
 }
 </style>
 
+<!-- ── Динамический title/og для каждого участника по URL-хэшу ──────────────
+     Googlebot (Chromium) выполняет JS → видит правильный <title> и og:image
+     для каждого URL: team.html#ibodlo-abdusalomov, #firuz-mirzoev, …
+     Без отдельных HTML-файлов.
+─────────────────────────────────────────────────────────────────────────── -->
+<script>
+(function(){
+  /* Данные каждого участника */
+  var MEMBERS = {
+    'ibodlo-abdusalomov': {
+      title: 'Ибодло Абдусаломов — CEO | Dastdaroz',
+      desc:  'Ибодло Абдусаломов — Генеральный директор (CEO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.',
+      img:   'https://dastdaroz.shop/storage/images/ibodlo_abdusalomov.jpg',
+      url:   'https://dastdaroz.shop/team.html#ibodlo-abdusalomov'
+    },
+    'firuz-mirzoev': {
+      title: 'Фируз Мирзоев — COO | Dastdaroz',
+      desc:  'Фируз Мирзоев — Операционный директор (COO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.',
+      img:   'https://dastdaroz.shop/storage/images/firuz_mirzoev.jpg',
+      url:   'https://dastdaroz.shop/team.html#firuz-mirzoev'
+    },
+    'siyovush-mirzoev': {
+      title: 'Сиёвуш Мирзоев — CMO | Dastdaroz',
+      desc:  'Сиёвуш Мирзоев — Маркетинговый директор (CMO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.',
+      img:   'https://dastdaroz.shop/storage/images/siyovush_mirzoev.jpg',
+      url:   'https://dastdaroz.shop/team.html#siyovush-mirzoev'
+    }
+  };
+
+  var hash = (window.location.hash || '').replace('#', '');
+  var m    = MEMBERS[hash];
+  if (!m) return; /* Нет хэша — оставляем базовый title "Команда — dastdaroz" */
+
+  /* 1. <title> */
+  document.title = m.title;
+
+  /* 2. <meta name="description"> */
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', m.desc);
+
+  /* 3. Open Graph */
+  function ogSet(prop, val) {
+    var el = document.querySelector('meta[property="' + prop + '"]');
+    if (el) el.setAttribute('content', val);
+  }
+  ogSet('og:title',       m.title);
+  ogSet('og:description', m.desc);
+  ogSet('og:image',       m.img);
+  ogSet('og:url',         m.url);
+
+  /* 4. <link rel="canonical"> — отдельный canonical для каждого участника */
+  var canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', m.url);
+})();
+</script>
+
 <!-- JSON-LD: Google видит каждого как отдельную сущность Person -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "Person",
+      "@type": "WebPage",
+      "@id": "https://dastdaroz.shop/team.html",
+      "url": "https://dastdaroz.shop/team.html",
+      "name": "Команда — dastdaroz",
+      "description": "Команда Dastdaroz: Ибодло Абдусаломов (CEO), Фируз Мирзоев (COO), Сиёвуш Мирзоев (CMO).",
+      "publisher": { "@type": "Organization", "name": "Dastdaroz", "url": "https://dastdaroz.shop" }
+    },
+    {
+      "@type": "WebPage",
       "@id": "https://dastdaroz.shop/team.html#ibodlo-abdusalomov",
+      "url": "https://dastdaroz.shop/team.html#ibodlo-abdusalomov",
+      "name": "Ибодло Абдусаломов — CEO | Dastdaroz",
+      "description": "Ибодло Абдусаломов — Генеральный директор (CEO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.",
+      "primaryImageOfPage": { "@type": "ImageObject", "url": "https://dastdaroz.shop/storage/images/ibodlo_abdusalomov.jpg" },
+      "mainEntity": { "@id": "https://dastdaroz.shop/team.html#person-ibodlo" }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://dastdaroz.shop/team.html#firuz-mirzoev",
+      "url": "https://dastdaroz.shop/team.html#firuz-mirzoev",
+      "name": "Фируз Мирзоев — COO | Dastdaroz",
+      "description": "Фируз Мирзоев — Операционный директор (COO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.",
+      "primaryImageOfPage": { "@type": "ImageObject", "url": "https://dastdaroz.shop/storage/images/firuz_mirzoev.jpg" },
+      "mainEntity": { "@id": "https://dastdaroz.shop/team.html#person-firuz" }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://dastdaroz.shop/team.html#siyovush-mirzoev",
+      "url": "https://dastdaroz.shop/team.html#siyovush-mirzoev",
+      "name": "Сиёвуш Мирзоев — CMO | Dastdaroz",
+      "description": "Сиёвуш Мирзоев — Маркетинговый директор (CMO) компании Dastdaroz. Сервис быстрой доставки в Таджикистане.",
+      "primaryImageOfPage": { "@type": "ImageObject", "url": "https://dastdaroz.shop/storage/images/siyovush_mirzoev.jpg" },
+      "mainEntity": { "@id": "https://dastdaroz.shop/team.html#person-siyovush" }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://dastdaroz.shop/team.html#person-ibodlo",
       "name": "Ибодло Абдусаломов",
       "jobTitle": "Генеральный директор",
       "description": "Генеральный директор (CEO) компании Dastdaroz — сервиса доставки в Таджикистане.",
       "url": "https://dastdaroz.shop/team.html#ibodlo-abdusalomov",
-      "image": "https://dastdaroz.shop/storage/images/ibodlo_abdusalomov.jpg",
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://dastdaroz.shop/storage/images/ibodlo_abdusalomov.jpg",
+        "name": "Ибодло Абдусаломов — CEO Dastdaroz"
+      },
       "sameAs": [
         "https://t.me/ibodlo",
         "https://www.instagram.com/ibodlo_official",
         "https://www.linkedin.com/in/ibodlo-abdusalomov-721719377"
       ],
-      "worksFor": {
-        "@type": "Organization",
-        "name": "Dastdaroz",
-        "url": "https://dastdaroz.shop"
-      }
+      "worksFor": { "@type": "Organization", "name": "Dastdaroz", "url": "https://dastdaroz.shop" }
     },
     {
       "@type": "Person",
-      "@id": "https://dastdaroz.shop/team.html#firuz-mirzoev",
+      "@id": "https://dastdaroz.shop/team.html#person-firuz",
       "name": "Фируз Мирзоев",
       "jobTitle": "Операционный директор",
       "description": "Операционный директор (COO) компании Dastdaroz — сервиса доставки в Таджикистане.",
       "url": "https://dastdaroz.shop/team.html#firuz-mirzoev",
-      "image": "https://dastdaroz.shop/storage/images/firuz_mirzoev.jpg",
-      "sameAs": [
-        "https://www.instagram.com/mzv.up"
-      ],
-      "worksFor": {
-        "@type": "Organization",
-        "name": "Dastdaroz",
-        "url": "https://dastdaroz.shop"
-      }
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://dastdaroz.shop/storage/images/firuz_mirzoev.jpg",
+        "name": "Фируз Мирзоев — COO Dastdaroz"
+      },
+      "sameAs": ["https://www.instagram.com/mzv.up", "https://t.me/+992878777788"],
+      "worksFor": { "@type": "Organization", "name": "Dastdaroz", "url": "https://dastdaroz.shop" }
     },
     {
       "@type": "Person",
-      "@id": "https://dastdaroz.shop/team.html#siyovush-mirzoev",
+      "@id": "https://dastdaroz.shop/team.html#person-siyovush",
       "name": "Сиёвуш Мирзоев",
       "jobTitle": "Маркетинговый директор",
       "description": "Маркетинговый директор (CMO) компании Dastdaroz — сервиса доставки в Таджикистане.",
       "url": "https://dastdaroz.shop/team.html#siyovush-mirzoev",
-      "image": "https://dastdaroz.shop/storage/images/siyovush_mirzoev.jpg",
-      "sameAs": [
-        "https://www.instagram.com/_mirzzzzoev_"
-      ],
-      "worksFor": {
-        "@type": "Organization",
-        "name": "Dastdaroz",
-        "url": "https://dastdaroz.shop"
-      }
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://dastdaroz.shop/storage/images/siyovush_mirzoev.jpg",
+        "name": "Сиёвуш Мирзоев — CMO Dastdaroz"
+      },
+      "sameAs": ["https://www.instagram.com/_mirzzzzoev_"],
+      "worksFor": { "@type": "Organization", "name": "Dastdaroz", "url": "https://dastdaroz.shop" }
     }
   ]
 }
