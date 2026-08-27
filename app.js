@@ -2848,6 +2848,28 @@ window.saveProfile = async function () {
 // ─── Cloudinary: загрузка аватара (нативный выбор файла) ────────
 // Виджет на мобиле не работает — используем скрытый input + fetch
 
+// Сжимает фото до maxPx × maxPx перед загрузкой (экономим место в Cloudinary)
+function _resizeAvatar(file, maxPx = 800) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else        { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // JPEG 85% — хороший баланс качество/размер
+      canvas.toBlob(resolve, 'image/jpeg', 0.85);
+    };
+    img.src = blobUrl;
+  });
+}
+
 window.openAvWidget = function () {
   if (!CU) { requireAuth('Войдите для изменения фото'); return; }
   // Создаём скрытый input, триггерим клик — откроется системный выбор
@@ -2861,14 +2883,17 @@ window.openAvWidget = function () {
     const file = inp.files[0];
     document.body.removeChild(inp);
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast('Файл слишком большой (макс 5 МБ)', 'err'); return; }
+    if (file.size > 20 * 1024 * 1024) { toast('Файл слишком большой (макс 20 МБ)', 'err'); return; }
 
     toast('Загрузка фото…');
 
     try {
+      // Сжимаем до 800px перед отправкой — в Cloudinary хранится компактный файл
+      const blob = await _resizeAvatar(file, 800);
+
       // Прямая загрузка на Cloudinary без сервера (unsigned preset)
       const fd = new FormData();
-      fd.append('file',          file);
+      fd.append('file',          blob, 'avatar.jpg');
       fd.append('upload_preset', 'dastdaroz_avatars');
       // transformation нельзя в unsigned — применим к URL после загрузки
 
