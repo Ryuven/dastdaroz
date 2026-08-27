@@ -2845,51 +2845,46 @@ window.saveProfile = async function () {
   } catch { toast('Ошибка', 'err'); }
 };
 
-// ─── Cloudinary: аватар ───────────────────────────────────────
-// Виджет создаётся один раз и переиспользуется
-let _avWidget = null;
+// ─── Cloudinary: загрузка аватара (нативный выбор файла) ────────
+// Виджет на мобиле не работает — используем скрытый input + fetch
 
-function _getAvWidget() {
-  if (_avWidget) return _avWidget;
-  _avWidget = cloudinary.createUploadWidget({
-    cloudName:             'epgcpmjt',
-    uploadPreset:          'dastdaroz_avatars',
-    // Обрезка — квадрат, без пропуска
-    cropping:              true,
-    croppingAspectRatio:   1,
-    showSkipCropButton:    false,
-    // Источники: файл + камера
-    sources:               ['local', 'camera'],
-    // Ограничения
-    maxFileSize:           3_000_000,
-    clientAllowedFormats:  ['jpg', 'jpeg', 'png', 'webp'],
-    // Стиль в цветах бренда
-    styles: {
-      palette: {
-        window:          '#FFFFFF',
-        windowBorder:    '#E5E7EB',
-        tabIcon:         '#1a9e4a',
-        link:            '#1a9e4a',
-        action:          '#1a9e4a',
-        inactiveTabIcon: '#7a9882',
-        error:           '#dc2626',
-        inProgress:      '#1a9e4a',
-        complete:        '#22c55e',
-        sourceBg:        '#f3f7f4',
-        textDark:        '#171f1a',
-        textLight:       '#FFFFFF',
-      },
-    },
-  }, async (error, result) => {
-    if (error) { toast('Ошибка загрузки', 'err'); return; }
-    if (result.event !== 'success') return;
+window.openAvWidget = function () {
+  if (!CU) { requireAuth('Войдите для изменения фото'); return; }
+  // Создаём скрытый input, триггерим клик — откроется системный выбор
+  const inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = 'image/*';
+  inp.style.display = 'none';
+  document.body.appendChild(inp);
 
-    // Cloudinary вернул secure_url — добавляем трансформацию:
-    // 200×200, обрезка по лицу, авто-качество, авто-формат (AVIF/WebP)
-    const raw = result.info.secure_url;
-    const url = raw.replace('/upload/', '/upload/w_200,h_200,c_thumb,g_face,q_auto,f_auto/');
+  inp.onchange = async function () {
+    const file = inp.files[0];
+    document.body.removeChild(inp);
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast('Файл слишком большой (макс 5 МБ)', 'err'); return; }
+
+    toast('Загрузка фото…');
 
     try {
+      // Прямая загрузка на Cloudinary без сервера (unsigned preset)
+      const fd = new FormData();
+      fd.append('file',          file);
+      fd.append('upload_preset', 'dastdaroz_avatars');
+      // Авто-трансформация: 200×200, обрезка по лицу, авто-качество
+      fd.append('transformation', 'w_200,h_200,c_thumb,g_face,q_auto,f_auto');
+
+      const res  = await fetch('https://api.cloudinary.com/v1_1/epgcpmjt/image/upload', {
+        method: 'POST',
+        body:   fd,
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.secure_url) throw new Error(data.error?.message || 'upload failed');
+
+      // Применяем трансформацию к URL (на случай если FormData не применил)
+      const url = data.secure_url.replace('/upload/', '/upload/w_200,h_200,c_thumb,g_face,q_auto,f_auto/');
+
+      // Сохраняем в Firestore
       await setDoc(
         doc(db, 'users', CU.uid),
         { avatarUrl: url, updatedAt: serverTimestamp() },
@@ -2902,15 +2897,14 @@ function _getAvWidget() {
       const shAv = document.getElementById('prof-sh-av');
       if (shAv) shAv.innerHTML = `<img src="${url}" alt="">`;
       toast('Фото обновлено ✓', 'ok');
-    } catch { toast('Ошибка сохранения', 'err'); }
-  });
-  return _avWidget;
-}
 
-// Вызывается из HTML при клике на аватарку
-window.openAvWidget = function () {
-  if (!CU) { requireAuth('Войдите для изменения фото'); return; }
-  _getAvWidget().open();
+    } catch (e) {
+      console.error('Avatar upload error:', e);
+      toast('Ошибка загрузки фото', 'err');
+    }
+  };
+
+  inp.click();
 };
 
 // ─── Редактирование профиля (sheet) ───────────────────────────
