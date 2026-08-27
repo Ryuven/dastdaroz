@@ -2845,23 +2845,72 @@ window.saveProfile = async function () {
   } catch { toast('Ошибка', 'err'); }
 };
 
-window.uploadAvUI = async function (inp) {
-  const f = inp.files[0];
-  if (!f) return;
-  if (f.size > 2 * 1024 * 1024) { toast('Файл слишком большой (макс 2 МБ)', 'err'); return; }
-  toast('Загрузка…');
-  try {
-    const sr  = sRef(storage, `avatars/${CU.uid}`);
-    await uploadBytes(sr, f);
-    const url = await getDownloadURL(sr);
-    await setDoc(doc(db, 'users', CU.uid), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
-    UD.avatarUrl = url;
-    renderSB(); renderProfile();
-    // Обновляем аватар прямо в открытом шите
-    const shAv = document.getElementById('prof-sh-av');
-    if (shAv) shAv.innerHTML = `<img src="${url}" alt="">`;
-    toast('Фото обновлено', 'ok');
-  } catch { toast('Ошибка загрузки', 'err'); }
+// ─── Cloudinary: аватар ───────────────────────────────────────
+// Виджет создаётся один раз и переиспользуется
+let _avWidget = null;
+
+function _getAvWidget() {
+  if (_avWidget) return _avWidget;
+  _avWidget = cloudinary.createUploadWidget({
+    cloudName:             'epgcpmjt',
+    uploadPreset:          'dastdaroz_avatars',
+    // Обрезка — квадрат, без пропуска
+    cropping:              true,
+    croppingAspectRatio:   1,
+    showSkipCropButton:    false,
+    // Источники: файл + камера
+    sources:               ['local', 'camera'],
+    // Ограничения
+    maxFileSize:           3_000_000,
+    clientAllowedFormats:  ['jpg', 'jpeg', 'png', 'webp'],
+    // Стиль в цветах бренда
+    styles: {
+      palette: {
+        window:          '#FFFFFF',
+        windowBorder:    '#E5E7EB',
+        tabIcon:         '#1a9e4a',
+        link:            '#1a9e4a',
+        action:          '#1a9e4a',
+        inactiveTabIcon: '#7a9882',
+        error:           '#dc2626',
+        inProgress:      '#1a9e4a',
+        complete:        '#22c55e',
+        sourceBg:        '#f3f7f4',
+        textDark:        '#171f1a',
+        textLight:       '#FFFFFF',
+      },
+    },
+  }, async (error, result) => {
+    if (error) { toast('Ошибка загрузки', 'err'); return; }
+    if (result.event !== 'success') return;
+
+    // Cloudinary вернул secure_url — добавляем трансформацию:
+    // 200×200, обрезка по лицу, авто-качество, авто-формат (AVIF/WebP)
+    const raw = result.info.secure_url;
+    const url = raw.replace('/upload/', '/upload/w_200,h_200,c_thumb,g_face,q_auto,f_auto/');
+
+    try {
+      await setDoc(
+        doc(db, 'users', CU.uid),
+        { avatarUrl: url, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+      UD.avatarUrl = url;
+      renderSB();
+      renderProfile();
+      // Обновляем аватар прямо в открытом шите
+      const shAv = document.getElementById('prof-sh-av');
+      if (shAv) shAv.innerHTML = `<img src="${url}" alt="">`;
+      toast('Фото обновлено ✓', 'ok');
+    } catch { toast('Ошибка сохранения', 'err'); }
+  });
+  return _avWidget;
+}
+
+// Вызывается из HTML при клике на аватарку
+window.openAvWidget = function () {
+  if (!CU) { requireAuth('Войдите для изменения фото'); return; }
+  _getAvWidget().open();
 };
 
 // ─── Редактирование профиля (sheet) ───────────────────────────
@@ -2875,13 +2924,12 @@ window.openProfileEditSheet = function () {
   Sheet.body('profile-edit').innerHTML = `
     <div class="prof-sh-body">
       <div class="prof-sh-av-row">
-        <label class="prof-sh-av-wrap" for="prof-sh-av-inp">
+        <div class="prof-sh-av-wrap" onclick="openAvWidget()">
           <div class="prof-sh-av" id="prof-sh-av">${avHtml}</div>
           <div class="prof-sh-av-cam">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
-        </label>
-        <input type="file" id="prof-sh-av-inp" accept="image/*" style="display:none" onchange="uploadAvUI(this)">
+        </div>
         <div class="prof-sh-av-sub">Нажмите на фото чтобы изменить</div>
       </div>
 
