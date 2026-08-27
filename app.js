@@ -376,6 +376,9 @@ function _initSheets() {
   Sheet.define({ id: 'product', title: 'Товар', zIndex: 700 });
   const _prodShBody = Sheet.body('product');
   _prodShBody.style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  // ── Редактирование профиля ────────────────────────────────
+  Sheet.define({ id: 'profile-edit', title: 'Редактировать профиль', zIndex: 700 });
+  Sheet.body('profile-edit').style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
 }
 
 _initSheets();
@@ -2132,7 +2135,7 @@ window.openOrderModal = function (oid) {
           Подтвердить заказ
         </button>
         <div class="booking-pay-row">
-          <button class="booking-btn-pay" id="alif-pay-btn-${o.id}" onclick="payWithAlif('${o.id}')">
+          <button class="booking-btn-pay" onclick="openAlifPaySheet()">
             <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
             Alif Pay
           </button>
@@ -2854,8 +2857,48 @@ window.uploadAvUI = async function (inp) {
     await setDoc(doc(db, 'users', CU.uid), { avatarUrl: url, updatedAt: serverTimestamp() }, { merge: true });
     UD.avatarUrl = url;
     renderSB(); renderProfile();
+    // Обновляем аватар прямо в открытом шите
+    const shAv = document.getElementById('prof-sh-av');
+    if (shAv) shAv.innerHTML = `<img src="${url}" alt="">`;
     toast('Фото обновлено', 'ok');
   } catch { toast('Ошибка загрузки', 'err'); }
+};
+
+// ─── Редактирование профиля (sheet) ───────────────────────────
+window.openProfileEditSheet = function () {
+  if (!CU) { requireAuth('Войдите для редактирования профиля'); return; }
+  const name  = UD?.displayName || CU.displayName || '';
+  const init  = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const phone = UD?.phone || phoneFromPseudoEmail(CU.email) || '';
+  const avHtml = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+
+  Sheet.body('profile-edit').innerHTML = `
+    <div class="prof-sh-body">
+      <div class="prof-sh-av-row">
+        <label class="prof-sh-av-wrap" for="prof-sh-av-inp">
+          <div class="prof-sh-av" id="prof-sh-av">${avHtml}</div>
+          <div class="prof-sh-av-cam">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </label>
+        <input type="file" id="prof-sh-av-inp" accept="image/*" style="display:none" onchange="uploadAvUI(this)">
+        <div class="prof-sh-av-sub">Нажмите на фото чтобы изменить</div>
+      </div>
+
+      <div class="prof-sh-field">
+        <div class="prof-sh-lbl">Имя и фамилия</div>
+        <input class="prof-sh-inp" id="pf-name" type="text" value="${name}" placeholder="Ваше имя">
+      </div>
+
+      <div class="prof-sh-field">
+        <div class="prof-sh-lbl">Номер телефона</div>
+        <input class="prof-sh-inp prof-sh-inp--ro" type="tel" value="${phone}" readonly>
+      </div>
+
+      <button class="prof-sh-save" onclick="saveProfile()">Сохранить изменения</button>
+    </div>`;
+
+  Sheet.open('profile-edit');
 };
 
 
@@ -3128,50 +3171,8 @@ window.openLikesSheet = () => Sheet.open('likes');
 window.closeLikesSheet= () => Sheet.close('likes');
 
 // ─── Оплата (Alif Pay / Google Pay) ────────────────────────
-window.openAlifPaySheet   = () => Sheet.open('alifpay'); // legacy
+window.openAlifPaySheet   = () => Sheet.open('alifpay');
 window.openGooglePaySheet = () => Sheet.open('googlepay');
-
-window.payWithAlif = async function(oid) {
-  const o = orders.find(x => x.id === oid);
-  if (!o) { toast('Заказ не найден', 'err'); return; }
-
-  const btn      = document.getElementById(`alif-pay-btn-${oid}`);
-  const origHtml = btn?.innerHTML;
-  if (btn) {
-    btn.disabled  = true;
-    btn.innerHTML = `<div class="spin" style="border-color:rgba(0,0,0,.12);border-top-color:var(--acc);width:14px;height:14px"></div>&nbsp;Загрузка…`;
-  }
-
-  try {
-    const resp = await fetch('https://api.dastdaroz.shop/api/payment/init', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clientId:    o.clientId,
-        address:     o.address,
-        cityId:      o.cityId      || null,
-        clientPhone: o.clientPhone || CU?.phoneNumber || null,
-        items: (o.items || []).map(i => ({
-          productId: i.productId,
-          quantity:  i.quantity,
-        })),
-      }),
-    });
-
-    const data = await resp.json();
-
-    if (!data.paymentUrl) {
-      throw new Error(data.error || 'Не удалось получить ссылку на оплату');
-    }
-
-    toast('Переходим к оплате… 💳', 'ok');
-    setTimeout(() => { window.location.href = data.paymentUrl; }, 700);
-
-  } catch(e) {
-    toast('Ошибка: ' + e.message, 'err');
-    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
-  }
-};
 window.openOfertaSheet    = () => SheetPdf.open('oferta');
 window.closeOfertaSheet   = () => SheetPdf.close('oferta');
 

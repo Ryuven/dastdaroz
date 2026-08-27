@@ -345,6 +345,28 @@ select.addr-inp{cursor:pointer}
 .pcard{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:24px 18px;text-align:center;box-shadow:var(--shadow)}
 .p-av{width:70px;height:70px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:var(--acc);margin:0 auto 12px;overflow:hidden}
 .p-av img{width:100%;height:100%;object-fit:cover}
+.p-av-wrap{position:relative;flex-shrink:0;cursor:pointer;transition:opacity .14s}
+.p-av-wrap:hover{opacity:.82}
+.p-av-wrap:active{opacity:.65}
+.p-av-edit-badge{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:var(--acc);border:2.5px solid var(--s1);display:flex;align-items:center;justify-content:center;color:#fff}
+
+/* ── Profile edit sheet content ── */
+.prof-sh-body{padding:22px 20px 36px;display:flex;flex-direction:column}
+.prof-sh-av-row{display:flex;flex-direction:column;align-items:center;margin-bottom:26px}
+.prof-sh-av-wrap{position:relative;display:block;cursor:pointer;width:90px;height:90px;border-radius:50%;transition:opacity .14s}
+.prof-sh-av-wrap:hover{opacity:.82}
+.prof-sh-av{width:90px;height:90px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:700;color:var(--acc);overflow:hidden}
+.prof-sh-av img{width:100%;height:100%;object-fit:cover}
+.prof-sh-av-cam{position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--acc);border:2.5px solid var(--s1);display:flex;align-items:center;justify-content:center;color:#fff}
+.prof-sh-av-sub{margin-top:10px;font-size:.62rem;color:var(--tx3);letter-spacing:.01em}
+.prof-sh-field{margin-bottom:14px}
+.prof-sh-lbl{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px}
+.prof-sh-inp{width:100%;padding:13px 16px;border:1.5px solid var(--b0);border-radius:12px;font-family:var(--fs);font-size:.88rem;color:var(--tx);background:var(--s1);outline:none;box-sizing:border-box;transition:border-color .14s}
+.prof-sh-inp:focus{border-color:var(--acc)}
+.prof-sh-inp--ro{opacity:.5;cursor:default}
+.prof-sh-save{width:100%;height:50px;background:var(--acc);border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.9rem;cursor:pointer;margin-top:8px;box-shadow:0 4px 16px rgba(26,158,74,.26);transition:opacity .14s,transform .12s;letter-spacing:-.01em}
+.prof-sh-save:hover{opacity:.9;transform:translateY(-1px)}
+.prof-sh-save:active{transform:scale(.97)}
 .p-name{font-family:var(--fd);font-weight:900;font-size:1.05rem;color:var(--tx);margin-bottom:2px}
 .p-phone{font-size:.68rem;color:var(--tx3);margin-bottom:14px}
 .p-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b0);border-radius:0 0 12px 12px;overflow:hidden;margin:0 -18px -24px}
@@ -1813,7 +1835,12 @@ select.addr-inp{cursor:pointer}
         <!-- ── Profile card ─────────────────────────────── -->
         <div class="prof-card-new">
           <div class="prof-card-top">
-            <div class="p-av" id="p-av" style="margin:0;width:58px;height:58px;font-size:1.25rem;flex-shrink:0">?</div>
+            <div class="p-av-wrap" onclick="openProfileEditSheet()">
+              <div class="p-av" id="p-av" style="margin:0;width:58px;height:58px;font-size:1.25rem;flex-shrink:0">?</div>
+              <div class="p-av-edit-badge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
+            </div>
             <div style="flex:1;min-width:0">
               <div class="prof-card-name" id="p-name">—</div>
               <div class="prof-card-phone" id="p-phone">—</div>
