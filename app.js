@@ -2872,16 +2872,14 @@ function _resizeAvatar(file, maxPx = 800) {
 
 window.openAvWidget = function () {
   if (!CU) { requireAuth('Войдите для изменения фото'); return; }
-  // Создаём скрытый input, триггерим клик — откроется системный выбор
-  const inp = document.createElement('input');
-  inp.type   = 'file';
-  inp.accept = 'image/*';
-  inp.style.display = 'none';
-  document.body.appendChild(inp);
+
+  // Используем постоянный input из DOM — динамически созданные не работают в WebView
+  const inp = document.getElementById('av-file-inp');
+  if (!inp) return;
+  inp.value = ''; // сброс, чтобы то же фото можно было выбрать повторно
 
   inp.onchange = async function () {
     const file = inp.files[0];
-    document.body.removeChild(inp);
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) { toast('Файл слишком большой (макс 20 МБ)', 'err'); return; }
 
@@ -2895,7 +2893,6 @@ window.openAvWidget = function () {
       const fd = new FormData();
       fd.append('file',          blob, 'avatar.jpg');
       fd.append('upload_preset', 'dastdaroz_avatars');
-      // transformation нельзя в unsigned — применим к URL после загрузки
 
       const res  = await fetch('https://api.cloudinary.com/v1_1/epgcpmjt/image/upload', {
         method: 'POST',
