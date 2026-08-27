@@ -2870,8 +2870,7 @@ window.openAvWidget = function () {
       const fd = new FormData();
       fd.append('file',          file);
       fd.append('upload_preset', 'dastdaroz_avatars');
-      // Авто-трансформация: 200×200, обрезка по лицу, авто-качество
-      fd.append('transformation', 'w_200,h_200,c_thumb,g_face,q_auto,f_auto');
+      // transformation нельзя в unsigned — применим к URL после загрузки
 
       const res  = await fetch('https://api.cloudinary.com/v1_1/epgcpmjt/image/upload', {
         method: 'POST',
@@ -2881,7 +2880,7 @@ window.openAvWidget = function () {
 
       if (!res.ok || !data.secure_url) throw new Error(data.error?.message || 'upload failed');
 
-      // Применяем трансформацию к URL (на случай если FormData не применил)
+      // Добавляем трансформацию прямо в URL: 200×200, по лицу, авто-качество
       const url = data.secure_url.replace('/upload/', '/upload/w_200,h_200,c_thumb,g_face,q_auto,f_auto/');
 
       // Сохраняем в Firestore
