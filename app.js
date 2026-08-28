@@ -256,6 +256,15 @@ function _initSheets() {
   })();
 
   // ── Partner application ───────────────────────────────────
+  // ── Language selector ──────────────────────────────────────
+  Sheet.define({ id: 'lang', title: 'Язык / Забон / Language', zIndex: 800 });
+  Sheet.body('lang').style.cssText = 'padding:28px 20px 48px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px';
+  Sheet.body('lang').innerHTML = `
+    <div style="font-size:2.6rem;margin-bottom:18px">🌐</div>
+    <div style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--tx);margin-bottom:8px">Скоро</div>
+    <div style="font-size:.76rem;color:var(--tx3);text-align:center;line-height:1.6;max-width:220px">Выбор языка интерфейса появится в ближайшем обновлении</div>`;
+  window.openLangSheet = function () { Sheet.open('lang'); };
+
   Sheet.define({ id: 'partner', title: 'Партнерство', zIndex: 800 });
   Sheet.body('partner').style.cssText = 'padding:20px 16px 32px;overflow-y:auto;-webkit-overflow-scrolling:touch';
   Sheet.body('partner').innerHTML = `

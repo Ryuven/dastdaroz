@@ -343,7 +343,7 @@ select.addr-inp{cursor:pointer}
 /* ── PROFILE ── */
 .pg2{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
 .pcard{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:24px 18px;text-align:center;box-shadow:var(--shadow)}
-.p-av{width:70px;height:70px;border-radius:50%;background:var(--accd);border:3px solid var(--b0);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:var(--acc);margin:0 auto 12px;overflow:hidden}
+.p-av{width:70px;height:70px;border-radius:50%;background:var(--accd);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:var(--acc);margin:0 auto 12px;overflow:hidden}
 .p-av img{width:100%;height:100%;object-fit:cover}
 .p-av-wrap{position:relative;flex-shrink:0;cursor:pointer;transition:opacity .14s}
 .p-av-wrap:hover{opacity:.82}
@@ -1232,10 +1232,10 @@ select.addr-inp{cursor:pointer}
 /* Section label */
 .prof-section-lbl{font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:var(--tx3);padding:16px 4px 6px;font-weight:600}
 /* Row */
-.prof-row{display:flex;align-items:center;gap:13px;background:var(--s1);border:none;padding:13px 16px;cursor:pointer;transition:background .15s;width:100%;text-align:left;font-family:var(--fs);border-radius:0}
-.prof-row.prof-group-start{border-radius:13px 13px 0 0}
-.prof-row.prof-group-end{border-radius:0 0 13px 13px}
-.prof-row.prof-group-single{border-radius:13px!important;border:1.5px solid var(--b0)!important}
+.prof-row{display:flex;align-items:center;gap:13px;background:var(--s1);border:none;padding:13px 16px;cursor:pointer;transition:background .15s;width:100%;text-align:left;font-family:var(--fs);border-radius:0;-webkit-appearance:none;appearance:none;outline:none}
+.prof-row.prof-group-start{border-radius:0}
+.prof-row.prof-group-end{border-radius:0}
+.prof-row.prof-group-single{border-radius:0}
 .prof-row:hover{background:var(--s2)}
 .prof-row-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .prof-row-body{flex:1;min-width:0}
@@ -1940,16 +1940,18 @@ select.addr-inp{cursor:pointer}
 
         <!-- Понравившиеся товары -->
         <div class="prof-section-lbl">Избранное</div>
-        <button class="prof-row prof-group-single" onclick="openLikesSheet()">
-          <div class="prof-row-icon" style="background:var(--redd)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-          </div>
-          <div class="prof-row-body">
-            <div class="prof-row-title">Понравившиеся товары</div>
-            <div class="prof-row-sub">Сохранённые позиции</div>
-          </div>
-          <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
+        <div style="border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
+          <button class="prof-row prof-group-single" onclick="openLikesSheet()">
+            <div class="prof-row-icon" style="background:var(--redd)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Понравившиеся товары</div>
+              <div class="prof-row-sub">Сохранённые позиции</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
 
         <!-- Заказы (только авторизованным) -->
         <div class="prof-section-lbl pn-guest-hidden">Заказы</div>
@@ -1974,7 +1976,17 @@ select.addr-inp{cursor:pointer}
         <!-- Прочее -->
         <div class="prof-section-lbl">Прочее</div>
         <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
-          <button class="prof-row prof-group-start" onclick="openPartnerSheet()">
+          <button class="prof-row prof-group-start" onclick="openLangSheet()">
+            <div class="prof-row-icon" style="background:#e8f4fd">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2d9cdb" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Поменять язык</div>
+              <div class="prof-row-sub">Русский</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="prof-row" style="border-top:1.5px solid var(--b0)" onclick="openPartnerSheet()">
             <div class="prof-row-icon" style="background:var(--teal-d)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
