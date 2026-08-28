@@ -56,7 +56,7 @@ let prods            = [];
 let cats             = [];
 let orders           = [];
 let stores           = [];
-let genCats          = [];
+
 
 let catFilter        = 'all';
 let searchQ          = '';
@@ -407,7 +407,7 @@ onAuthStateChanged(auth, async u => {
     CU    = null;
     UD    = null;
     if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
-    await Promise.all([loadProds(), loadCats(), loadStores(), loadGenCats(), loadDeliveryServices()]);
+    await Promise.all([loadProds(), loadCats(), loadStores(), loadDeliveryServices()]);
     renderSB();
     renderGuestBanner();
     renderGuestProfile();
@@ -418,7 +418,7 @@ onAuthStateChanged(auth, async u => {
   GUEST = false;
   CU    = u;
   await loadUD();
-  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadGenCats(), loadDeliveryServices()]);
+  await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadDeliveryServices()]);
   renderSB();
   renderProfile();
   renderCart();
@@ -677,84 +677,7 @@ function removeGuestBanner() {
 }
 
 
-// ─── 8. Общие категории ───────────────────────────────────────
-async function loadGenCats() {
-  // Сразу показываем скелетоны — сбрасываем старые данные до ответа Firestore
-  showGenCatsSkeleton();
-
-  try {
-    const snap = await getDocs(query(collection(db, 'generalCatalogs'), orderBy('order', 'asc')));
-    if (!snap.empty) {
-      const all = snap.docs.map(d => {
-        const data = d.data();
-        const raw = data.cityIds;
-        const cityIds = Array.isArray(raw)
-          ? raw.filter(Boolean)
-          : (typeof raw === 'string' && raw.trim() ? [raw.trim()] : []);
-        return {
-          id:      d.id,
-          nameRu:  data.nameRu || data.name || d.id,
-          nameTj:  data.nameTj || data.name || d.id,
-          icon:    data.icon   || `storage/general-catalogs/${d.id}.png`,
-          order:   data.order  ?? 0,
-          active:  data.active,
-          cityIds,
-        };
-      }).filter(c => c.active !== false);
-
-      genCats = all.filter(c =>
-        !c.cityIds.length || c.cityIds.includes(_selectedCityId)
-      );
-    } else {
-      genCats = [];
-    }
-  } catch (e) {
-    console.warn('loadGenCats error:', e?.message);
-    genCats = [];
-  }
-  renderGenCats();
-  renderCatalogGenCats();
-}
-
-// Сбрасывает контент и возвращает скелетоны в оба контейнера
-function showGenCatsSkeleton() {
-  genCats = [];
-  const row = document.getElementById('gen-cats-row');
-  if (row) {
-    row.innerHTML = Array(8).fill(
-      '<div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>'
-    ).join('');
-  }
-  // gen-cat-grid удалён (каталог «Скоро»)
-}
-
-function renderGenCats() {
-  const el = document.getElementById('gen-cats-row');
-  if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; } // нет категорий для города — убираем скелетоны
-  el.innerHTML = genCats.map(c => `
-    <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
-      <div class="gen-cat-img-wrap">
-        <img class="gen-cat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
-      </div>
-      <div class="gen-cat-name">${c.nameRu}</div>
-    </button>`).join('');
-}
-
-function renderCatalogGenCats() {
-  const el = document.getElementById('gen-cat-grid');
-  if (!el) return;
-  if (!genCats.length) { el.innerHTML = ''; return; }
-  el.innerHTML = genCats.map(c => `
-    <button class="gen-cat-btn" onclick="onGenCatClick('${c.id}')" title="${c.nameRu}">
-      <div class="gen-cat-img-wrap">
-        <img class="gen-cat-img" src="${c.icon}" alt="${c.nameRu}" loading="lazy" onerror="this.style.opacity='.18'"/>
-      </div>
-      <div class="gen-cat-name">${c.nameRu}</div>
-    </button>`).join('');
-}
-
-window.onGenCatClick = function (id) { goPage('catalog'); };
+// ─── 8. Общие категории — удалено ────────────────────────────
 
 
 
@@ -2837,7 +2760,7 @@ function renderGuestProfile() {
         <div style="font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);margin-bottom:8px">Гостевой режим</div>
         <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Для просмотра профиля и истории заказов войдите или зарегистрируйтесь.</div>
         <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-size:.78rem;font-family:var(--fd);font-weight:800;padding:13px 32px;cursor:pointer;width:100%;max-width:260px">
-          Войти / Зарегистрироваться
+          Авторизоваться
         </button>
       </div>`;
   }
@@ -3327,7 +3250,6 @@ window.selectCity = function (id, name) {
   });
 
   loadStores();
-  loadGenCats();
   setTimeout(closeCitySheet, 260);
 };
 
