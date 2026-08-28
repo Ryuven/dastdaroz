@@ -1894,7 +1894,7 @@ select.addr-inp{cursor:pointer}
         <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
 
           <!-- Personal info row -->
-          <button class="prof-row prof-group-start" onclick="toggleProfEdit('pf-personal',this)">
+          <button class="prof-row prof-group-start" onclick="openProfileEditSheet()">
             <div class="prof-row-icon" style="background:var(--accd)">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
@@ -1902,20 +1902,8 @@ select.addr-inp{cursor:pointer}
               <div class="prof-row-title">Личные данные</div>
               <div class="prof-row-sub">Имя и телефон</div>
             </div>
-            <svg class="prof-row-arrow" id="pf-personal-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s"><path d="M9 18l6-6-6-6"/></svg>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
-          <!-- Personal info edit panel (inline) -->
-          <div class="prof-edit-panel" id="pf-personal">
-            <div class="fr2" style="margin-bottom:10px">
-              <div class="ff"><label class="fl">Ном</label><input class="fi" type="text" id="pf-name" placeholder="Имя Фамилия"/></div>
-              <div class="ff">
-                <label class="fl">Телефон (dastdaroz ID)</label>
-                <input class="fi" type="tel" id="pf-phone" readonly style="opacity:.65;cursor:not-allowed"/>
-              </div>
-            </div>
-            <div style="font-size:.6rem;color:var(--tx3);margin:-6px 0 12px;line-height:1.55">Номер телефона — идентификатор вашего аккаунта, изменить невозможно</div>
-            <button class="btn-primary" onclick="saveProfile()" style="margin-top:2px">Сохранить изменения</button>
-          </div>
 
 
           <!-- Support row -->

@@ -2807,7 +2807,8 @@ function renderProfile() {
   const av = document.getElementById('p-av');
   if (av) av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
 
-  document.getElementById('pf-name')  && (document.getElementById('pf-name').value  = name);
+  const nameInp = document.getElementById('prof-sh-name') || document.getElementById('pf-name');
+  if (nameInp) nameInp.value = name;
   document.getElementById('pf-phone') && (document.getElementById('pf-phone').value = phone);
 }
 
@@ -2844,7 +2845,7 @@ function renderGuestProfile() {
 }
 
 window.saveProfile = async function () {
-  const name = document.getElementById('pf-name')?.value.trim();
+  const name = (document.getElementById('prof-sh-name') || document.getElementById('pf-name'))?.value.trim();
   try {
     const saveData = {
       displayName: name,
@@ -2853,6 +2854,7 @@ window.saveProfile = async function () {
     await setDoc(doc(db, 'users', CU.uid), saveData, { merge: true });
     UD = { ...UD, ...saveData };
     renderSB(); renderProfile();
+    Sheet.close('profile-edit');
     toast('Профиль сохранён', 'ok');
   } catch { toast('Ошибка', 'err'); }
 };
@@ -2964,12 +2966,13 @@ window.openProfileEditSheet = function () {
 
       <div class="prof-sh-field">
         <div class="prof-sh-lbl">Имя и фамилия</div>
-        <input class="prof-sh-inp" id="pf-name" type="text" value="${name}" placeholder="Ваше имя">
+        <input class="prof-sh-inp" id="prof-sh-name" type="text" value="${name}" placeholder="Ваше имя">
       </div>
 
       <div class="prof-sh-field">
         <div class="prof-sh-lbl">Номер телефона</div>
         <input class="prof-sh-inp prof-sh-inp--ro" type="tel" value="${phone}" readonly>
+        <div style="font-size:.62rem;color:var(--tx3);margin-top:5px;line-height:1.5">Номер телефона — идентификатор вашего аккаунта, изменить невозможно</div>
       </div>
 
       <button class="prof-sh-save" onclick="saveProfile()">Сохранить изменения</button>
