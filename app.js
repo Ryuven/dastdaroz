@@ -1831,7 +1831,25 @@ async function loadOrders() {
     const found = orders.find(o => o.id === _payReturnOid);
     if (found) {
       activeOid = found.id;
-      setTimeout(() => { goPage('orders'); setTimeout(() => openOrderModal(found.id), 400); }, 300);
+      // Проверяем статус оплаты и отменяем заказ если не прошло
+      setTimeout(async () => {
+        try {
+          const r    = await fetch('https://api.dastdaroz.shop/api/payment/verify-return', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ orderId: found.id }),
+          });
+          const data = await r.json();
+          if (data.paymentStatus === 'paid') {
+            toast('Оплата прошла успешно! ✅', 'ok');
+          } else if (data.paymentStatus === 'failed' || data.paymentStatus === 'unknown') {
+            toast('Оплата не прошла. Заказ отменён.', 'err');
+          }
+        } catch {}
+        await loadOrders();
+        goPage('orders');
+        setTimeout(() => openOrderModal(found.id), 400);
+      }, 300);
     }
   }
 
