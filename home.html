@@ -151,10 +151,10 @@ a{color:inherit;text-decoration:none}
 .guest-topbar-mark{display:none}
 .guest-topbar-name{display:none}
 .guest-topbar-badge{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;overflow:hidden}
-.guest-topbar-line1{font-family:var(--fd);font-weight:900;font-size:.72rem;color:var(--tx);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.guest-topbar-line2{font-size:.6rem;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.guest-topbar-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:8px;color:#fff;font-size:.66rem;font-family:var(--fd);font-weight:800;padding:7px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px var(--acc-shadow);flex-shrink:0;transition:opacity var(--tf)}
-.guest-topbar-btn:hover{opacity:.88}
+.guest-topbar-line1{font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--tx);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guest-topbar-line2{font-size:.66rem;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guest-topbar-btn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:10px;color:#fff;font-size:.7rem;font-family:var(--fd);font-weight:800;padding:8px 15px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px var(--acc-shadow);flex-shrink:0;transition:all var(--tf);display:flex;align-items:center}
+.guest-topbar-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px var(--acc-shadow)}
 
 /* ── PAGES ── */
 .pages{flex:1;overflow-y:auto;overflow-x:hidden}
@@ -220,6 +220,7 @@ a{color:inherit;text-decoration:none}
 .cat-panel:hover .cat-panel-ico{transform:scale(1.12) rotate(-4deg)}
 .cat-panel-name{font-size:.74rem;font-weight:800;color:var(--tx);font-family:var(--fd);position:relative;z-index:1;line-height:1.2}
 .cat-panel-count{font-size:.56rem;color:var(--tx3);margin-top:3px;position:relative;z-index:1}
+.cat-panels:empty{margin-bottom:0}
 .all-cats-btn{width:100%;padding:10px;border:1.5px dashed var(--accg);border-radius:12px;background:var(--accd);color:var(--acc);font-size:.72rem;font-weight:700;font-family:var(--fd);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px}
 .all-cats-btn:hover{background:var(--accg);border-style:solid}
 
@@ -404,7 +405,7 @@ select.addr-inp{cursor:pointer}
 .toast.ok .tdot{background:var(--acc)}.toast.err .tdot{background:var(--red)}.toast.info .tdot{background:var(--blue)}
 
 /* ── STORES ── */
-.stores-section{margin-bottom:10px}
+.stores-section{margin-bottom:0}
 
 /* ── PROMO BANNER ── */
 .promo-section{margin-bottom:10px}
@@ -475,40 +476,7 @@ select.addr-inp{cursor:pointer}
 
 
 
-/* ── GENERAL CATALOG (single-row horizontal scroll) ── */
-.gen-cats-section{margin-bottom:10px}
-.gen-cats-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -22px;padding:2px 22px 8px}
-.gen-cats-scroll::-webkit-scrollbar{display:none}
-.gen-cats-row{display:flex;flex-direction:row;gap:4px;width:max-content;align-items:flex-start}
-.gen-cat-btn{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:none;border:none;padding:4px;font-family:var(--fs);transition:transform .18s var(--spring)}
-.gen-cat-btn:hover{transform:translateY(-3px)}
-.gen-cat-btn:active{transform:scale(.92)}
-.gen-cat-img-wrap{width:60px;height:60px;background:none;border:none;box-shadow:none;overflow:hidden}
-.gen-cat-img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .22s var(--ease)}
-.gen-cat-btn:hover .gen-cat-img{transform:scale(1.1)}
-.gen-cat-name{font-size:.58rem;font-weight:700;color:var(--tx2);text-align:center;line-height:1.25;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gen-cat-skl-wrap{width:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px}
-.gen-cat-skl-ico{width:60px;height:60px;border-radius:12px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-.gen-cat-skl-lbl{width:44px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-@media(max-width:860px){.gen-cats-scroll{margin:0 -14px;padding:2px 14px 8px}}
 
-/* ── GENERAL CATALOG PAGE GRID ── */
-.gcat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-/* Карточка — полностью иконка, без внутренних отступов */
-.gcat-item{position:relative;overflow:hidden;aspect-ratio:1/1;border-radius:16px;border:1.5px solid var(--b0);box-shadow:var(--shadow);background:var(--s1);user-select:none;cursor:default;transition:border-color var(--tf),transform var(--t),box-shadow var(--t)}
-.gcat-item.clickable{cursor:pointer}
-.gcat-item.clickable:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:var(--shadow-md)}
-.gcat-item.clickable:active{transform:scale(.97)}
-/* Изображение занимает 100% карточки */
-.gcat-img-wrap{position:absolute;inset:0}
-.gcat-img{width:100%;height:100%;object-fit:contain;display:block}
-/* Название — полупрозрачная подложка снизу */
-.gcat-name{position:absolute;bottom:0;left:0;right:0;font-size:.6rem;font-weight:700;color:#fff;text-align:center;line-height:1.25;padding:18px 5px 6px;background:linear-gradient(transparent,rgba(0,0,0,.58));pointer-events:none}
-/* Скелетон — та же форма, что и карточка */
-.gcat-skl-wrap{position:relative;overflow:hidden;aspect-ratio:1/1;border-radius:16px;border:1.5px solid var(--b0);box-shadow:var(--shadow)}
-.gcat-skl-img{position:absolute;inset:0;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-.gcat-skl-lbl{display:none}
-@media(max-width:480px){.gcat-grid{gap:8px}.gcat-item{border-radius:12px}.gcat-skl-wrap{border-radius:12px}}
 
 /* ── PRODUCT SKELETON ── */
 .pc-skeleton{pointer-events:none;cursor:default}
@@ -643,9 +611,9 @@ select.addr-inp{cursor:pointer}
   .stores-scroll{margin:0 -14px;padding:4px 14px 10px}
   .store-cat-header{aspect-ratio:512/200}
   /* На мобиле гостевой топбар чуть компактнее */
-  .guest-topbar-line1{font-size:.68rem}
-  .guest-topbar-line2{font-size:.56rem}
-  .guest-topbar-btn{font-size:.62rem;padding:6px 11px}
+  .guest-topbar-line1{font-size:.76rem}
+  .guest-topbar-line2{font-size:.62rem}
+  .guest-topbar-btn{font-size:.7rem;padding:8px 15px}
 }
 @media(max-width:480px){.cat-panels{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:360px){.pg{grid-template-columns:repeat(2,1fr)}}
@@ -1509,7 +1477,7 @@ select.addr-inp{cursor:pointer}
     <div class="nav-grp">Главная</div>
     <button class="ni active" data-page="home"    onclick="goPage('home')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>Главная страница</button>
     <button class="ni"        data-page="catalog" onclick="goPage('catalog')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Каталог</button>
-    <button class="ni guest-hidden" data-page="cart" onclick="goPage('cart')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Сабад<span class="ni-badge" id="cart-nb" style="display:none">0</span></button>
+    <button class="ni guest-hidden" data-page="cart" onclick="goPage('cart')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>Корзина<span class="ni-badge" id="cart-nb" style="display:none">0</span></button>
     <div class="nav-grp guest-hidden">Заказы</div>
     <button class="ni guest-hidden" data-page="orders"  onclick="goPage('orders')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Мои заказы<span class="ni-badge amber" id="orders-nb" style="display:none">0</span></button>
     <button class="ni guest-hidden" data-page="status"  onclick="goPage('status')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Статус заказа</button>
@@ -1546,7 +1514,7 @@ select.addr-inp{cursor:pointer}
       <div class="guest-topbar-line1">Гостевой режим</div>
       <div class="guest-topbar-line2">Войдите, чтобы сделать заказ</div>
     </div>
-    <button class="guest-topbar-btn" onclick="goLogin()">Войти →</button>
+    <button class="guest-topbar-btn" onclick="goLogin()">Авторизоватся</button>
   </div>
   <div class="pages" id="pages">
 
@@ -1556,7 +1524,7 @@ select.addr-inp{cursor:pointer}
       <div class="home-search-wrap">
         <div class="search-box" id="search-box">
           <svg class="si" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input type="text" id="search-inp-home" placeholder="Масалан: Нон, Шир, Себ…" oninput="onHomeSearch(this.value)" onfocus="openSD()" autocomplete="off"/>
+          <input type="text" id="search-inp-home" placeholder="Например: Хлеб, Картошка…" oninput="onHomeSearch(this.value)" onfocus="openSD()" autocomplete="off"/>
           <button class="search-clear" id="search-clear" onclick="clearHS()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           <div class="search-dropdown" id="search-dd"></div>
         </div>
@@ -1574,7 +1542,7 @@ select.addr-inp{cursor:pointer}
       <!-- STORES SECTION -->
       <div class="stores-section" id="stores-section">
         <div class="sh" style="margin-bottom:10px">
-          <div><div class="sh-tag">Магазины</div><div class="sh-title">Каталоги <em>магазинов</em></div></div>
+          <div><div class="sh-tag">Магазины</div><div class="sh-title">Список <em>магазинов</em></div></div>
         </div>
         <div class="stores-scroll">
           <div class="stores-grid" id="stores-grid">
@@ -1582,22 +1550,6 @@ select.addr-inp{cursor:pointer}
             <div class="store-card store-card-skeleton"></div>
             <div class="store-card store-card-skeleton"></div>
             <div class="store-card store-card-skeleton"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- GENERAL CATALOG SECTION -->
-      <div class="gen-cats-section" id="gen-cats-section">
-        <div class="gen-cats-scroll">
-          <div class="gen-cats-row" id="gen-cats-row">
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
-            <div class="gen-cat-skl-wrap"><div class="gen-cat-skl-ico"></div><div class="gen-cat-skl-lbl"></div></div>
           </div>
         </div>
       </div>
@@ -1615,11 +1567,10 @@ select.addr-inp{cursor:pointer}
       </div>
 
       <div class="home-cats-wrap">
-        <div class="sh" style="margin-bottom:10px"><div><div class="sh-tag">Категории</div><div class="sh-title">Откуда <em>заказ</em> доставим?</div></div></div>
         <div class="cat-panels" id="home-cats"></div>
         <button class="all-cats-btn" onclick="goPage('catalog')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Все категории →
+          Все категории
         </button>
       </div>
       <div class="sh"><div><div class="sh-tag">Популярное</div><div class="sh-title">Хиты <em>меню</em></div></div><button class="sh-link" onclick="goPage('catalog')">Весь каталог →</button></div>
@@ -1650,7 +1601,7 @@ select.addr-inp{cursor:pointer}
 
     <!-- CART -->
     <div class="page" id="page-cart">
-      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Сабад</div></div><button class="sh-link" id="cart-clear-btn" style="color:var(--red);display:none" onclick="clearCartUI()">Очистить</button></div>
+      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Корзина</div></div><button class="sh-link" id="cart-clear-btn" style="color:var(--red);display:none" onclick="clearCartUI()">Очистить</button></div>
       <div class="cart-layout">
         <div id="cart-list">
           <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
@@ -2039,7 +1990,7 @@ select.addr-inp{cursor:pointer}
   <div class="mn-inner">
     <button class="mn-item active" data-page="home"    onclick="goPage('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span class="mn-lbl">Главная</span></button>
     <button class="mn-item"        data-page="catalog" onclick="goPage('catalog')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="mn-lbl">Каталог</span></button>
-    <button class="mn-item" data-page="cart" onclick="goPage('cart')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><span class="mn-lbl">Сабад</span><span class="mn-badge" id="mob-cart-b" style="display:none">0</span></button>
+    <button class="mn-item" data-page="cart" onclick="goPage('cart')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><span class="mn-lbl">Корзина</span><span class="mn-badge" id="mob-cart-b" style="display:none">0</span></button>
     <button class="mn-item" data-page="orders" onclick="goPage('orders')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span class="mn-lbl">Заказы</span><span class="mn-badge" id="mob-ord-b" style="display:none">0</span></button>
     <button class="mn-item"        data-page="profile" onclick="goPage('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="mn-lbl">Профил</span><span class="mn-badge" id="mob-prof-b" style="display:none">0</span></button>
   </div>
@@ -2048,7 +1999,6 @@ select.addr-inp{cursor:pointer}
 <!-- Вся логика в app.js -->
 <script type="module" src="./app.js"></script>
 
-<!-- Загрузка generalCatalogs и рендер gen-cats-row / gen-cat-grid выполняется через app.js (loadGenCats) -->
 <!-- ORDER DETAIL MODAL -->
 <div class="o-modal-bg" id="order-modal-bg" onclick="closeOrderModal(event)">
   <div class="o-modal" id="order-modal">
