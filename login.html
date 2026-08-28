@@ -886,11 +886,29 @@ function clearSmsCountdown() {
   smsCountdown.classList.remove('hidden');
 }
 
-btnResendSms.addEventListener('click', () => {
-  if (btnResendSms.disabled) return;
-  startSmsCountdown();
-  clearOtp();
-  // TODO: здесь вызов отправки СМС
+btnResendSms.addEventListener('click', async () => {
+  if (btnResendSms.disabled || !loginPhoneDigits) return;
+
+  btnResendSms.disabled = true;
+  try {
+    const r = await fetch(`${API_BASE}/api/auth/send-otp`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ phone: '992' + loginPhoneDigits }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      showOtpErr(data.error || 'Не удалось отправить SMS');
+      btnResendSms.disabled = false;
+      return;
+    }
+    clearOtp();
+    startSmsCountdown();
+    setTimeout(() => otpBoxes[0].focus(), 150);
+  } catch {
+    showOtpErr('Ошибка сети. Проверьте подключение.');
+    btnResendSms.disabled = false;
+  }
 });
 
 // ─── OTP-утилиты ──────────────────────────────────────────────
@@ -1032,6 +1050,13 @@ btnLoginNext.addEventListener('click', async () => {
 
   const st = RL.check(phoneToPseudoEmail(d9));
   if (!st.ok) { startLockout(st.until); return; }
+
+  // Тот же номер — просто переходим на шаг 2, SMS не шлём
+  if (d9 === loginPhoneDigits) {
+    phoneChipNum.textContent = formatPhoneDisplay(d9);
+    goLoginStep(2);
+    return;
+  }
 
   setLoading(btnLoginNext, true);
   try {

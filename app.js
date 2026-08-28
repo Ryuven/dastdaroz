@@ -596,10 +596,14 @@ function renderSB() {
     _renderGuestSB();
     return;
   }
-  const name = UD?.displayName || 'Покупатель';
-  const init = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const name  = UD?.displayName?.trim() || '';
+  const phone = UD?.phone || phoneFromPseudoEmail(CU.email) || '';
+  const displayStr = name || phone || 'Покупатель';
+  const init = name
+    ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : (phone ? phone.replace(/\D/g, '').slice(3, 5) : '?');
 
-  document.getElementById('sb-uname').textContent = name;
+  document.getElementById('sb-uname').textContent = displayStr;
   const av = document.getElementById('sb-av');
   av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
 
@@ -2784,19 +2788,27 @@ function showProfContent() {
 
 function renderProfile() {
   showProfContent();
-  const name  = UD?.displayName || CU.displayName || '';
-  const init  = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const phone = UD?.phone || phoneFromPseudoEmail(CU.email);
+  const name  = UD?.displayName?.trim() || '';
+  const phone = UD?.phone || phoneFromPseudoEmail(CU.email) || '';
 
-  document.getElementById('p-name')?.textContent  && (document.getElementById('p-name').textContent  = name || 'Без имени');
-  document.getElementById('p-phone')?.textContent && (document.getElementById('p-phone').textContent = phone || '—');
+  // Аватар: инициалы имени или две цифры оператора из номера
+  const init = name
+    ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : (phone ? phone.replace(/\D/g, '').slice(3, 5) : '?');
+
+  const nameEl  = document.getElementById('p-name');
+  const phoneEl = document.getElementById('p-phone');
+
+  // Если имя есть — имя сверху, номер снизу
+  // Если имени нет — номер сверху, подсказка снизу
+  if (nameEl)  nameEl.textContent  = name || phone || '—';
+  if (phoneEl) phoneEl.textContent = name ? (phone || '—') : 'Добавьте имя в профиле →';
 
   const av = document.getElementById('p-av');
   if (av) av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
 
   document.getElementById('pf-name')  && (document.getElementById('pf-name').value  = name);
   document.getElementById('pf-phone') && (document.getElementById('pf-phone').value = phone);
-
 }
 
 function renderGuestProfile() {
@@ -2931,9 +2943,11 @@ window.openAvWidget = function () {
 // ─── Редактирование профиля (sheet) ───────────────────────────
 window.openProfileEditSheet = function () {
   if (!CU) { requireAuth('Войдите для редактирования профиля'); return; }
-  const name  = UD?.displayName || CU.displayName || '';
-  const init  = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const name  = UD?.displayName?.trim() || '';
   const phone = UD?.phone || phoneFromPseudoEmail(CU.email) || '';
+  const init  = name
+    ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : (phone ? phone.replace(/\D/g, '').slice(3, 5) : '?');
   const avHtml = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
 
   Sheet.body('profile-edit').innerHTML = `
