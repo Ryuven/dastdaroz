@@ -47,6 +47,10 @@ import {
 
 
 // ─── 2. Состояние приложения ──────────────────────────────────
+// ─── Возврат с платёжной страницы Алифа ─────────────────────
+const _payReturnOid = new URLSearchParams(location.search).get('order') || null;
+if (_payReturnOid) history.replaceState({}, '', location.pathname + location.hash);
+
 let CU               = null;   // текущий пользователь Firebase Auth
 let UD               = null;   // документ пользователя из Firestore
 let GUEST            = false;  // режим гостя
@@ -1822,6 +1826,15 @@ async function loadOrders() {
   renderLiveBanner();
   if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
 
+  // Автооткрытие заказа после возврата с платёжной страницы Алифа
+  if (_payReturnOid) {
+    const found = orders.find(o => o.id === _payReturnOid);
+    if (found) {
+      activeOid = found.id;
+      setTimeout(() => { goPage('orders'); setTimeout(() => openOrderModal(found.id), 400); }, 300);
+    }
+  }
+
   const tot   = orders.length;
   const spent = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
   const po = document.getElementById('ps-orders'); if (po) po.textContent = tot;
@@ -3183,7 +3196,32 @@ window.openLikesSheet = () => Sheet.open('likes');
 window.closeLikesSheet= () => Sheet.close('likes');
 
 // ─── Оплата (Alif Pay / Google Pay) ────────────────────────
-window.openAlifPaySheet   = () => Sheet.open('alifpay');
+window.openAlifPaySheet = async function () {
+  if (!activeOid) return toast('Заказ не найден', 'err');
+
+  const btn = document.querySelector('.booking-btn-pay');
+  if (btn) {
+    btn.disabled  = true;
+    btn.innerHTML = '<div class="spin" style="width:16px;height:16px;border-color:rgba(0,0,0,.15);border-top-color:var(--tx);margin:0 auto"></div>';
+  }
+
+  try {
+    const r    = await fetch('https://api.dastdaroz.shop/api/payment/init', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ orderId: activeOid }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.paymentUrl) throw new Error(data.error || 'Ошибка платежа');
+    window.location.href = data.paymentUrl;
+  } catch (err) {
+    toast('Ошибка: ' + err.message, 'err');
+    if (btn) {
+      btn.disabled  = false;
+      btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/> Alif Pay';
+    }
+  }
+};
 window.openGooglePaySheet = () => Sheet.open('googlepay');
 window.openOfertaSheet    = () => SheetPdf.open('oferta');
 window.closeOfertaSheet   = () => SheetPdf.close('oferta');
