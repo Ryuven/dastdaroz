@@ -1833,37 +1833,17 @@ async function loadOrders() {
     const found = orders.find(o => o.id === _payReturnOid);
     if (found) {
       activeOid = found.id;
-      setTimeout(async () => {
-        try {
-          const r    = await fetch('https://api.dastdaroz.shop/api/payment/verify-return', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ orderId: found.id }),
-          });
-          const data = await r.json();
-
-          if (data.paymentStatus === 'paid') {
-            toast('Оплата прошла успешно! ✅', 'ok');
-            // Перезагружаем — заказ теперь в mavsimiOrders/dastdarozOrders
-            await loadOrders();
-            goPage('orders');
-            setTimeout(() => openOrderModal(found.id), 400);
-          } else if (data.paymentStatus === 'failed') {
-            toast('Оплата не прошла. Заказ отменён.', 'err');
-            await loadOrders();
-            goPage('orders');
-          } else {
-            // unknown — слушаем bookedOrders на случай если callback придёт позже
-            listenBooked(found.id);
-            await loadOrders();
-            goPage('orders');
-            setTimeout(() => openOrderModal(found.id), 400);
-          }
-        } catch {
-          await loadOrders();
-          goPage('orders');
-        }
-      }, 500);
+      if (found._col === 'bookedOrders' && !['cancelled', 'failed'].includes(found.status)) {
+        // Заказ ещё в bookedOrders — оплата обрабатывается
+        // Показываем оверлей и слушаем в реальном времени
+        showPaymentProcessing();
+        listenBooked(found.id);
+      } else if (found._col !== 'bookedOrders') {
+        // Callback уже пришёл и переместил заказ — показываем сразу
+        toast('Оплата прошла успешно! ✅', 'ok');
+        goPage('orders');
+        setTimeout(() => openOrderModal(found.id), 400);
+      }
     }
   }
 
@@ -2326,16 +2306,48 @@ function listenLive(oid, col = 'dastdarozOrders') {
 }
 
 
+// ─── Оверлей "Обрабатывается оплата" ────────────────────────
+function showPaymentProcessing() {
+  if (document.getElementById('pay-proc-overlay')) return;
+  const el = document.createElement('div');
+  el.id = 'pay-proc-overlay';
+  el.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:9999',
+    'background:rgba(255,255,255,0.97)',
+    'display:flex', 'flex-direction:column',
+    'align-items:center', 'justify-content:center', 'gap:16px',
+  ].join(';');
+  el.innerHTML = `
+    <div class="spin" style="width:48px;height:48px;border-width:4px;
+      border-color:rgba(0,0,0,.1);border-top-color:var(--accent, #4f8fff)"></div>
+    <div style="font-size:17px;font-weight:600">Обрабатывается оплата</div>
+    <div style="font-size:14px;opacity:.6">Обычно занимает 1–2 минуты</div>
+    <div style="font-size:13px;opacity:.4">Не закрывайте страницу</div>
+  `;
+  document.body.appendChild(el);
+  // Таймаут 3 минуты
+  setTimeout(() => {
+    hidePaymentProcessing();
+    toast('Оплата занимает дольше обычного. Обновите страницу через минуту.', 'err');
+  }, 3 * 60 * 1000);
+}
+function hidePaymentProcessing() {
+  document.getElementById('pay-proc-overlay')?.remove();
+}
+
 // ─── Слушатель bookedOrders (для реакции на оплату/отмену) ──
 function listenBooked(oid) {
   if (unsubBooked) { unsubBooked(); unsubBooked = null; }
   unsubBooked = onSnapshot(doc(db, 'bookedOrders', oid), async snap => {
     if (!snap.exists()) {
-      // Документ удалён — значит оплата прошла, callback переместил заказ
+      // Документ удалён — callback переместил заказ (оплата прошла)
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+      hidePaymentProcessing();
       toast('Оплата прошла успешно! ✅', 'ok');
       await loadOrders();
       renderOrders(); renderOrdersBadge();
+      goPage('orders');
+      setTimeout(() => openOrderModal(oid), 400);
       return;
     }
     const o   = { id: snap.id, ...snap.data(), _col: 'bookedOrders' };
@@ -2352,6 +2364,7 @@ function listenBooked(oid) {
     // Заказ отменён (оплата не прошла или истёк таймер)
     if (['cancelled', 'failed'].includes(o.status)) {
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+      hidePaymentProcessing();
       toast('Оплата не прошла. Заказ отменён.', 'err');
     }
   });
