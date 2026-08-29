@@ -307,6 +307,16 @@ select.addr-inp{cursor:pointer}
 .checkout-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* ── ORDERS ── */
+/* ── Кнопка "Бронированные" ── */
+.bookings-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--teal-d);border:1.5px solid rgba(13,148,136,.25);border-radius:14px;cursor:pointer;margin-bottom:14px;transition:background .15s;color:var(--teal);text-align:left}
+.bookings-btn:hover{background:rgba(13,148,136,.13)}
+.bookings-btn:active{transform:scale(.98)}
+.bookings-btn-left{display:flex;align-items:center;gap:12px}
+.bookings-btn-ico{width:42px;height:42px;border-radius:12px;background:rgba(13,148,136,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal)}
+.bookings-btn-title{font-family:var(--fd);font-weight:800;font-size:.84rem;color:var(--teal);letter-spacing:-.01em}
+.bookings-btn-sub{font-size:.64rem;color:var(--tx3);margin-top:2px;font-weight:500}
+.bookings-btn-right{display:flex;align-items:center;gap:8px;flex-shrink:0;color:var(--tx3)}
+.bookings-btn-badge{background:var(--teal);color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 8px;line-height:1.6}
 .oc{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:14px 16px;margin-bottom:9px;transition:all var(--tf);position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .oc:hover{border-color:var(--accg);box-shadow:var(--shadow-md)}
 .oc::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3.5px;border-radius:3.5px 0 0 3.5px}
@@ -1106,18 +1116,15 @@ select.addr-inp{cursor:pointer}
 }
 .booking-btn-pay{
   width:100%;padding:13px 16px;
-  background:var(--s1);border:1.5px solid var(--b0);
-  border-radius:14px;color:var(--tx);
+  background:var(--accd);border:1.5px solid var(--accg);
+  border-radius:14px;color:var(--acc);
   font-family:var(--fd);font-weight:800;font-size:.82rem;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:border-color .15s,background .15s,transform .15s var(--spring),box-shadow .15s;
-  box-shadow:var(--shadow);letter-spacing:-.01em;
+  transition:background .15s,transform .15s;
+  letter-spacing:-.01em;
 }
-.booking-btn-pay:hover{
-  background:var(--s2);border-color:var(--b2);
-  transform:translateY(-2px);box-shadow:var(--shadow-md);
-}
-.booking-btn-pay:active{transform:scale(.95);}
+.booking-btn-pay:hover{background:var(--accd2, rgba(34,197,94,.15));}
+.booking-btn-pay:active{transform:scale(.97);}
 .booking-pay-ico{
   width:22px;height:22px;object-fit:contain;border-radius:5px;flex-shrink:0;
 }
@@ -1671,20 +1678,27 @@ select.addr-inp{cursor:pointer}
 
     <!-- ORDERS -->
     <div class="page" id="page-orders">
-      <div class="sh" style="align-items:center">
-        <div><div class="sh-tag">История</div><div class="sh-title">Мои <em>заказы</em></div></div>
-        <button onclick="openBookingsSheet()" title="Бронированные" style="display:flex;align-items:center;gap:7px;padding:8px 14px;background:var(--s1);border:1.5px solid var(--b0);border-radius:11px;cursor:pointer;color:var(--tx3);font-size:.7rem;font-family:var(--fs);font-weight:600;transition:all .15s;white-space:nowrap;flex-shrink:0" onmouseover="this.style.borderColor='var(--accg)';this.style.color='var(--acc)';this.style.background='var(--accd)'" onmouseout="this.style.borderColor='var(--b0)';this.style.color='var(--tx3)';this.style.background='var(--s1)'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
-          </svg>
-          Бронированные
-          <span id="bookings-nb" style="display:none;background:var(--teal);color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:1px 6px;line-height:1.6"></span>
-        </button>
-      </div>
+      <button class="bookings-btn" onclick="openBookingsSheet()">
+        <div class="bookings-btn-left">
+          <div class="bookings-btn-ico">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+            </svg>
+          </div>
+          <div>
+            <div class="bookings-btn-title">Бронированные</div>
+            <div class="bookings-btn-sub">Активные брони заказов</div>
+          </div>
+        </div>
+        <div class="bookings-btn-right">
+          <span id="bookings-nb" class="bookings-btn-badge" style="display:none">0</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </button>
 
       <div id="orders-list">
         <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:50%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:82px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:82%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:58%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:54px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:120px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
