@@ -1907,14 +1907,7 @@ window.openOrderModal = function (oid) {
       <!-- ── Герой-блок бронирования ── -->
       <div class="booking-hero">
         <div class="booking-hero-glow"></div>
-        <div class="booking-icon-wrap">
-          <div class="booking-icon-ring">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-            </svg>
-          </div>
-        </div>
-        <div class="booking-hero-title">Заказ оформлен!</div>
+        <div class="booking-hero-title">Заказ бронирован!</div>
         <div class="booking-hero-sub">Оплатите заказ удобным способом</div>
       </div>
 
@@ -1984,7 +1977,7 @@ window.openOrderModal = function (oid) {
         <!-- 7. Итог -->
         <div class="booking-total-row booking-total-final">
           <span>Итог</span>
-          <span>${o.total} см</span>
+          <span class="booking-total-final-sum">${o.total} см</span>
         </div>
 
       </div>
