@@ -405,6 +405,14 @@ SheetPdf.define({
   zIndex: 700,
 });
 
+// ─── Политика конфиденциальности (PDF sheet) ───────────────────
+SheetPdf.define({
+  id:     'privacy',
+  title:  'Политика конфиденциальности',
+  url:    'https://dastdaroz.shop/help/privacy.pdf',
+  zIndex: 700,
+});
+
 // ─── 5. Auth / Инициализация ──────────────────────────────────
 onAuthStateChanged(auth, async u => {
   if (!u) {
@@ -2040,6 +2048,12 @@ window.openOrderModal = function (oid) {
             Google Pay
           </button>
         </div>
+        <p style="font-size:.62rem;color:var(--tx3);text-align:center;line-height:1.55;margin:4px 4px 0">
+          Нажимая на кнопку оплаты, вы автоматически соглашаетесь с
+          <span style="color:var(--acc);text-decoration:underline;cursor:pointer" onclick="openOfertaSheet()">Публичной офертой</span>
+          и
+          <span style="color:var(--acc);text-decoration:underline;cursor:pointer" onclick="openPrivacySheet()">Политикой конфиденциальности</span>
+        </p>
         <button class="booking-btn-cancel" onclick="cancelReservation('${o.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Отменить бронь
@@ -3237,6 +3251,8 @@ window.openAlifPaySheet = async function () {
 window.openGooglePaySheet = () => Sheet.open('googlepay');
 window.openOfertaSheet    = () => SheetPdf.open('oferta');
 window.closeOfertaSheet   = () => SheetPdf.close('oferta');
+window.openPrivacySheet   = () => SheetPdf.open('privacy');
+window.closePrivacySheet  = () => SheetPdf.close('privacy');
 
 async function _loadCities() {
   const list = document.getElementById('citysh-list');
