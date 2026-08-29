@@ -1833,7 +1833,6 @@ async function loadOrders() {
     const found = orders.find(o => o.id === _payReturnOid);
     if (found) {
       activeOid = found.id;
-      // Проверяем статус оплаты и отменяем заказ если не прошло
       setTimeout(async () => {
         try {
           const r    = await fetch('https://api.dastdaroz.shop/api/payment/verify-return', {
@@ -1842,16 +1841,29 @@ async function loadOrders() {
             body:    JSON.stringify({ orderId: found.id }),
           });
           const data = await r.json();
+
           if (data.paymentStatus === 'paid') {
             toast('Оплата прошла успешно! ✅', 'ok');
-          } else if (data.paymentStatus === 'failed' || data.paymentStatus === 'unknown') {
+            // Перезагружаем — заказ теперь в mavsimiOrders/dastdarozOrders
+            await loadOrders();
+            goPage('orders');
+            setTimeout(() => openOrderModal(found.id), 400);
+          } else if (data.paymentStatus === 'failed') {
             toast('Оплата не прошла. Заказ отменён.', 'err');
+            await loadOrders();
+            goPage('orders');
+          } else {
+            // unknown — слушаем bookedOrders на случай если callback придёт позже
+            listenBooked(found.id);
+            await loadOrders();
+            goPage('orders');
+            setTimeout(() => openOrderModal(found.id), 400);
           }
-        } catch {}
-        await loadOrders();
-        goPage('orders');
-        setTimeout(() => openOrderModal(found.id), 400);
-      }, 300);
+        } catch {
+          await loadOrders();
+          goPage('orders');
+        }
+      }, 500);
     }
   }
 
