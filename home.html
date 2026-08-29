@@ -1111,14 +1111,14 @@ select.addr-inp{cursor:pointer}
 }
 .booking-btn-pay{
   width:100%;padding:13px 16px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  border:none;border-radius:14px;color:#fff;
+  background:var(--accd);border:1.5px solid var(--accg);
+  border-radius:14px;color:var(--acc);
   font-family:var(--fd);font-weight:800;font-size:.86rem;
   cursor:pointer;display:flex;align-items:center;justify-content:flex-start;gap:12px;
-  transition:opacity .15s,transform .15s;
-  letter-spacing:-.01em;box-shadow:0 3px 14px var(--acc-shadow);
+  transition:background .15s,transform .15s;
+  letter-spacing:-.01em;
 }
-.booking-btn-pay:hover{opacity:.9;}
+.booking-btn-pay:hover{background:rgba(34,197,94,.15);}
 .booking-btn-pay:active{transform:scale(.97);}
 .booking-pay-ico{
   width:28px;height:28px;object-fit:contain;border-radius:7px;flex-shrink:0;
