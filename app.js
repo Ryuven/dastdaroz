@@ -1914,7 +1914,6 @@ window.openOrderModal = function (oid) {
       <div class="booking-order-card">
         <div class="booking-order-header">
           <div class="booking-order-num">Заказ ${num}</div>
-          <div class="booking-order-total">${o.total} см</div>
         </div>
 
         <div class="booking-items">
