@@ -1514,6 +1514,7 @@ window.doCheckout = async function () {
     const orderData = {
       clientId:        CU.uid,
       clientName:      UD?.displayName || '',
+      clientPhone:     UD?.phone || phoneFromPseudoEmail(CU.email) || '',
       orderNumber:     oNum,
       items:           cart.map(c => ({
         productId: c.productId,
@@ -1895,6 +1896,13 @@ window.openOrderModal = function (oid) {
       </div>`
     ).join('');
 
+    const svcObj  = deliveryServices.find(s => s.id === o.deliveryService);
+    const svcName = svcObj ? svcObj.name : (o.deliveryService || '—');
+    const coords  = (o.lat && o.lng) ? `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}` : '—';
+    const bPhone  = o.clientPhone || '—';
+    const bName   = o.clientName  || '—';
+    const bFee    = o.total - sub > 0 ? o.total - sub : DFEE;
+
     document.getElementById('order-modal-body').innerHTML = `
       <!-- ── Герой-блок бронирования ── -->
       <div class="booking-hero">
@@ -1916,6 +1924,7 @@ window.openOrderModal = function (oid) {
           <div class="booking-order-num">Заказ ${num}</div>
         </div>
 
+        <!-- 1. Список товаров -->
         <div class="booking-items">
           ${(o.items || []).map(i => `
             <div class="booking-item">
@@ -1927,6 +1936,10 @@ window.openOrderModal = function (oid) {
             </div>`).join('')}
         </div>
 
+        <!-- 2. Разделитель -->
+        <div class="booking-divider"></div>
+
+        <!-- 3. Товары + Доставка -->
         <div class="booking-totals">
           <div class="booking-total-row">
             <span>Товары</span>
@@ -1934,22 +1947,46 @@ window.openOrderModal = function (oid) {
           </div>
           <div class="booking-total-row">
             <span>Доставка</span>
-            <span>${o.total - sub > 0 ? o.total - sub : DFEE} см</span>
-          </div>
-          <div class="booking-total-row booking-total-final">
-            <span>Итого</span>
-            <span>${o.total} см</span>
+            <span>${bFee} см</span>
           </div>
         </div>
 
-        <div class="booking-info-grid">
-          <div class="booking-info-item">
-            <div class="booking-info-ico">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <div class="booking-info-val">${escHtml(o.address || '—')}</div>
+        <!-- 4. Разделитель -->
+        <div class="booking-divider"></div>
+
+        <!-- 5. Информация о доставке -->
+        <div class="booking-delivery-info">
+          <div class="booking-delivery-row">
+            <span class="booking-delivery-label">Способ доставки</span>
+            <span class="booking-delivery-val">${escHtml(svcName)}</span>
+          </div>
+          <div class="booking-delivery-row">
+            <span class="booking-delivery-label">Имя</span>
+            <span class="booking-delivery-val">${escHtml(bName)}</span>
+          </div>
+          <div class="booking-delivery-row">
+            <span class="booking-delivery-label">Номер телефона</span>
+            <span class="booking-delivery-val">${escHtml(bPhone)}</span>
+          </div>
+          <div class="booking-delivery-row">
+            <span class="booking-delivery-label">Адрес</span>
+            <span class="booking-delivery-val">${escHtml(o.address || '—')}</span>
+          </div>
+          <div class="booking-delivery-row">
+            <span class="booking-delivery-label">Координаты</span>
+            <span class="booking-delivery-val booking-delivery-coords">${escHtml(coords)}</span>
           </div>
         </div>
+
+        <!-- 6. Разделитель -->
+        <div class="booking-divider"></div>
+
+        <!-- 7. Итог -->
+        <div class="booking-total-row booking-total-final">
+          <span>Итог</span>
+          <span>${o.total} см</span>
+        </div>
+
       </div>
 
       <!-- ── Кнопки действий ── -->

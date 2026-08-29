@@ -1014,33 +1014,38 @@ select.addr-inp{cursor:pointer}
 }
 .booking-item-price{font-weight:700;color:var(--tx);font-size:.76rem;white-space:nowrap;}
 
+/* Divider */
+.booking-divider{height:1px;background:var(--b0);margin:0;}
+
 /* Totals */
-.booking-totals{border-top:1px solid var(--b0);}
+.booking-totals{padding:4px 0;}
 .booking-total-row{
   display:flex;align-items:center;justify-content:space-between;
   font-size:.74rem;color:var(--tx2);padding:7px 16px;
 }
 .booking-total-final{
   font-weight:800;color:var(--tx);font-size:.86rem;
-  border-top:1.5px solid var(--b0);padding:10px 16px;
+  padding:11px 16px;
 }
 
-/* Info grid */
-.booking-info-grid{
-  display:flex;flex-direction:column;gap:4px;
-  padding:11px 16px 14px;border-top:1px solid var(--b0);
+/* Delivery info block */
+.booking-delivery-info{
+  display:flex;flex-direction:column;
+  padding:10px 16px 12px;gap:6px;
 }
-.booking-info-item{
-  display:flex;align-items:flex-start;gap:8px;
-  font-size:.72rem;color:var(--tx2);
+.booking-delivery-row{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  font-size:.74rem;gap:12px;
 }
-.booking-info-ico{
-  width:20px;height:20px;border-radius:6px;
-  background:var(--s2);border:1px solid var(--b0);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--tx3);flex-shrink:0;margin-top:1px;
+.booking-delivery-label{
+  color:var(--tx3);font-weight:500;flex-shrink:0;
 }
-.booking-info-val{flex:1;line-height:1.4;font-weight:500;}
+.booking-delivery-val{
+  color:var(--tx);font-weight:600;text-align:right;flex:1;line-height:1.4;
+}
+.booking-delivery-coords{
+  font-size:.68rem;color:var(--tx2);font-weight:500;font-variant-numeric:tabular-nums;
+}
 
 /* ── Кнопки действий ── */
 .booking-actions{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
