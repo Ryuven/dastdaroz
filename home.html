@@ -1084,21 +1084,6 @@ select.addr-inp{cursor:pointer}
 
 /* ── Кнопки действий ── */
 .booking-actions{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
-.booking-btn-confirm{
-  width:100%;padding:15px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));
-  border:none;border-radius:14px;
-  color:#fff;font-family:var(--fd);font-weight:900;font-size:.88rem;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 4px 18px var(--acc-shadow);
-  transition:opacity .15s,transform .12s;
-  letter-spacing:-.01em;
-}
-.booking-btn-confirm:hover{opacity:.92;transform:translateY(-1px);}
-.booking-btn-confirm:active{transform:scale(.97);}
-.booking-btn-confirm:disabled{
-  background:var(--s3);box-shadow:none;cursor:not-allowed;color:var(--tx3);
-}
 .booking-btn-cancel{
   width:100%;padding:12px;
   background:var(--redd);border:1.5px solid rgba(220,38,38,.2);
@@ -1117,14 +1102,14 @@ select.addr-inp{cursor:pointer}
 
 /* ── Payment buttons row ── */
 .booking-pay-row{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  display:flex;flex-direction:column;gap:8px;
 }
 .booking-btn-pay{
-  width:100%;padding:12px 10px;
+  width:100%;padding:13px 16px;
   background:var(--s1);border:1.5px solid var(--b0);
   border-radius:14px;color:var(--tx);
-  font-family:var(--fd);font-weight:800;font-size:.76rem;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--fd);font-weight:800;font-size:.82rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
   transition:border-color .15s,background .15s,transform .15s var(--spring),box-shadow .15s;
   box-shadow:var(--shadow);letter-spacing:-.01em;
 }

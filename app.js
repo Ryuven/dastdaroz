@@ -1575,66 +1575,7 @@ window.doCheckout = async function () {
  *  - удаляем из bookedOrders
  *  - создаём в dastdarozOrders или mavsimiOrders (зависит от deliveryService)
  */
-window.confirmReservation = async function (oid) {
-  const btn = document.getElementById('booking-confirm-btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:13px;height:13px"></div> Подтверждаем…'; }
-  try {
-    // Находим заказ в памяти (он лежит в bookedOrders)
-    const booked = orders.find(x => x.id === oid);
-    if (!booked) throw new Error('Заказ не найден');
 
-    // Целевая коллекция по выбранной службе
-    const svc       = booked.deliveryService || 'dastdaroz';
-    const targetCol = svc === 'mavsimi' ? 'mavsimiOrders' : 'dastdarozOrders';
-
-    // Данные для целевой коллекции (без локальных полей)
-    const { _col, id: _id, ...orderFields } = booked;
-
-    // Защита от псевдо-timestamp: если createdAt — объект с функцией (локальная заглушка),
-    // а не настоящий Firestore Timestamp, заменяем на serverTimestamp().
-    const safeCreatedAt = (orderFields.createdAt && typeof orderFields.createdAt.toMillis === 'function')
-      ? orderFields.createdAt
-      : serverTimestamp();
-
-    // reservedUntil может быть JS Date (если заказ ещё не был перечитан из Firestore) —
-    // Firebase умеет сериализовать Date → Timestamp, оставляем как есть.
-
-    const confirmedData = {
-      ...orderFields,
-      createdAt:   safeCreatedAt,   // ← реальный TS или serverTimestamp()
-      status:      'pending',
-      confirmedAt: serverTimestamp(),
-      updatedAt:   serverTimestamp(),
-    };
-
-    // Транзакция: записываем в целевую, удаляем из bookedOrders
-    await setDoc(doc(db, targetCol, oid), confirmedData);
-    await deleteDoc(doc(db, 'bookedOrders', oid));
-
-    // Обновляем в памяти
-    const idx = orders.findIndex(x => x.id === oid);
-    if (idx >= 0) {
-      orders[idx] = { ...orders[idx], status: 'pending', _col: targetCol };
-    }
-    activeOid        = oid;
-    activeCollection = targetCol;
-
-    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
-    closeOrderModal();
-
-    // Для dastdaroz запускаем live-слежение
-    if (targetCol === 'dastdarozOrders') {
-      listenLive(oid, 'dastdarozOrders');
-    }
-
-    await loadOrders();
-    toast('Заказ подтверждён! ✅ Ожидайте курьера', 'ok');
-    setTimeout(() => { activeOid = oid; goPage('status'); renderStatusPage(); }, 350);
-  } catch (e) {
-    toast('Ошибка подтверждения: ' + e.message, 'err');
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Подтвердить заказ'; }
-  }
-};
 
 /** Отмена бронирования (статус reserved → бронь ещё не подтверждена) */
 window.cancelReservation = async function (oid) {
@@ -1672,8 +1613,6 @@ function _startBookingCountdown(reservedUntil) {
       // авто-показ истечения
       const expiredEl = document.getElementById('booking-expired-note');
       if (expiredEl) expiredEl.style.display = 'flex';
-      const confirmBtn = document.getElementById('booking-confirm-btn');
-      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; }
       return;
     }
 
@@ -2091,10 +2030,6 @@ window.openOrderModal = function (oid) {
 
       <!-- ── Кнопки действий ── -->
       <div class="booking-actions">
-        <button class="booking-btn-confirm" id="booking-confirm-btn" onclick="confirmReservation('${o.id}')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Подтвердить заказ
-        </button>
         <div class="booking-pay-row">
           <button class="booking-btn-pay" onclick="openAlifPaySheet()">
             <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
