@@ -545,6 +545,12 @@ window.selectDeliveryService = function (svc) {
   document.querySelectorAll('.dtab').forEach(el => {
     el.classList.toggle('active', el.dataset.svc === svc);
   });
+  // Обновляем способ доставки в карточке корзины
+  const csSvc  = document.getElementById('cs-svc-name');
+  if (csSvc) {
+    const svcObj = deliveryServices.find(s => s.id === svc);
+    csSvc.textContent = svcObj ? svcObj.name : (svc || '—');
+  }
 };
 
 // ── Курьерские службы из Firestore ────────────────────────────
@@ -1462,7 +1468,31 @@ function renderCart() {
   const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' см';
   const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
   const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' см';
-  const ch  = document.getElementById('cs-header-items'); if (ch) ch.textContent = cart.length + ' позиций';
+
+  // Список товаров в карточке
+  const csList = document.getElementById('cs-items-list');
+  if (csList) {
+    csList.innerHTML = cart.map(i => `
+      <div class="booking-item">
+        <div class="booking-item-name">${escHtml(i.name)}</div>
+        <div class="booking-item-right">
+          <span class="booking-item-qty">×${i.quantity}</span>
+          <span class="booking-item-price">${i.price * i.quantity} см</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Инфо-блок: имя, телефон, способ доставки
+  const csName  = document.getElementById('cs-client-name');
+  const csPhone = document.getElementById('cs-client-phone');
+  const csSvc   = document.getElementById('cs-svc-name');
+  const phone   = UD?.phone || phoneFromPseudoEmail(CU?.email) || '';
+  if (csName)  csName.textContent  = UD?.displayName || '—';
+  if (csPhone) csPhone.textContent = phone || '—';
+  if (csSvc) {
+    const svcObj = deliveryServices.find(s => s.id === deliveryService);
+    csSvc.textContent = svcObj ? svcObj.name : (deliveryService || '—');
+  }
 }
 
 function _setCartFooter(active) {
@@ -1679,6 +1709,17 @@ window.selectCartAddr = function (text, lat, lng) {
   if (display) display.textContent = text;
   const card = document.getElementById('cart-addr-card');
   if (card) card.classList.add('filled');
+
+  // Обновляем блок инфо в карточке
+  const csAddr   = document.getElementById('cs-addr-display');
+  const csCoords = document.getElementById('cs-coords-display');
+  if (csAddr) csAddr.textContent = text || '—';
+  if (csCoords) {
+    const fLat = parseFloat(lat);
+    const fLng = parseFloat(lng);
+    csCoords.textContent = (fLat && fLng) ? `${fLat.toFixed(5)}, ${fLng.toFixed(5)}` : '—';
+  }
+
   closeCartAddrSheet();
 };
 

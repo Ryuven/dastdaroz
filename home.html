@@ -1550,8 +1550,17 @@ select.addr-inp{cursor:pointer}
         <!-- Скелетон Чека — виден только во время загрузки -->
         <div id="cart-sum-skl" style="display:flex;flex-direction:column;gap:8px;margin-top:2px">
           <div class="booking-order-card" style="margin-bottom:0">
+            <div style="padding:10px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:8px;width:60%"></div><div class="skl-block" style="height:8px;width:48px"></div></div>
+            <div style="padding:10px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:8px;width:48%"></div><div class="skl-block" style="height:8px;width:44px"></div></div>
+            <div style="height:1px;background:var(--b0)"></div>
             <div style="padding:7px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:8px;width:52px"></div><div class="skl-block" style="height:8px;width:56px"></div></div>
             <div style="padding:7px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:8px;width:60px"></div><div class="skl-block" style="height:8px;width:44px"></div></div>
+            <div style="height:1px;background:var(--b0)"></div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:7px;width:80px"></div><div class="skl-block" style="height:7px;width:100px"></div></div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:7px;width:40px"></div><div class="skl-block" style="height:7px;width:80px"></div></div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:7px;width:96px"></div><div class="skl-block" style="height:7px;width:88px"></div></div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:7px;width:44px"></div><div class="skl-block" style="height:7px;width:120px"></div></div>
+            <div style="padding:8px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:7px;width:72px"></div><div class="skl-block" style="height:7px;width:96px"></div></div>
             <div style="height:1px;background:var(--b0)"></div>
             <div style="padding:11px 16px;display:flex;justify-content:space-between"><div class="skl-block" style="height:10px;width:40px"></div><div class="skl-block" style="height:13px;width:68px"></div></div>
           </div>
@@ -1560,13 +1569,49 @@ select.addr-inp{cursor:pointer}
 
         <div id="cart-sum" style="min-width:0;max-width:100%;display:none;flex-direction:column;gap:8px">
 
-          <!-- ══ Карточка 1: Итого (суммы) — стиль брони ══ -->
+          <!-- ══ Карточка 1: Полный формат брони ══ -->
           <div class="booking-order-card" style="margin-bottom:0">
+
+            <!-- Список товаров -->
+            <div class="booking-items" id="cs-items-list"></div>
+
+            <div class="booking-divider"></div>
+
+            <!-- Товары + Доставка -->
             <div class="booking-totals">
               <div class="booking-total-row"><span>Товары</span><span id="cs-items">0 см</span></div>
               <div class="booking-total-row"><span>Доставка</span><span id="cs-del">7 см</span></div>
             </div>
+
             <div class="booking-divider"></div>
+
+            <!-- Блок инфо: способ доставки, имя, телефон, адрес, координаты -->
+            <div class="booking-delivery-info">
+              <div class="booking-delivery-row">
+                <span class="booking-delivery-label">Способ доставки</span>
+                <span class="booking-delivery-val" id="cs-svc-name">—</span>
+              </div>
+              <div class="booking-delivery-row">
+                <span class="booking-delivery-label">Имя</span>
+                <span class="booking-delivery-val" id="cs-client-name">—</span>
+              </div>
+              <div class="booking-delivery-row">
+                <span class="booking-delivery-label">Номер телефона</span>
+                <span class="booking-delivery-val" id="cs-client-phone">—</span>
+              </div>
+              <div class="booking-delivery-row">
+                <span class="booking-delivery-label">Адрес</span>
+                <span class="booking-delivery-val" id="cs-addr-display">—</span>
+              </div>
+              <div class="booking-delivery-row">
+                <span class="booking-delivery-label">Координаты</span>
+                <span class="booking-delivery-val booking-delivery-coords" id="cs-coords-display">—</span>
+              </div>
+            </div>
+
+            <div class="booking-divider"></div>
+
+            <!-- Итог -->
             <div class="booking-total-row booking-total-final">
               <span>Итог</span>
               <span class="booking-total-final-sum" id="cs-total">7 см</span>
