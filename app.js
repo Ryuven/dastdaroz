@@ -108,8 +108,7 @@ const SC = {
 };
 
 // Длительность бронирования
-const BOOKING_DURATION_MS = 10 * 60 * 1000; // 10 минут
-let _bookingTimerInterval = null; // счётчик обратного отсчёта
+
 
 const STEPS = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered'];
 
@@ -1511,7 +1510,6 @@ window.doCheckout = async function () {
     const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
     const oNum          = nextOrderNum();
     const payMethod     = 'online';
-    const reservedUntil = new Date(Date.now() + BOOKING_DURATION_MS);
 
     const orderData = {
       clientId:        CU.uid,
@@ -1533,7 +1531,6 @@ window.doCheckout = async function () {
       paymentMethod:   payMethod,
       deliveryService,
       status:          'reserved',
-      reservedUntil,
       courierId:       null,
       courierName:     null,
       createdAt:       serverTimestamp(),
@@ -1556,14 +1553,13 @@ window.doCheckout = async function () {
       ...orderData,
       _col: 'bookedOrders',
       createdAt: { toDate: () => new Date() }, // псевдо-timestamp для fmtDate
-      reservedUntil,
     };
     orders.unshift(newOrder);
     activeOid = ref.id;
 
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
 
-    toast('Заказ забронирован! 🔒 У вас 10 минут', 'ok');
+    toast('Заказ оформлен! ✅', 'ok');
     listenBooked(ref.id);
 
     // Сразу открываем модалку бронирования
@@ -1593,57 +1589,13 @@ window.cancelReservation = async function (oid) {
       status: 'cancelled',
       updatedAt: serverTimestamp(),
     });
-    if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
     closeOrderModal();
     await loadOrders();
     toast('Бронирование отменено', 'ok');
   } catch { toast('Ошибка отмены', 'err'); }
 };
 
-/** Запуск обратного отсчёта бронирования */
-function _startBookingCountdown(reservedUntil) {
-  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
 
-  const endMs = reservedUntil instanceof Date
-    ? reservedUntil.getTime()
-    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
-
-  const tick = () => {
-    const el = document.getElementById('booking-timer-display');
-    if (!el) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; return; }
-
-    const rem = endMs - Date.now();
-    if (rem <= 0) {
-      el.textContent = '0:00';
-      el.closest?.('.booking-timer-ring')?.classList.add('expired');
-      clearInterval(_bookingTimerInterval);
-      _bookingTimerInterval = null;
-      // авто-показ истечения
-      const expiredEl = document.getElementById('booking-expired-note');
-      if (expiredEl) expiredEl.style.display = 'flex';
-      return;
-    }
-
-    const mins = Math.floor(rem / 60000);
-    const secs = Math.floor((rem % 60000) / 1000);
-    el.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-
-    // меняем цвет когда < 2 минуты
-    const ringEl = document.getElementById('booking-timer-ring');
-    if (ringEl) {
-      if (rem < 120000) {
-        ringEl.classList.add('warning');
-        ringEl.classList.remove('normal');
-      } else {
-        ringEl.classList.add('normal');
-        ringEl.classList.remove('warning');
-      }
-    }
-  };
-
-  tick();
-  _bookingTimerInterval = setInterval(tick, 1000);
-}
 
 /** Маvsimi — добавляем в очередь (TODO: подключить API) */
 async function _submitToMavsimi(data) {
@@ -1854,15 +1806,7 @@ function renderBookingsSheet() {
   body.innerHTML = reserved.map(o => {
     const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
     const items = (o.items || []).map(i => `${escHtml(i.name)} ×${i.quantity}`).join(', ');
-    const ru    = o.reservedUntil instanceof Date
-      ? o.reservedUntil
-      : (o.reservedUntil?.toDate?.() ?? new Date());
-    const secsTotal = Math.max(0, Math.floor((ru.getTime() - Date.now()) / 1000));
-    const mins = Math.floor(secsTotal / 60);
-    const secs = secsTotal % 60;
-    const timeLeft = secsTotal > 0
-      ? `${mins}:${String(secs).padStart(2, '0')} осталось`
-      : 'Время истекло';
+
 
     return `<div class="oc st-reserved" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
       <div class="oc-head">
@@ -1873,7 +1817,7 @@ function renderBookingsSheet() {
       <div class="oc-footer">
         <div>
           <div class="oc-total">${o.total} см</div>
-          <div class="oc-meta" style="color:var(--teal)">⏱ ${timeLeft}</div>
+          <div class="oc-meta" style="color:var(--teal)">Ожидает оплаты</div>
         </div>
         <div class="oc-actions">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -1929,8 +1873,6 @@ window.openOrderModal = function (oid) {
   const o = orders.find(x => x.id === oid);
   if (!o) return;
 
-  // Очищаем предыдущий таймер перед открытием
-  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
 
   const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
   const c        = SC[o.status] || '#888';
@@ -1964,33 +1906,8 @@ window.openOrderModal = function (oid) {
             </svg>
           </div>
         </div>
-        <div class="booking-hero-title">Заказ забронирован!</div>
-        <div class="booking-hero-sub">Подтвердите заказ до истечения времени</div>
-
-        <!-- Таймер обратного отсчёта -->
-        <div class="booking-timer-ring normal" id="booking-timer-ring">
-          <svg class="booking-timer-svg" viewBox="0 0 120 120" fill="none">
-            <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
-            <circle class="booking-timer-progress" id="booking-timer-progress"
-              cx="60" cy="60" r="52"
-              stroke="#fff" stroke-width="6"
-              stroke-linecap="round"
-              stroke-dasharray="326.7"
-              stroke-dashoffset="0"
-              transform="rotate(-90 60 60)"/>
-          </svg>
-          <div class="booking-timer-inner">
-            <div class="booking-timer-label">осталось</div>
-            <div class="booking-timer-display" id="booking-timer-display">10:00</div>
-            <div class="booking-timer-unit">мин</div>
-          </div>
-        </div>
-
-        <!-- Предупреждение об истечении -->
-        <div class="booking-expired-note" id="booking-expired-note" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Время бронирования истекло
-        </div>
+        <div class="booking-hero-title">Заказ оформлен!</div>
+        <div class="booking-hero-sub">Оплатите заказ удобным способом</div>
       </div>
 
       <!-- ── Детали заказа ── -->
@@ -2062,12 +1979,7 @@ window.openOrderModal = function (oid) {
 
     document.getElementById('order-modal-bg').classList.add('open');
 
-    // Запускаем таймер
-    const reservedUntil = o.reservedUntil instanceof Date
-      ? o.reservedUntil
-      : (o.reservedUntil?.toDate?.() ?? new Date(Date.now() + BOOKING_DURATION_MS));
-    _startBookingCountdown(reservedUntil);
-    _startTimerProgressAnimation(reservedUntil);
+
     return; // выходим — не показываем обычный UI
   }
 
@@ -2156,35 +2068,10 @@ window.openOrderModal = function (oid) {
 
 window.closeOrderModal = function (e) {
   if (e && e.target !== document.getElementById('order-modal-bg')) return;
-  if (_bookingTimerInterval) { clearInterval(_bookingTimerInterval); _bookingTimerInterval = null; }
   document.getElementById('order-modal-bg').classList.remove('open');
 };
 
-/** Анимация прогресса круговой шкалы таймера */
-function _startTimerProgressAnimation(reservedUntil) {
-  const endMs   = reservedUntil instanceof Date
-    ? reservedUntil.getTime()
-    : (reservedUntil?.toDate?.()?.getTime?.() ?? (Date.now() + BOOKING_DURATION_MS));
-  const startMs = endMs - BOOKING_DURATION_MS;
-  const total   = endMs - startMs;
-  const circ    = 326.7; // 2 * π * 52
 
-  const animTick = () => {
-    const el = document.getElementById('booking-timer-progress');
-    if (!el) return;
-    const rem  = Math.max(0, endMs - Date.now());
-    const frac = rem / total;
-    el.style.strokeDashoffset = String(circ * (1 - frac));
-  };
-  animTick();
-  // обновляем каждые 200мс для плавной анимации
-  const animId = setInterval(() => {
-    const el = document.getElementById('booking-timer-progress');
-    if (!el) { clearInterval(animId); return; }
-    animTick();
-    if (endMs - Date.now() <= 0) clearInterval(animId);
-  }, 200);
-}
 
 window.viewOrderStatus = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
 window.trackO          = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
