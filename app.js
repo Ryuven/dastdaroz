@@ -67,6 +67,7 @@ let searchQ          = '';
 let homeSearchQ      = '';
 let activeOid        = null;
 let unsubLive        = null;
+let unsubBooked      = null;
 let currentOTab      = 'all';
 let activeStore      = null;
 let storeCatFilter   = 'all';
@@ -1555,6 +1556,7 @@ window.doCheckout = async function () {
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
 
     toast('Заказ забронирован! 🔒 У вас 10 минут', 'ok');
+    listenBooked(ref.id);
 
     // Сразу открываем модалку бронирования
     setTimeout(() => openOrderModal(ref.id), 350);
@@ -2311,6 +2313,37 @@ function listenLive(oid, col = 'dastdarozOrders') {
   });
 }
 
+
+// ─── Слушатель bookedOrders (для реакции на оплату/отмену) ──
+function listenBooked(oid) {
+  if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+  unsubBooked = onSnapshot(doc(db, 'bookedOrders', oid), async snap => {
+    if (!snap.exists()) {
+      // Документ удалён — значит оплата прошла, callback переместил заказ
+      if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+      toast('Оплата прошла успешно! ✅', 'ok');
+      await loadOrders();
+      renderOrders(); renderOrdersBadge();
+      return;
+    }
+    const o   = { id: snap.id, ...snap.data(), _col: 'bookedOrders' };
+    const idx = orders.findIndex(x => x.id === oid);
+    if (idx >= 0) orders[idx] = o; else orders.unshift(o);
+    renderOrders(); renderOrdersBadge(); renderLiveBanner();
+
+    // Если модалка открыта — обновляем её
+    const modalBg = document.getElementById('order-modal-bg');
+    if (modalBg?.classList.contains('open') && activeOid === oid) {
+      openOrderModal(oid);
+    }
+
+    // Заказ отменён (оплата не прошла или истёк таймер)
+    if (['cancelled', 'failed'].includes(o.status)) {
+      if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+      toast('Оплата не прошла. Заказ отменён.', 'err');
+    }
+  });
+}
 
 // ─── 16. Статус заказа + Leaflet карта ───────────────────────
 let _trackMap          = null;
@@ -3231,6 +3264,7 @@ window.openAlifPaySheet = async function () {
     });
     const data = await r.json();
     if (!r.ok || !data.paymentUrl) throw new Error(data.error || 'Ошибка платежа');
+    listenBooked(activeOid);
     window.location.href = data.paymentUrl;
   } catch (err) {
     toast('Ошибка: ' + err.message, 'err');
