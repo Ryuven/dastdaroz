@@ -2088,56 +2088,74 @@ window.openOrderModal = function (oid) {
 
   document.getElementById('order-modal-title').textContent = `Заказ ${num}`;
   document.getElementById('order-modal-body').innerHTML = `
-    <div style="margin:14px 0 4px">
-      <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-        Посмотреть статус заказа
-      </button>
+
+    <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 3px 14px var(--acc-shadow)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Посмотреть статус заказа
+    </button>
+
+    <div class="booking-order-card">
+      <div class="booking-order-header">
+        <div class="booking-order-num">Заказ ${num}</div>
+        <div class="booking-order-total">${o.total} TJS</div>
+      </div>
+
+      <div class="booking-items">
+        ${(o.items || []).map(i => `
+          <div class="booking-item">
+            <div class="booking-item-name">${escHtml(i.name)}</div>
+            <div class="booking-item-right">
+              <span class="booking-item-qty">×${i.quantity}</span>
+              <span class="booking-item-price">${i.price * i.quantity} TJS</span>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="booking-divider"></div>
+
+      <div class="booking-totals">
+        <div class="booking-total-row"><span>Товары</span><span>${sub} TJS</span></div>
+        <div class="booking-total-row"><span>Доставка</span><span>${delivery > 0 ? delivery : DFEE} TJS</span></div>
+      </div>
+
+      <div class="booking-divider"></div>
+
+      <div class="booking-delivery-info">
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Адрес</span>
+          <span class="booking-delivery-val">${escHtml(o.address || '—')}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Оплата</span>
+          <span class="booking-delivery-val">${pay}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Курьер</span>
+          <span class="booking-delivery-val">${o.courierName || 'Назначается…'}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Время</span>
+          <span class="booking-delivery-val">${fmtDate(o.createdAt)}</span>
+        </div>
+        ${o.comment ? `<div class="booking-delivery-row">
+          <span class="booking-delivery-label">Комментарий</span>
+          <span class="booking-delivery-val">${escHtml(o.comment)}</span>
+        </div>` : ''}
+      </div>
+
+      <div class="booking-divider"></div>
+
+      <div class="booking-total-row booking-total-final">
+        <span>Итого</span>
+        <span class="booking-total-final-sum">${o.total} TJS</span>
+      </div>
     </div>
-    <div class="receipt">
-      <div class="receipt-top">
-        <div class="receipt-brand">dastdaroz Delivery</div>
-        <div class="receipt-order-num">Заказ ${num}</div>
-        <div class="receipt-status-row">
-          <div class="receipt-status-dot" style="background:${c}"></div>
-          <div class="receipt-status-lbl">${l}</div>
-        </div>
-      </div>
-      <div class="receipt-body">
-        <div class="receipt-section">
-          <div class="receipt-section-title">Состав</div>
-          ${itemsHtml}
-        </div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-section">
-          <div class="receipt-total-row"><span>Товары</span><span>${sub} TJS</span></div>
-          <div class="receipt-total-row"><span>Доставка</span><span>${delivery > 0 ? delivery : DFEE} TJS</span></div>
-          <div class="receipt-divider" style="margin:8px 0"></div>
-          <div class="receipt-total-row big"><span>Итого</span><span>${o.total} TJS</span></div>
-        </div>
-        <div class="receipt-section">
-          <div class="receipt-section-title">Информация</div>
-          <div class="receipt-info-grid">
-            <div class="receipt-info-item"><div class="receipt-info-label">Адрес</div><div class="receipt-info-val">${o.address || '—'}</div></div>
-            <div class="receipt-info-item"><div class="receipt-info-label">Оплата</div><div class="receipt-info-val">${pay}</div></div>
-            <div class="receipt-info-item"><div class="receipt-info-label">Курьер</div><div class="receipt-info-val">${o.courierName || 'Назначается…'}</div></div>
-            <div class="receipt-info-item"><div class="receipt-info-label">Время</div><div class="receipt-info-val">${fmtDate(o.createdAt)}</div></div>
-          </div>
-          ${o.comment ? `<div class="receipt-info-item" style="margin-top:10px"><div class="receipt-info-label">Комментарий</div><div class="receipt-info-val">${o.comment}</div></div>` : ''}
-        </div>
-        <div class="receipt-qr-wrap">
-          <div class="receipt-qr"><img src="${qrUrl}" alt="QR" loading="lazy"></div>
-          <div class="receipt-qr-hint">Код · GAL-${o.id.slice(-8).toUpperCase()}</div>
-        </div>
-      </div>
-      <div class="receipt-footer">
-        <div class="receipt-footer-brand">dastdaroz Delivery</div>
-        <div class="receipt-footer-ts">${fmtDate(o.createdAt)}</div>
-      </div>
-    </div>
+
     ${['pending','confirmed'].includes(o.status) ? `
-    <div style="margin-top:4px;margin-bottom:8px">
-      <button class="btn-sm danger" style="width:100%;padding:10px;font-size:.64rem" onclick="cancelO('${o.id}');closeOrderModal()">Отменить заказ</button>
-    </div>` : ''}`;
+    <button class="booking-btn-cancel" style="margin-top:8px" onclick="cancelO('${o.id}');closeOrderModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Отменить заказ
+    </button>` : ''}`;
 
   _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
   goPage('order-detail');
