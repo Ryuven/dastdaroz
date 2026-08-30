@@ -1951,6 +1951,16 @@ select.addr-inp{cursor:pointer}
       </div><!-- /prof-user-section -->
 </div>
 
+    <div class="page" id="page-order-detail">
+      <div class="od-header">
+        <button class="od-back" onclick="closeOrderModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="od-title" id="order-modal-title"></div>
+      </div>
+      <div class="od-body" id="order-modal-body"></div>
+    </div>
+
   </div><!-- /pages -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -1975,15 +1985,7 @@ select.addr-inp{cursor:pointer}
 <script type="module" src="./app.js"></script>
 
 <!-- ORDER DETAIL MODAL -->
-<div class="page" id="page-order-detail">
-  <div class="od-header">
-    <button class="od-back" onclick="closeOrderModal()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    </button>
-    <div class="od-title" id="order-modal-title"></div>
-  </div>
-  <div class="od-body" id="order-modal-body"></div>
-</div>
+
 
 <!-- CHAT MODAL (чат клиент ↔ курьер) -->
 <div class="chat-modal-bg" id="chat-modal-bg" onclick="if(event.target===this)closeChat()">
