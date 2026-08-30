@@ -1126,7 +1126,7 @@ function renderPC(p) {
       <div class="pc-name">${p.name}</div>
       <div class="pc-desc">${p.description || ''}</div>
       <div class="pc-footer">
-        <div class="pc-price">${p.price}<span> см</span></div>
+        <div class="pc-price">${p.price}<span> TJS</span></div>
         ${controls}
       </div>
     </div>
@@ -1201,7 +1201,7 @@ function renderProdModal(p) {
            <button class="pm-addrow-side" onclick="pmMinus('${p.id}')">−</button>
            <div class="pm-addrow-mid">
              <span class="pm-addrow-num" id="pm-qty-${p.id}">${qty}</span>
-             <span class="pm-addrow-price">${p.price * qty} см</span>
+             <span class="pm-addrow-price">${p.price * qty} TJS</span>
            </div>
            <button class="pm-addrow-side" onclick="pmPlus('${p.id}')">+</button>
          </div>`
@@ -1218,7 +1218,7 @@ function renderProdModal(p) {
     </div>
     <div class="pm-body">
       <div class="pm-name">${p.name}</div>
-      <div class="pm-price-row"><span class="pm-price">${p.price}</span><span class="pm-price-unit">сом</span></div>
+      <div class="pm-price-row"><span class="pm-price">${p.price}</span><span class="pm-price-unit">TJS</span></div>
       ${p.description ? `<div class="pm-desc">${p.description}</div>` : ''}
       ${chipsHtml}
       ${buyHtml}
@@ -1236,7 +1236,7 @@ window.pmPlus  = async function (pid) {
   if (qEl) {
     qEl.textContent = qty;
     const priceEl = document.querySelector('.pm-addrow-price');
-    if (priceEl && p) priceEl.textContent = `${p.price * qty} см`;
+    if (priceEl && p) priceEl.textContent = `${p.price * qty} TJS`;
   } else if (p) { renderProdModal(p); }
 };
 window.pmMinus = async function (pid) {
@@ -1248,7 +1248,7 @@ window.pmMinus = async function (pid) {
   if (qEl) {
     qEl.textContent = qty;
     const priceEl = document.querySelector('.pm-addrow-price');
-    if (priceEl && p) priceEl.textContent = `${p.price * qty} см`;
+    if (priceEl && p) priceEl.textContent = `${p.price * qty} TJS`;
   } else if (p) { renderProdModal(p); }
 };
 
@@ -1337,7 +1337,7 @@ function renderSD(q) {
     return `<div class="srd-item" onclick="pickSD('${p.id}')">
       <div class="srd-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : ic.svg}</div>
       <div class="srd-info"><div class="srd-name">${p.name}</div><div class="srd-cat">${catName(p.categoryId)}</div></div>
-      <div class="srd-price">${p.price} см</div>
+      <div class="srd-price">${p.price} TJS</div>
     </div>`;
   }).join('');
   dd.classList.add('open');
@@ -1459,7 +1459,7 @@ function renderCart() {
            </button>`;
       return `<div class="ci">
         <div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div>
-        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price * i.quantity} см</div></div>
+        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price * i.quantity} TJS</div></div>
         <div class="ci-stepper">
           ${leftBtn}
           <span class="ci-stepper-val">${i.quantity}</span>
@@ -1474,9 +1474,9 @@ function renderCart() {
 
   const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
   const tot = sub + (cart.length ? DFEE : 0);
-  const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' см';
-  const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' см' : '0 см';
-  const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' см';
+  const ci  = document.getElementById('cs-items');        if (ci) ci.textContent = sub + ' TJS';
+  const cd  = document.getElementById('cs-del');          if (cd) cd.textContent = cart.length ? DFEE + ' TJS' : '0 TJS';
+  const ct  = document.getElementById('cs-total');        if (ct) ct.textContent = tot + ' TJS';
 
   // Список товаров в карточке
   const csList = document.getElementById('cs-items-list');
@@ -1486,7 +1486,7 @@ function renderCart() {
         <div class="booking-item-name">${escHtml(i.name)}</div>
         <div class="booking-item-right">
           <span class="booking-item-qty">×${i.quantity}</span>
-          <span class="booking-item-price">${i.price * i.quantity} см</span>
+          <span class="booking-item-price">${i.price * i.quantity} TJS</span>
         </div>
       </div>`).join('');
   }
@@ -1867,7 +1867,7 @@ function renderBookingsSheet() {
       <div class="oc-items">${items}</div>
       <div class="oc-footer">
         <div>
-          <div class="oc-total">${o.total} см</div>
+          <div class="oc-total">${o.total} TJS</div>
           <div class="oc-meta" style="color:var(--teal)">Ожидает оплаты</div>
         </div>
         <div class="oc-actions">
@@ -1899,7 +1899,7 @@ function renderOrders() {
       </div>
       <div class="oc-items">${items}</div>
       <div class="oc-footer">
-        <div><div class="oc-total">${o.total} см</div><div class="oc-meta">${fmtDate(o.createdAt)} · ${o.address || ''}</div></div>
+        <div><div class="oc-total">${o.total} TJS</div><div class="oc-meta">${fmtDate(o.createdAt)} · ${o.address || ''}</div></div>
         <div class="oc-actions" onclick="event.stopPropagation()">
           ${isActive ? `<div style="width:7px;height:7px;border-radius:50%;background:${c};animation:rpulse 2s infinite;flex-shrink:0"></div>` : ''}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -1942,7 +1942,7 @@ window.openOrderModal = function (oid) {
       `<div class="receipt-row">
         <span class="receipt-row-name">${escHtml(i.name)}</span>
         <span class="receipt-row-qty">×${i.quantity}</span>
-        <span class="receipt-row-price">${i.price * i.quantity} см</span>
+        <span class="receipt-row-price">${i.price * i.quantity} TJS</span>
       </div>`
     ).join('');
 
@@ -1974,7 +1974,7 @@ window.openOrderModal = function (oid) {
               <div class="booking-item-name">${escHtml(i.name)}</div>
               <div class="booking-item-right">
                 <span class="booking-item-qty">×${i.quantity}</span>
-                <span class="booking-item-price">${i.price * i.quantity} см</span>
+                <span class="booking-item-price">${i.price * i.quantity} TJS</span>
               </div>
             </div>`).join('')}
         </div>
@@ -1986,11 +1986,11 @@ window.openOrderModal = function (oid) {
         <div class="booking-totals">
           <div class="booking-total-row">
             <span>Товары</span>
-            <span>${sub} см</span>
+            <span>${sub} TJS</span>
           </div>
           <div class="booking-total-row">
             <span>Доставка</span>
-            <span>${bFee} см</span>
+            <span>${bFee} TJS</span>
           </div>
         </div>
 
@@ -2027,7 +2027,7 @@ window.openOrderModal = function (oid) {
         <!-- 7. Итог -->
         <div class="booking-total-row booking-total-final">
           <span>Итог</span>
-          <span class="booking-total-final-sum">${o.total} см</span>
+          <span class="booking-total-final-sum">${o.total} TJS</span>
         </div>
 
       </div>
@@ -2080,7 +2080,7 @@ window.openOrderModal = function (oid) {
     `<div class="receipt-row">
       <span class="receipt-row-name">${i.name}</span>
       <span class="receipt-row-qty">×${i.quantity}</span>
-      <span class="receipt-row-price">${i.price * i.quantity} см</span>
+      <span class="receipt-row-price">${i.price * i.quantity} TJS</span>
     </div>`
   ).join('');
 
@@ -2107,10 +2107,10 @@ window.openOrderModal = function (oid) {
         </div>
         <div class="receipt-divider"></div>
         <div class="receipt-section">
-          <div class="receipt-total-row"><span>Товары</span><span>${sub} см</span></div>
-          <div class="receipt-total-row"><span>Доставка</span><span>${delivery > 0 ? delivery : DFEE} см</span></div>
+          <div class="receipt-total-row"><span>Товары</span><span>${sub} TJS</span></div>
+          <div class="receipt-total-row"><span>Доставка</span><span>${delivery > 0 ? delivery : DFEE} TJS</span></div>
           <div class="receipt-divider" style="margin:8px 0"></div>
-          <div class="receipt-total-row big"><span>Итого</span><span>${o.total} см</span></div>
+          <div class="receipt-total-row big"><span>Итого</span><span>${o.total} TJS</span></div>
         </div>
         <div class="receipt-section">
           <div class="receipt-section-title">Информация</div>
@@ -2178,7 +2178,7 @@ function renderLiveBanner() {
       <div class="live-booking-ico">🔒</div>
       <div class="live-info">
         <div class="live-lbl" style="color:var(--teal)">Бронь активна</div>
-        <div class="live-txt">Заказ ${num} · ${live.total} см · нажмите для подтверждения</div>
+        <div class="live-txt">Заказ ${num} · ${live.total} TJS · нажмите для подтверждения</div>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
     </div>`;
@@ -2189,7 +2189,7 @@ function renderLiveBanner() {
     <div class="live-pulse"></div>
     <div class="live-info">
       <div class="live-lbl">Активный заказ</div>
-      <div class="live-txt">Заказ ${num} · ${SL[live.status]} · ${live.total} см</div>
+      <div class="live-txt">Заказ ${num} · ${SL[live.status]} · ${live.total} TJS</div>
     </div>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
   </div>`;
@@ -2438,13 +2438,13 @@ function renderStatusPage() {
     ${(o.items || []).map(i =>
       `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b0);font-size:.75rem">
         <span>${escHtml(i.name)} <span style="color:var(--tx3)">×${i.quantity}</span></span>
-        <span style="font-weight:600">${i.price * i.quantity} см</span>
+        <span style="font-weight:600">${i.price * i.quantity} TJS</span>
       </div>`
     ).join('')}
-    <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Доставка</span><span>${DFEE} см</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;padding:8px 0;color:var(--tx3)"><span>Доставка</span><span>${DFEE} TJS</span></div>
     <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--b0)">
       <span style="font-weight:700;font-size:.8rem">Итого</span>
-      <span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} см</span>
+      <span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} TJS</span>
     </div>
     ${['pending','confirmed'].includes(o.status) ? `
     <div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Отменить заказ</button></div>` : ''}

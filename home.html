@@ -170,20 +170,20 @@ a{color:inherit;text-decoration:none}
 .sh-link:hover{color:var(--acc)}
 
 /* ── SEARCH BOX on home ── */
-.home-search-wrap{margin-bottom:10px;display:flex;align-items:stretch;gap:8px;position:relative}
-.search-box{display:flex;align-items:center;gap:10px;background:var(--accd);border:1.5px solid var(--accg);border-radius:12px;padding:12px 16px;transition:border-color .18s,background .15s;flex:1;position:relative}
+.home-search-wrap{margin-bottom:20px;display:flex;align-items:stretch;gap:8px;position:relative}
+.search-box{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--b1);border-radius:12px;padding:12px 16px;transition:border-color .18s,background .15s;flex:1;position:relative;box-shadow:var(--shadow)}
 .search-box:focus-within{border-style:solid;border-color:var(--acc)}
-.search-box svg{color:var(--acc);flex-shrink:0;transition:color .15s}
+.search-box svg{color:var(--tx3);flex-shrink:0;transition:color .15s}
 .search-box:focus-within svg.si{color:var(--acc)}
 .search-box input{background:none;border:none;outline:none;color:var(--tx);font-family:var(--fs);font-size:.84rem;width:100%;font-weight:500}
-.search-box input::placeholder{color:var(--acc);opacity:.6}
+.search-box input::placeholder{color:var(--tx3);opacity:.8}
 .search-clear{background:none;border:none;cursor:pointer;color:var(--acc);width:24px;height:24px;display:none;align-items:center;justify-content:center;flex-shrink:0;transition:color .13s;padding:0;opacity:.7}
 .search-clear:hover{opacity:1}
 .search-clear.show{display:flex}
 .search-dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;box-shadow:var(--shadow-md);z-index:300;overflow:hidden;display:none;animation:pgIn .18s var(--ease) both}
 .search-dropdown.open{display:block}
-.home-fav-btn{width:44px;flex-shrink:0;background:var(--accd);border:1.5px solid var(--accg);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,border-color .15s;color:var(--acc)}
-.home-fav-btn:hover{background:var(--accg)}
+.home-fav-btn{width:44px;flex-shrink:0;background:#fff;border:1.5px solid var(--b1);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,border-color .15s;color:var(--tx3);box-shadow:var(--shadow)}
+.home-fav-btn:hover{background:var(--s2);border-color:var(--accg);color:var(--acc)}
 .addr-banner{
   display:flex;align-items:center;gap:10px;
   background:var(--accd);border:1.5px solid var(--accg);
@@ -1489,7 +1489,7 @@ select.addr-inp{cursor:pointer}
 
       <!-- STORES SECTION -->
       <div class="stores-section" id="stores-section">
-        <div class="sh" style="margin-bottom:10px">
+        <div class="sh" style="margin-bottom:16px">
           <div><div class="sh-tag">Магазины</div><div class="sh-title">Список <em>магазинов</em></div></div>
         </div>
         <div class="stores-scroll">
@@ -1589,8 +1589,8 @@ select.addr-inp{cursor:pointer}
 
             <!-- Товары + Доставка -->
             <div class="booking-totals">
-              <div class="booking-total-row"><span>Товары</span><span id="cs-items">0 см</span></div>
-              <div class="booking-total-row"><span>Доставка</span><span id="cs-del">7 см</span></div>
+              <div class="booking-total-row"><span>Товары</span><span id="cs-items">0 TJS</span></div>
+              <div class="booking-total-row"><span>Доставка</span><span id="cs-del">7 TJS</span></div>
             </div>
 
             <div class="booking-divider"></div>
@@ -1624,7 +1624,7 @@ select.addr-inp{cursor:pointer}
             <!-- Итог -->
             <div class="booking-total-row booking-total-final">
               <span>Итог</span>
-              <span class="booking-total-final-sum" id="cs-total">7 см</span>
+              <span class="booking-total-final-sum" id="cs-total">7 TJS</span>
             </div>
           </div>
 
@@ -1782,7 +1782,7 @@ select.addr-inp{cursor:pointer}
           </div>
           <div class="p-stats" style="margin:0 -18px;border-radius:0;border-top:1.5px solid var(--b0)">
             <div class="p-stat"><div class="p-stat-val" id="ps-orders">0</div><div class="p-stat-lbl">Заказы</div></div>
-            <div class="p-stat" style="border-left:1px solid var(--b0)"><div class="p-stat-val" id="ps-spent">0</div><div class="p-stat-lbl">сомони потрачено</div></div>
+            <div class="p-stat" style="border-left:1px solid var(--b0)"><div class="p-stat-val" id="ps-spent">0</div><div class="p-stat-lbl">TJS потрачено</div></div>
           </div>
         </div>
 
