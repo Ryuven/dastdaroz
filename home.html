@@ -605,10 +605,6 @@ select.addr-inp{cursor:pointer}
   .cart-layout{grid-template-columns:1fr}
   
   .ci-img{width:40px;height:40px}
-  .ci-total{min-width:36px;font-size:.75rem}
-  .qty-btn{width:22px;height:28px;font-size:.8rem}
-  .qty-val{min-width:18px;height:28px;line-height:22px;font-size:.72rem}
-  .ci-del svg{width:13px;height:13px}
   #cart-list{overflow:hidden;max-width:100%;width:100%}
   .pg2{grid-template-columns:1fr}
   .cat-panels{grid-template-columns:repeat(2,1fr)}
@@ -1194,7 +1190,7 @@ select.addr-inp{cursor:pointer}
 .ci{
   background:var(--s1);border:1.5px solid var(--b0);
   border-radius:14px;padding:11px 13px;
-  display:grid;grid-template-columns:46px minmax(0,1fr) auto auto auto;
+  display:grid;grid-template-columns:46px minmax(0,1fr) auto;
   align-items:center;gap:9px;margin-bottom:7px;
   transition:border-color var(--tf),box-shadow var(--tf),transform .15s var(--spring);
   box-shadow:var(--shadow);overflow:hidden;box-sizing:border-box;width:100%;max-width:100%;
@@ -1206,6 +1202,13 @@ select.addr-inp{cursor:pointer}
   justify-content:center;flex-shrink:0;overflow:hidden;
   border:1px solid var(--b0);
 }
+
+/* ── Stepper ── */
+.ci-stepper{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--b0);border-radius:99px;padding:3px;gap:1px;flex-shrink:0}
+.ci-stepper-btn{width:30px;height:30px;border-radius:50%;background:var(--s1);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .12s;color:var(--tx2)}
+.ci-stepper-btn:hover{background:var(--s3)}
+.ci-stepper-btn:active{transform:scale(.9)}
+.ci-stepper-val{min-width:26px;text-align:center;font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx)}
 
 /* ── Пустая корзина — карточка в стиле .ci ── */
 .ci-empty{

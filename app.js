@@ -1446,18 +1446,23 @@ function renderCart() {
   } else {
     el.innerHTML = cart.map(i => {
       const ic = catIcon(i.productId, '').svg;
+      const leftBtn = i.quantity === 1
+        ? `<button class="ci-stepper-btn" onclick="event.stopPropagation();removeCI('${i.productId}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+           </button>`
+        : `<button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',-1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+           </button>`;
       return `<div class="ci">
         <div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div>
-        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price} см / шт.</div></div>
-        <div class="qty">
-          <button class="qty-btn" onclick="updateQty('${i.productId}',-1)">−</button>
-          <div class="qty-val">${i.quantity}</div>
-          <button class="qty-btn" onclick="updateQty('${i.productId}',1)">+</button>
+        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price * i.quantity} см</div></div>
+        <div class="ci-stepper">
+          ${leftBtn}
+          <span class="ci-stepper-val">${i.quantity}</span>
+          <button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
         </div>
-        <div class="ci-total">${i.price * i.quantity} см</div>
-        <button class="ci-del" onclick="removeCI('${i.productId}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        </button>
       </div>`;
     }).join('');
     _setCartFooter(true);
