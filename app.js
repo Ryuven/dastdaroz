@@ -633,6 +633,8 @@ function renderSB() {
   document.getElementById('sb-uname').textContent = displayStr;
   const av = document.getElementById('sb-av');
   av.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
+  const mnAv = document.getElementById('mn-av');
+  if (mnAv) mnAv.innerHTML = UD?.avatarUrl ? `<img src="${UD.avatarUrl}" alt="">` : init;
 
   const adv = document.getElementById('sb-addr-val');
   if (UD?.address) {
@@ -657,6 +659,8 @@ function _renderGuestSB() {
 
   const av = document.getElementById('sb-av');
   if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  const mnAv = document.getElementById('mn-av');
+  if (mnAv) mnAv.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
   const adv = document.getElementById('sb-addr-val');
   if (adv) { adv.textContent = 'Войдите для оформления заказа'; adv.classList.add('empty'); }
