@@ -625,16 +625,11 @@ select.addr-inp{cursor:pointer}
 @media(min-width:1100px){.pg{grid-template-columns:repeat(4,1fr)}}
 @media(min-width:1400px){.pg{grid-template-columns:repeat(5,1fr)}}
 /* ── ORDER MODAL ── */
-.o-modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-.o-modal-bg.open{opacity:1;pointer-events:all}
-.o-modal{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:600px;height:100svh;max-height:100svh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s var(--ease)}
-.o-modal-bg.open .o-modal{transform:translateY(0)}
-.o-modal-drag{width:40px;height:4px;background:var(--b1);border-radius:99px;margin:10px auto 0}
-.o-modal-scroll{overflow-y:auto;flex:1;padding:0 20px 32px}
-.o-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;position:sticky;top:0;background:var(--s1);z-index:2;border-bottom:1px solid var(--b0)}
-.o-modal-title{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx)}
-.o-modal-close{width:30px;height:30px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);transition:all var(--tf)}
-.o-modal-close:hover{background:var(--s3);color:var(--tx)}
+.od-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--b0);background:var(--bg);position:sticky;top:0;z-index:10}
+.od-back{width:36px;height:36px;border:1.5px solid var(--b1);background:var(--s1);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--tx2);transition:background .15s}
+.od-back:hover{background:var(--s2)}
+.od-title{flex:1;font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);letter-spacing:-.02em}
+.od-body{padding:16px 16px 40px;overflow-y:auto}
 
 /* ═══ ЧАТ З КУРЬЕРОМ ═══════════════════════════════════════ */
 .chat-modal-bg{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -1980,17 +1975,14 @@ select.addr-inp{cursor:pointer}
 <script type="module" src="./app.js"></script>
 
 <!-- ORDER DETAIL MODAL -->
-<div class="o-modal-bg" id="order-modal-bg" onclick="closeOrderModal(event)">
-  <div class="o-modal" id="order-modal">
-    <div class="o-modal-drag"></div>
-    <div class="o-modal-head">
-      <div class="o-modal-title" id="order-modal-title">Фармоиш</div>
-      <button class="o-modal-close" onclick="closeOrderModal()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="o-modal-scroll" id="order-modal-body"></div>
+<div class="page" id="page-order-detail">
+  <div class="od-header">
+    <button class="od-back" onclick="closeOrderModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="od-title" id="order-modal-title"></div>
   </div>
+  <div class="od-body" id="order-modal-body"></div>
 </div>
 
 <!-- CHAT MODAL (чат клиент ↔ курьер) -->

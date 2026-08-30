@@ -504,6 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ─── 6. Навигация ─────────────────────────────────────────────
+let _odFromPage = 'orders';
+
 window.goPage = function (page) {
   if (GUEST && ['orders', 'status', 'cart'].includes(page)) {
     toast(page === 'cart'
@@ -523,12 +525,13 @@ window.goPage = function (page) {
     tb.innerHTML = 'dastdaroz <em>Delivery</em>';
   } else {
     tb.textContent = {
-      catalog: 'Каталог',
-      cart:    'Корзина',
-      orders:  'Мои заказы',
-      status:  'Статус заказа',
-      profile: 'Профиль',
-      store:   activeStore?.name || 'Магазин',
+      catalog:      'Каталог',
+      cart:         'Корзина',
+      orders:       'Мои заказы',
+      status:       'Статус заказа',
+      profile:      'Профиль',
+      store:        activeStore?.name || 'Магазин',
+      'order-detail': '',
     }[page] || 'dastdaroz';
   }
 
@@ -2056,9 +2059,8 @@ window.openOrderModal = function (oid) {
         </button>
       </div>`;
 
-    document.getElementById('order-modal-bg').classList.add('open');
-
-
+    _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
+    goPage('order-detail');
     return; // выходим — не показываем обычный UI
   }
 
@@ -2137,7 +2139,8 @@ window.openOrderModal = function (oid) {
       <button class="btn-sm danger" style="width:100%;padding:10px;font-size:.64rem" onclick="cancelO('${o.id}');closeOrderModal()">Отменить заказ</button>
     </div>` : ''}`;
 
-  document.getElementById('order-modal-bg').classList.add('open');
+  _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
+  goPage('order-detail');
   if (isActive && activeOid !== o.id) {
     activeOid        = o.id;
     activeCollection = o._col || 'dastdarozOrders';
@@ -2145,9 +2148,8 @@ window.openOrderModal = function (oid) {
   }
 };
 
-window.closeOrderModal = function (e) {
-  if (e && e.target !== document.getElementById('order-modal-bg')) return;
-  document.getElementById('order-modal-bg').classList.remove('open');
+window.closeOrderModal = function () {
+  goPage(_odFromPage || 'orders');
 };
 
 
@@ -2206,8 +2208,8 @@ function listenLive(oid, col = 'dastdarozOrders') {
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
     if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
 
-    const modalBg = document.getElementById('order-modal-bg');
-    if (modalBg?.classList.contains('open')) {
+    const odActive = document.getElementById('page-order-detail')?.classList.contains('active');
+    if (odActive) {
       const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
       if (document.getElementById('order-modal-title')?.textContent.includes(num.replace('#', ''))) {
         openOrderModal(oid);
@@ -2270,9 +2272,8 @@ function listenBooked(oid) {
     if (idx >= 0) orders[idx] = o; else orders.unshift(o);
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
 
-    // Если модалка открыта — обновляем её
-    const modalBg = document.getElementById('order-modal-bg');
-    if (modalBg?.classList.contains('open') && activeOid === oid) {
+    // Если страница заказа открыта — обновляем её
+    if (document.getElementById('page-order-detail')?.classList.contains('active') && activeOid === oid) {
       openOrderModal(oid);
     }
 
