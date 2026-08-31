@@ -170,7 +170,7 @@ a{color:inherit;text-decoration:none}
 .sh-link:hover{color:var(--acc)}
 
 /* ── SEARCH BOX on home ── */
-.home-search-wrap{margin-bottom:20px;display:flex;align-items:stretch;gap:8px;position:relative}
+.home-search-wrap{margin-bottom:10px;display:flex;align-items:stretch;gap:8px;position:relative}
 .search-box{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--b1);border-radius:12px;padding:12px 16px;transition:border-color .18s,background .15s;flex:1;position:relative;box-shadow:var(--shadow)}
 .search-box:focus-within{border-style:solid;border-color:var(--acc)}
 .search-box svg{color:var(--tx3);flex-shrink:0;transition:color .15s}
@@ -241,6 +241,13 @@ a{color:inherit;text-decoration:none}
 .cat.active{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 2px 10px var(--acc-shadow)}
 
 /* ── PRODUCT GRID ── */
+/* ── CATALOG FILTER ── */
+.cat-filter-wrap{margin:0 -22px 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cat-filter-wrap::-webkit-scrollbar{display:none}
+.cat-filter-scroll{display:flex;gap:8px;padding:0 22px 4px;width:max-content}
+.cat-filter-pill{padding:7px 16px;border-radius:99px;background:var(--s1);border:1.5px solid var(--b1);font-family:var(--fd);font-weight:700;font-size:.72rem;color:var(--tx3);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.cat-filter-pill:hover{border-color:var(--accg);color:var(--acc);background:var(--accd)}
+.cat-filter-pill.active{background:var(--accd);border-color:var(--accg);color:var(--acc)}
 .pg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .pc{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:border-color var(--tf),transform var(--t),box-shadow var(--t);box-shadow:var(--shadow)}
 .pc:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:var(--shadow-md)}
@@ -593,13 +600,12 @@ select.addr-inp{cursor:pointer}
   .page{padding:14px 14px calc(var(--nb) + var(--safe-b) + 14px)}
   .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-top:1.5px solid var(--b0);padding-bottom:var(--safe-b);height:calc(var(--nb) + var(--safe-b));box-shadow:0 -4px 20px rgba(0,0,0,.07)}
   .mn-inner{display:flex;align-items:stretch;width:100%}
-  .mn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:10px 4px;color:var(--tx3);border:none;background:none;font-family:var(--fs);position:relative;transition:color var(--tf)}
+  .mn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;padding:12px 4px;color:var(--tx3);border:none;background:none;font-family:var(--fs);position:relative;transition:color var(--tf)}
   .mn-item svg{transition:transform .2s var(--spring)}
   .mn-item.active{color:var(--acc)}
-  .mn-item.active svg{transform:scale(1.12)}
+  .mn-item.active svg{transform:scale(1.15)}
   .mn-item::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2.5px;background:var(--acc);border-radius:0 0 3px 3px;transform:scaleX(0);transition:transform .25s var(--spring)}
   .mn-item.active::before{transform:scaleX(1)}
-  .mn-lbl{font-size:.5rem;font-weight:700;letter-spacing:.03em}
   .mn-badge{position:absolute;top:7px;right:calc(50% - 16px);min-width:15px;height:15px;padding:0 3px;background:var(--acc);color:#fff;font-size:.46rem;font-weight:700;border-radius:99px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
   .mn-av{width:34px;height:34px;border-radius:50%;background:var(--accd);border:none;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:900;font-size:.72rem;color:var(--acc);transition:transform .2s var(--spring);flex-shrink:0}
   .mn-av img{width:100%;height:100%;object-fit:cover}
@@ -1485,7 +1491,7 @@ select.addr-inp{cursor:pointer}
 
       <!-- STORES SECTION -->
       <div class="stores-section" id="stores-section">
-        <div class="sh" style="margin-bottom:16px">
+        <div class="sh">
           <div><div class="sh-tag">Магазины</div><div class="sh-title">Список <em>магазинов</em></div></div>
         </div>
         <div class="stores-scroll">
@@ -1530,16 +1536,18 @@ select.addr-inp{cursor:pointer}
 
     <!-- CATALOG -->
     <div class="page" id="page-catalog">
-      <div class="sh"><div><div class="sh-tag">Общее</div><div class="sh-title">Каталог</div></div></div>
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px 24px;text-align:center">
-        <div style="width:64px;height:64px;border-radius:18px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.7">
-            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-          </svg>
+      <div class="cat-filter-wrap">
+        <div class="cat-filter-scroll" id="catalog-cats">
+          <button class="cat-filter-pill active" onclick="filterCat('all')">Все</button>
         </div>
-        <div style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--tx);letter-spacing:-.02em">Скоро</div>
-        <div style="font-size:.78rem;color:var(--tx3);line-height:1.65;max-width:210px">Общий каталог находится в разработке. Следите за обновлениями!</div>
+      </div>
+      <div class="pg" id="cat-prods">
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:70%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:60%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:75%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:65%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:72%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:68%;margin-top:5px"></div></div></div>
       </div>
     </div>
 
@@ -1970,10 +1978,10 @@ select.addr-inp{cursor:pointer}
 <!-- Мобильная навигация -->
 <nav class="mob-nav" id="mob-nav">
   <div class="mn-inner">
-    <button class="mn-item active" data-page="home"    onclick="goPage('home')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span class="mn-lbl">Главная</span></button>
-    <button class="mn-item"        data-page="catalog" onclick="goPage('catalog')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="mn-lbl">Каталог</span></button>
-    <button class="mn-item" data-page="cart" onclick="goPage('cart')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><span class="mn-lbl">Корзина</span><span class="mn-badge" id="mob-cart-b" style="display:none">0</span></button>
-    <button class="mn-item" data-page="orders" onclick="goPage('orders')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span class="mn-lbl">Заказы</span><span class="mn-badge" id="mob-ord-b" style="display:none">0</span></button>
+    <button class="mn-item active" data-page="home"    onclick="goPage('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></button>
+    <button class="mn-item"        data-page="catalog" onclick="goPage('catalog')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+    <button class="mn-item" data-page="cart" onclick="goPage('cart')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><span class="mn-badge" id="mob-cart-b" style="display:none">0</span></button>
+    <button class="mn-item" data-page="orders" onclick="goPage('orders')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span class="mn-badge" id="mob-ord-b" style="display:none">0</span></button>
     <button class="mn-item" data-page="profile" onclick="goPage('profile')">
       <div class="mn-av" id="mn-av">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>

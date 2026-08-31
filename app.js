@@ -1295,11 +1295,23 @@ function renderHomeCats() {
       <div class="cat-chip-name">${c.name}</div>
     </button>`;
   }).join('');
+  renderCatalogCats();
+}
+
+function renderCatalogCats() {
+  const el = document.getElementById('catalog-cats');
+  if (!el) return;
+  const allBtn = `<button class="cat-filter-pill${catFilter === 'all' ? ' active' : ''}" onclick="filterCat('all')">Все</button>`;
+  const catBtns = cats.map(c =>
+    `<button class="cat-filter-pill${catFilter === c.id ? ' active' : ''}" onclick="filterCat('${c.id}')">${c.name}</button>`
+  ).join('');
+  el.innerHTML = allBtn + catBtns;
 }
 
 window.filterCat = function (id) {
   catFilter = id;
   renderCatalog();
+  renderCatalogCats();
 };
 
 
@@ -1353,6 +1365,7 @@ window.pickSD = function (pid) {
   catFilter = 'all';
   searchQ   = prods.find(p => p.id === pid)?.name || '';
   renderCatalog();
+  renderCatalogCats();
   goPage('catalog');
   searchQ = '';
 };
