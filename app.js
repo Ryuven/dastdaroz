@@ -506,12 +506,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── 6. Навигация ─────────────────────────────────────────────
 let _odFromPage = 'orders';
 
+let _authFromPage = 'home';
+window.goAuthBack = function () { goPage(_authFromPage || 'home'); };
+
 window.goPage = function (page) {
-  if (GUEST && ['orders', 'status', 'cart'].includes(page)) {
-    toast(page === 'cart'
-      ? 'Войдите, чтобы использовать корзину'
-      : 'Войдите, чтобы видеть заказы', 'info');
-    return;
+  if (GUEST && ['orders', 'status', 'cart', 'profile'].includes(page)) {
+    _authFromPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'home';
+    page = 'auth';
   }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1952,15 +1953,7 @@ window.openOrderModal = function (oid) {
 
   // ════ БРОНИРОВАНИЕ — специальный UI ════
   if (o.status === 'reserved') {
-    document.getElementById('order-modal-title').textContent = `Бронь заказа ${num}`;
-
-    const itemsHtml = (o.items || []).map(i =>
-      `<div class="receipt-row">
-        <span class="receipt-row-name">${escHtml(i.name)}</span>
-        <span class="receipt-row-qty">×${i.quantity}</span>
-        <span class="receipt-row-price">${i.price * i.quantity} TJS</span>
-      </div>`
-    ).join('');
+    document.getElementById('booking-modal-title').textContent = `Бронь заказа ${num}`;
 
     const svcObj  = deliveryServices.find(s => s.id === o.deliveryService);
     const svcName = svcObj ? svcObj.name : (o.deliveryService || '—');
@@ -1969,7 +1962,7 @@ window.openOrderModal = function (oid) {
     const bName   = o.clientName  || '—';
     const bFee    = o.total - sub > 0 ? o.total - sub : DFEE;
 
-    document.getElementById('order-modal-body').innerHTML = `
+    document.getElementById('booking-modal-body').innerHTML = `
       <!-- ── Герой-блок бронирования ── -->
       <div class="booking-hero">
         <div class="booking-hero-glow"></div>
@@ -2073,8 +2066,8 @@ window.openOrderModal = function (oid) {
       </div>`;
 
     _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
-    goPage('order-detail');
-    return; // выходим — не показываем обычный UI
+    document.getElementById('booking-modal-bg').classList.add('open');
+    return;
   }
 
   const stepIcons = ['⏳','✅','👨‍🍳','🛵','🎉'];
@@ -2181,6 +2174,11 @@ window.openOrderModal = function (oid) {
 
 window.closeOrderModal = function () {
   goPage(_odFromPage || 'orders');
+};
+
+window.closeBookingModal = function (e) {
+  if (e && e.target !== document.getElementById('booking-modal-bg')) return;
+  document.getElementById('booking-modal-bg').classList.remove('open');
 };
 
 
@@ -2303,8 +2301,8 @@ function listenBooked(oid) {
     if (idx >= 0) orders[idx] = o; else orders.unshift(o);
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
 
-    // Если страница заказа открыта — обновляем её
-    if (document.getElementById('page-order-detail')?.classList.contains('active') && activeOid === oid) {
+    // Если шит бронирования открыт — обновляем его
+    if (document.getElementById('booking-modal-bg')?.classList.contains('open') && activeOid === oid) {
       openOrderModal(oid);
     }
 
@@ -2781,35 +2779,12 @@ function renderProfile() {
 }
 
 function renderGuestProfile() {
-  showProfContent();
   const av = document.getElementById('sb-av');
   if (av) av.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-
+  const mnAv = document.getElementById('mn-av');
+  if (mnAv) mnAv.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   const nm = document.getElementById('sb-uname');
   if (nm) nm.textContent = 'Гость';
-
-  const profUserSection = document.getElementById('prof-user-section');
-  if (profUserSection) {
-    profUserSection.innerHTML = `
-      <div style="max-width:400px;margin:24px auto 60px;text-align:center;padding:0 4px">
-        <div style="width:80px;height:80px;border-radius:50%;background:var(--accd);border:3px solid var(--accg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--acc)">👤</div>
-        <div style="font-family:var(--fd);font-weight:900;font-size:1.3rem;color:var(--tx);margin-bottom:8px">Гостевой режим</div>
-        <div style="font-size:.8rem;color:var(--tx3);line-height:1.6;margin-bottom:28px">Для просмотра профиля и истории заказов войдите или зарегистрируйтесь.</div>
-        <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:12px;color:#fff;font-size:.78rem;font-family:var(--fd);font-weight:800;padding:13px 32px;cursor:pointer;width:100%;max-width:260px">
-          Авторизоваться
-        </button>
-      </div>`;
-  }
-
-  const ordPage = document.getElementById('page-orders');
-  if (ordPage) {
-    ordPage.innerHTML = `<div style="text-align:center;padding:60px 20px">
-      <div style="font-size:3rem;margin-bottom:14px">📋</div>
-      <div style="font-family:var(--fd);font-weight:900;font-size:1.1rem;color:var(--tx);margin-bottom:8px">Заказы недоступны</div>
-      <div style="font-size:.76rem;color:var(--tx3);margin-bottom:24px">Войдите, чтобы увидеть историю заказов</div>
-      <button onclick="goLogin()" style="background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.74rem;font-family:var(--fs);font-weight:700;padding:10px 28px;cursor:pointer">Войти</button>
-    </div>`;
-  }
 }
 
 window.saveProfile = async function () {
