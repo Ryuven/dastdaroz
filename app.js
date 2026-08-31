@@ -234,8 +234,7 @@ function _initSheets() {
     </div>`;
 
   // ── Bookings (бронированные) ──────────────────────────────
-  Sheet.define({ id: 'bookings',       title: 'Бронированные',  zIndex: 700, onOpen: renderBookingsSheet });
-  Sheet.define({ id: 'booking-detail', title: 'Бронирование',   zIndex: 710 });
+  Sheet.define({ id: 'bookings', title: 'Бронированные', zIndex: 700, onOpen: renderBookingsSheet });
 
   // ── Support chat ────────────────────────────────────────────
   Sheet.define({ id: 'support', title: 'Чат с поддержкой', zIndex: 700 });
@@ -1963,7 +1962,7 @@ window.openOrderModal = function (oid) {
     const bName   = o.clientName  || '—';
     const bFee    = o.total - sub > 0 ? o.total - sub : DFEE;
 
-    Sheet.body('booking-detail').innerHTML = `
+    document.getElementById('booking-modal-body').innerHTML = `
       <!-- ── Герой-блок бронирования ── -->
       <div class="booking-hero">
         <div class="booking-hero-glow"></div>
@@ -2067,7 +2066,7 @@ window.openOrderModal = function (oid) {
       </div>`;
 
     _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
-    Sheet.open('booking-detail');
+    document.getElementById('booking-modal-bg').classList.add('open');
     return;
   }
 
@@ -2177,7 +2176,10 @@ window.closeOrderModal = function () {
   goPage(_odFromPage || 'orders');
 };
 
-window.closeBookingModal = function () { Sheet.close('booking-detail'); };
+window.closeBookingModal = function (e) {
+  if (e && e.target !== document.getElementById('booking-modal-bg')) return;
+  document.getElementById('booking-modal-bg').classList.remove('open');
+};
 
 
 
@@ -2300,7 +2302,7 @@ function listenBooked(oid) {
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
 
     // Если шит бронирования открыт — обновляем его
-    if (document.getElementById('bs-booking-detail')?.classList.contains('open') && activeOid === oid) {
+    if (document.getElementById('booking-modal-bg')?.classList.contains('open') && activeOid === oid) {
       openOrderModal(oid);
     }
 
