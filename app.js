@@ -1961,7 +1961,9 @@ window.openOrderModal = function (oid) {
     const bName   = o.clientName  || '—';
     const bFee    = o.total - sub > 0 ? o.total - sub : DFEE;
 
-    Sheet.body('booking-detail').innerHTML = `
+    const _bd = Sheet.body('booking-detail');
+    _bd.style.cssText = 'overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 40px';
+    _bd.innerHTML = `
       <!-- ── Герой-блок бронирования ── -->
       <div class="booking-hero">
         <div class="booking-hero-glow"></div>
