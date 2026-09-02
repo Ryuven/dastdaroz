@@ -70,6 +70,8 @@ let unsubLive        = null;
 let unsubBooked      = null;
 let currentOTab      = 'all';
 let activeStore      = null;
+let activeRetailerId = null;  // ID ритейлера выбранной точки
+let activeLocId      = null;  // ID выбранной точки (location)
 let storeCatFilter   = 'all';
 let jsonMenuData     = null;
 let jsonProdsMap     = {};
@@ -788,9 +790,11 @@ window.openStore = window.openRetailer; // алиас для совместим�
 // Открыть каталог конкретной точки ритейлера
 window.openRetailerCatalog = async function (rid, locId, locAddr) {
   document.getElementById('pages').scrollTop = 0;
-  storeCatFilter = 'all';
-  jsonMenuData   = null;
-  jsonProdsMap   = {};
+  storeCatFilter   = 'all';
+  jsonMenuData     = null;
+  jsonProdsMap     = {};
+  activeRetailerId = rid;
+  activeLocId      = locId;
 
   const prodsEl = document.getElementById('store-prods');
   const catsEl  = document.getElementById('store-cats');
@@ -859,9 +863,9 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
 
   try {
     const snap = await getDocs(
-      query(collection(db, 'retailers', rid, 'catalog'), where('available', '==', true))
+      query(collection(db, 'retailers', rid, 'locations', locId, 'catalog'), where('available', '==', true))
     );
-    const allProds = snap.docs.map(d => ({ id: d.id, ...d.data(), storeId: rid }));
+    const allProds = snap.docs.map(d => ({ id: d.id, ...d.data(), storeId: rid, locationId: locId }));
 
     // Категории из уникальных categoryId продуктов
     const catMap = {};
@@ -1588,6 +1592,8 @@ window.doCheckout = async function () {
       comment:         document.getElementById('cart-comment')?.value.trim() || '',
       paymentMethod:   payMethod,
       deliveryService,
+      retailerId:      activeRetailerId || null,
+      locationId:      activeLocId      || null,
       status:          'reserved',
       courierId:       null,
       courierName:     null,
