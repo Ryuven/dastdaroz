@@ -265,20 +265,19 @@ a{color:inherit;text-decoration:none}
 .pc-img img{width:100%;height:100%;object-fit:cover}
 .pc-badge{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.48rem;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.06em}
 .pc-body{padding:11px 13px 13px;flex:1;display:flex;flex-direction:column;gap:3px}
-.pc-cat{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);font-weight:700}
-.pc-name{font-weight:700;font-size:.86rem;color:var(--tx);line-height:1.3;flex:1}
-.pc-desc{font-size:.64rem;color:var(--tx3);line-height:1.5;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pc-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:9px;border-top:1px solid var(--b0)}
-.pc-price{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx)}
-.pc-price span{font-size:.6rem;color:var(--tx3);font-family:var(--fs);font-weight:400}
-.pc-qty{display:flex;align-items:center;background:var(--s2);border:1.5px solid var(--accg);border-radius:10px;overflow:hidden}
-.pc-qty-btn{width:30px;height:30px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:1.05rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:color var(--tf),background var(--tf);flex-shrink:0}
+.pc-price{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx);margin-bottom:1px}
+.pc-price span{font-size:.58rem;color:var(--tx3);font-family:var(--fs);font-weight:400}
+.pc-name{font-weight:700;font-size:.82rem;color:var(--tx);line-height:1.3;flex:1}
+.pc-desc{font-size:.62rem;color:var(--tx3);line-height:1.5;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pc-footer{margin-top:auto;padding-top:8px;border-top:1px solid var(--b0)}
+.add-btn-full{width:100%;padding:9px;background:var(--acc);border:none;border-radius:10px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.72rem;cursor:pointer;transition:opacity .15s,transform .12s;letter-spacing:.01em}
+.add-btn-full:hover{opacity:.88}
+.add-btn-full:active{transform:scale(.97)}
+.add-btn-full:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.pc-qty{display:flex;align-items:center;width:100%;background:var(--s2);border:1.5px solid var(--accg);border-radius:10px;overflow:hidden}
+.pc-qty-btn{flex:0 0 36px;height:32px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:1.05rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:color var(--tf),background var(--tf)}
 .pc-qty-btn:hover{color:var(--acc);background:var(--accd)}
-.pc-qty-val{min-width:28px;height:30px;text-align:center;line-height:30px;font-size:.8rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
-.add-btn{width:30px;height:30px;border-radius:9px;background:var(--acc);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:opacity var(--tf),transform var(--tf);box-shadow:0 2px 8px var(--acc-shadow)}
-.add-btn:hover{opacity:.88;transform:scale(1.1)}
-.add-btn:active{transform:scale(.94)}
-.add-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+.pc-qty-val{flex:1;height:32px;text-align:center;line-height:32px;font-size:.8rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
 
 /* ── CART ── */
 .cart-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-width:0}
@@ -610,12 +609,15 @@ select.addr-inp{cursor:pointer}
   .page{padding:14px 14px calc(var(--nb) + var(--safe-b) + 14px)}
   .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-top:1.5px solid var(--b0);padding-bottom:var(--safe-b);height:calc(var(--nb) + var(--safe-b));box-shadow:0 -4px 20px rgba(0,0,0,.07)}
   .mn-inner{display:flex;align-items:stretch;width:100%}
-  .mn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;padding:12px 4px;color:var(--tx3);border:none;background:none;font-family:var(--fs);position:relative;transition:color var(--tf)}
+  .mn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;padding:12px 4px;color:var(--tx3);border:none;background:none;font-family:var(--fs);position:relative;transition:color var(--tf),opacity .08s}
   .mn-item svg{transition:transform .2s var(--spring)}
   .mn-item.active{color:var(--acc)}
   .mn-item.active svg{transform:scale(1.15)}
   .mn-item::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2.5px;background:var(--acc);border-radius:0 0 3px 3px;transform:scaleX(0);transition:transform .25s var(--spring)}
   .mn-item.active::before{transform:scaleX(1)}
+  .mn-item:active{opacity:.55}
+  .mn-item:active svg{transform:scale(.82)!important;transition-duration:.06s}
+  .mn-item:active .mn-av{transform:scale(.82);transition:transform .06s}
   .mn-badge{position:absolute;top:7px;right:calc(50% - 16px);min-width:15px;height:15px;padding:0 3px;background:var(--acc);color:#fff;font-size:.46rem;font-weight:700;border-radius:99px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
   .mn-av{width:34px;height:34px;border-radius:50%;background:var(--accd);border:none;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--fd);font-weight:900;font-size:.72rem;color:var(--acc);transition:transform .2s var(--spring);flex-shrink:0}
   .mn-av img{width:100%;height:100%;object-fit:cover}
@@ -1535,12 +1537,12 @@ select.addr-inp{cursor:pointer}
       </div>
       <div class="sh"><div><div class="sh-tag">Популярное</div><div class="sh-title">Хиты <em>меню</em></div></div><button class="sh-link" onclick="goPage('catalog')">Весь каталог →</button></div>
       <div class="pg" id="home-prods">
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:40%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%"></div><div class="skl-block" style="height:8px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:35%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%"></div><div class="skl-block" style="height:8px;width:75%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:42%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:8px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:38%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:44%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:36%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:11px;width:82%"></div><div class="skl-block" style="height:8px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:36%"></div><div class="skl-block" style="height:11px;width:90%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:78%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:38%"></div><div class="skl-block" style="height:11px;width:86%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:46%"></div><div class="skl-block" style="height:11px;width:80%"></div><div class="skl-block" style="height:8px;width:64%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
       </div>
     </div>
 
@@ -1552,12 +1554,12 @@ select.addr-inp{cursor:pointer}
         </div>
       </div>
       <div class="pg" id="cat-prods">
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:70%;margin-top:5px"></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:60%;margin-top:5px"></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:75%;margin-top:5px"></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:65%;margin-top:5px"></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:72%;margin-top:5px"></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%;margin-top:5px"></div><div class="skl-block" style="height:8px;width:68%;margin-top:5px"></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:11px;width:82%"></div><div class="skl-block" style="height:8px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:36%"></div><div class="skl-block" style="height:11px;width:90%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:78%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:38%"></div><div class="skl-block" style="height:11px;width:86%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:46%"></div><div class="skl-block" style="height:11px;width:80%"></div><div class="skl-block" style="height:8px;width:64%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
       </div>
     </div>
 
@@ -1707,12 +1709,12 @@ select.addr-inp{cursor:pointer}
       <div id="store-header"></div>
       <div class="cats" id="store-cats"><button class="cat active" onclick="filterStoreCat('all')">Все</button></div>
       <div class="pg" id="store-prods">
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:45%"></div><div class="skl-block" style="height:9px;width:90%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:40%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:55%"></div><div class="skl-block" style="height:9px;width:85%"></div><div class="skl-block" style="height:8px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:35%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:40%"></div><div class="skl-block" style="height:9px;width:92%"></div><div class="skl-block" style="height:8px;width:75%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:42%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:50%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:8px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:38%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:48%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:44%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:7px;width:52%"></div><div class="skl-block" style="height:9px;width:83%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:11px;width:36%"></div><div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:11px;width:82%"></div><div class="skl-block" style="height:8px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:36%"></div><div class="skl-block" style="height:11px;width:90%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:78%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:38%"></div><div class="skl-block" style="height:11px;width:86%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:46%"></div><div class="skl-block" style="height:11px;width:80%"></div><div class="skl-block" style="height:8px;width:64%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
       </div>
     </div>
 
@@ -1982,14 +1984,7 @@ select.addr-inp{cursor:pointer}
     </div>
 
     <div class="page" id="page-auth">
-      <div class="od-header">
-        <button class="od-back" onclick="goAuthBack()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
-        <div class="od-title"></div>
-        <div class="od-filler"></div>
-      </div>
-      <div style="max-width:360px;margin:36px auto 0;text-align:center;padding:0 20px">
+      <div style="max-width:360px;margin:52px auto 0;text-align:center;padding:0 20px">
 
         <!-- Avatar + lock badge -->
         <div style="position:relative;width:96px;height:96px;margin:0 auto 24px">
@@ -2009,34 +2004,6 @@ select.addr-inp{cursor:pointer}
         <button onclick="goLogin()" style="background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:13px;color:#fff;font-size:.86rem;font-family:var(--fd);font-weight:800;padding:15px 32px;cursor:pointer;width:100%;box-shadow:0 4px 18px var(--acc-shadow);letter-spacing:.01em;transition:opacity .15s">
           Авторизоваться
         </button>
-
-        <!-- Feature icons -->
-        <div style="display:flex;justify-content:center;gap:14px;margin-top:32px">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
-            <div style="width:44px;height:44px;border-radius:13px;background:var(--s1);border:1.5px solid var(--b1);display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="1.7"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-            </div>
-            <span style="font-size:.6rem;font-weight:700;color:var(--tx3)">Заказы</span>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
-            <div style="width:44px;height:44px;border-radius:13px;background:var(--s1);border:1.5px solid var(--b1);display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="1.7"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <span style="font-size:.6rem;font-weight:700;color:var(--tx3)">Адреса</span>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
-            <div style="width:44px;height:44px;border-radius:13px;background:var(--s1);border:1.5px solid var(--b1);display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="1.7"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </div>
-            <span style="font-size:.6rem;font-weight:700;color:var(--tx3)">Избранное</span>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
-            <div style="width:44px;height:44px;border-radius:13px;background:var(--s1);border:1.5px solid var(--b1);display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-            </div>
-            <span style="font-size:.6rem;font-weight:700;color:var(--tx3)">Статус</span>
-          </div>
-        </div>
 
       </div>
     </div>

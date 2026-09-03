@@ -850,15 +850,7 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   // Скелетон при загрузке
   if (catsEl)  catsEl.innerHTML = '';
   if (prodsEl) prodsEl.innerHTML = Array(6).fill(0).map(() =>
-    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
-      <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
-      <div class="skl-block" style="height:10px;width:82%"></div>
-      <div class="skl-block" style="height:7px;width:40%;margin-top:6px"></div>
-      <div class="pc-footer" style="margin-top:auto">
-        <div class="skl-block" style="height:11px;width:38%"></div>
-        <div class="skl-block" style="height:28px;width:72px;border-radius:9px"></div>
-      </div>
-    </div></div>`
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:84%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>`
   ).join('');
 
   try {
@@ -1067,11 +1059,7 @@ function renderStoreProds() {
   if (!el || !activeStore) return;
 
   const skeleton = Array(6).fill(0).map(() =>
-    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body" style="gap:8px">
-      <div class="skl-block" style="height:8px;width:55%;margin-bottom:4px"></div>
-      <div class="skl-block" style="height:10px;width:80%"></div>
-      <div class="skl-block" style="height:7px;width:40%;margin-top:4px"></div>
-    </div></div>`
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:84%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>`
   ).join('');
 
   if (activeStore.menuUrl && jsonMenuData === null) { el.innerHTML = skeleton; return; }
@@ -1123,21 +1111,18 @@ function renderPC(p) {
     : `<div style="width:64px;height:64px;opacity:.2">${ic.svg.replace('width="26" height="26"', 'width="64" height="64"')}</div>`;
 
   const controls = unavail
-    ? `<button class="add-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`
+    ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
     : qty > 0
       ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}')">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}')">+</button></div>`
-      : `<button class="add-btn" onclick="event.stopPropagation();addToCart('${p.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>`;
+      : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}')">В корзину</button>`;
 
   return `<div class="pc" onclick="openProdModal('${p.id}')">
     <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
     <div class="pc-body">
-      <div class="pc-cat">${catName(p.categoryId)}</div>
+      <div class="pc-price">${p.price}<span> TJS</span></div>
       <div class="pc-name">${p.name}</div>
       <div class="pc-desc">${p.description || ''}</div>
-      <div class="pc-footer">
-        <div class="pc-price">${p.price}<span> TJS</span></div>
-        ${controls}
-      </div>
+      <div class="pc-footer">${controls}</div>
     </div>
   </div>`;
 }
