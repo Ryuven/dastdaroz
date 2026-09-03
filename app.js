@@ -77,7 +77,7 @@ let jsonMenuData     = null;
 let jsonProdsMap     = {};
 let deliveryService  = 'mavsimi';
 let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
-let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'mavsimiOrders'
+let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'mavsimiOrders' | 'retailerOrders'
 
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
@@ -1777,13 +1777,14 @@ async function loadOrders() {
     }
   };
 
-  const [booked, dast, mav] = await Promise.all([
+  const [booked, dast, mav, ret] = await Promise.all([
     safeQuery('bookedOrders'),
     safeQuery('dastdarozOrders'),
     safeQuery('mavsimiOrders'),
+    safeQuery('retailerOrders'),
   ]);
 
-  orders = [...booked, ...dast, ...mav].sort(
+  orders = [...booked, ...dast, ...mav, ...ret].sort(
     (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
   );
 
@@ -1921,6 +1922,7 @@ function renderOrders() {
         <div class="oc-num">Заказ ${num}</div>
         <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10">${l}</div>
       </div>
+      ${o.retailerName ? `<div class="oc-items" style="color:var(--acc);font-size:.64rem;font-weight:600;margin-bottom:2px">🏪 ${escHtml(o.retailerName)}</div>` : ''}
       <div class="oc-items">${items}</div>
       <div class="oc-footer">
         <div><div class="oc-total">${o.total} TJS</div><div class="oc-meta">${fmtDate(o.createdAt)} · ${o.address || ''}</div></div>
@@ -2194,7 +2196,7 @@ window.cancelO = async function (id) {
   if (!confirm('Отменить заказ?')) return;
   try {
     const o   = orders.find(x => x.id === id);
-    const col = o?._col || 'dastdarozOrders';
+    const col = o?._col || (o?.retailerId ? 'retailerOrders' : 'dastdarozOrders');
     await updateDoc(doc(db, col, id), { status: 'cancelled', updatedAt: serverTimestamp() });
     toast('Заказ отменён', 'ok');
     await loadOrders();
@@ -2455,7 +2457,7 @@ function renderStatusPage() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.76rem">
       <div><div class="sh-tag" style="margin-bottom:3px">Адрес</div><div style="color:var(--tx)">${o.address || '—'}</div></div>
       <div><div class="sh-tag" style="margin-bottom:3px">Оплата</div><div style="color:var(--tx)">${pay}</div></div>
-      <div><div class="sh-tag" style="margin-bottom:3px">Курьер</div><div style="color:var(--tx)">${o.courierName || 'Назначается…'}</div></div>
+      ${o.retailerName ? `<div><div class="sh-tag" style="margin-bottom:3px">Ресторан / Магазин</div><div style="color:var(--tx)">${escHtml(o.retailerName)}</div></div>` : `<div><div class="sh-tag" style="margin-bottom:3px">Курьер</div><div style="color:var(--tx)">${o.courierName || 'Назначается…'}</div></div>`}
       <div><div class="sh-tag" style="margin-bottom:3px">Время</div><div style="color:var(--tx)">${fmtDate(o.createdAt)}</div></div>
     </div>
     ${o.courierId ? `
