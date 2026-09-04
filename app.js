@@ -399,6 +399,45 @@ function _initSheets() {
 
 _initSheets();
 
+// ─── Статус заказа — full-height sheet (скоро) ────────────────
+Sheet.define({ id: 'order-status', title: 'Статус заказа', zIndex: 750 });
+(function () {
+  const _osBody = Sheet.body('order-status');
+  _osBody.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px 28px 60px;gap:18px;text-align:center;overflow:hidden';
+  _osBody.innerHTML = `
+    <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(124,58,237,.05));border:1.5px solid rgba(124,58,237,.2);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div style="position:absolute;inset:0;border-radius:inherit;border:2px solid rgba(124,58,237,.25);animation:osRing 2s ease-in-out infinite"></div>
+    </div>
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.18);border-radius:99px;padding:5px 14px;margin-bottom:14px">
+        <div style="width:6px;height:6px;border-radius:50%;background:#8B5CF6;animation:osDot 1.4s ease-in-out infinite"></div>
+        <span style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8B5CF6">Скоро</span>
+      </div>
+      <div style="font-family:var(--fd);font-weight:900;font-size:1.08rem;color:var(--tx);letter-spacing:-.02em;margin-bottom:8px">Статус заказа</div>
+      <div style="font-size:.76rem;color:var(--tx3);line-height:1.65;max-width:220px;margin:0 auto">Отслеживание заказа в реальном времени появится совсем скоро. Следите за обновлениями!</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;opacity:.45">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--tx3);animation:osBounce 1.2s ease-in-out infinite"></div>
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--tx3);animation:osBounce 1.2s ease-in-out .2s infinite"></div>
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--tx3);animation:osBounce 1.2s ease-in-out .4s infinite"></div>
+    </div>
+  `;
+  // Инжектируем keyframes если ещё нет
+  if (!document.getElementById('os-kf')) {
+    const s = document.createElement('style');
+    s.id = 'os-kf';
+    s.textContent = `
+      @keyframes osRing{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+      @keyframes osDot{0%,100%{opacity:1}50%{opacity:.3}}
+      @keyframes osBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+    `;
+    document.head.appendChild(s);
+  }
+})();
+
+window.openOrderStatusSheet = function () { Sheet.open('order-status'); };
+
 // ─── Публичная оферта (PDF sheet) ─────────────────────────────
 SheetPdf.define({
   id:     'oferta',
@@ -513,7 +552,7 @@ let _authFromPage = 'home';
 window.goAuthBack = function () { goPage(_authFromPage || 'home'); };
 
 window.goPage = function (page) {
-  if (GUEST && ['orders', 'status', 'cart', 'profile'].includes(page)) {
+  if (GUEST && ['orders', 'cart', 'profile'].includes(page)) {
     _authFromPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'home';
     page = 'auth';
   }
@@ -532,14 +571,12 @@ window.goPage = function (page) {
       catalog:      'Каталог',
       cart:         'Корзина',
       orders:       'Мои заказы',
-      status:       'Статус заказа',
       profile:      'Профиль',
       store:        activeStore?.name || 'Магазин',
       'order-detail': '',
     }[page] || 'dastdaroz';
   }
 
-  if (page === 'status') renderStatusPage();
   if (page === 'orders') { showOrdersSkeleton(); loadOrders(); }
   if (page === 'store')  renderStorePage();
 
@@ -1824,7 +1861,6 @@ async function loadOrders() {
   renderOrders();
   renderOrdersBadge();
   renderLiveBanner();
-  if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
 
   // Автооткрытие заказа после возврата с платёжной страницы Алифа
   if (_payReturnOid) {
@@ -2135,7 +2171,7 @@ window.openOrderModal = function (oid) {
       <button onclick="closeOrderModal()" style="width:46px;height:46px;flex-shrink:0;background:var(--s1);border:1.5px solid var(--b1);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
-      <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 14px var(--acc-shadow)">
+      <button onclick="openOrderStatusSheet()" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 14px var(--acc-shadow)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Статус заказа
       </button>
@@ -2233,8 +2269,8 @@ window.closeBookingModal = function () { Sheet.close('booking-detail'); };
 
 
 
-window.viewOrderStatus = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
-window.trackO          = function (oid) { activeOid = oid; goPage('status'); renderStatusPage(); };
+window.viewOrderStatus = function (oid) { activeOid = oid; openOrderStatusSheet(); };
+window.trackO          = function (oid) { activeOid = oid; openOrderStatusSheet(); };
 
 window.cancelO = async function (id) {
   if (!confirm('Отменить заказ?')) return;
@@ -2285,7 +2321,6 @@ function listenLive(oid, col = 'dastdarozOrders') {
     if (idx >= 0) orders[idx] = o; else orders.unshift(o);
     if (activeOid === oid || !activeOid) { activeOid = oid; activeCollection = col; }
     renderOrders(); renderOrdersBadge(); renderLiveBanner();
-    if (document.getElementById('page-status')?.classList.contains('active')) renderStatusPage();
 
     const odActive = document.getElementById('page-order-detail')?.classList.contains('active');
     if (odActive) {
