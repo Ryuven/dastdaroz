@@ -1113,8 +1113,8 @@ function renderPC(p) {
   const controls = unavail
     ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
     : qty > 0
-      ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}')">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}')">+</button></div>`
-      : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}')">В корзину</button>`;
+      ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
+      : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
 
   return `<div class="pc" onclick="openProdModal('${p.id}')">
     <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
@@ -1192,15 +1192,15 @@ function renderProdModal(p) {
        </div>`
     : qty > 0
       ? `<div class="pm-addrow">
-           <button class="pm-addrow-side" onclick="pmMinus('${p.id}')">−</button>
+           <button class="pm-addrow-side" onclick="pmMinus('${p.id}',this)">−</button>
            <div class="pm-addrow-mid">
              <span class="pm-addrow-num" id="pm-qty-${p.id}">${qty}</span>
              <span class="pm-addrow-price">${p.price * qty} TJS</span>
            </div>
-           <button class="pm-addrow-side" onclick="pmPlus('${p.id}')">+</button>
+           <button class="pm-addrow-side" onclick="pmPlus('${p.id}',this)">+</button>
          </div>`
       : `<div class="pm-addrow">
-           <button class="pm-addrow-add" onclick="pmAdd('${p.id}')">Добавить в корзину</button>
+           <button class="pm-addrow-add" onclick="pmAdd('${p.id}',this)">Добавить в корзину</button>
          </div>`;
 
   const _psBody = Sheet.body('product');
@@ -1221,8 +1221,16 @@ function renderProdModal(p) {
   _psBody.scrollTop = 0;
 }
 
-window.pmAdd   = async function (pid) { await addToCart(pid); const p = prods.find(x => x.id === pid); if (p) renderProdModal(p); };
-window.pmPlus  = async function (pid) {
+window.pmAdd   = async function (pid, _srcBtn) {
+  const btn = _srcBtn || document.querySelector('.pm-addrow-add');
+  btnLoad(btn);
+  await addToCart(pid);
+  const p = prods.find(x => x.id === pid);
+  if (p) renderProdModal(p);
+};
+window.pmPlus  = async function (pid, _srcBtn) {
+  const btn = _srcBtn || document.querySelectorAll('.pm-addrow-side')[1];
+  btnLoad(btn);
   await addToCart(pid);
   const p   = prods.find(x => x.id === pid);
   const qty = getCartQty(pid);
@@ -1231,9 +1239,12 @@ window.pmPlus  = async function (pid) {
     qEl.textContent = qty;
     const priceEl = document.querySelector('.pm-addrow-price');
     if (priceEl && p) priceEl.textContent = `${p.price * qty} TJS`;
+    btnDone(btn);
   } else if (p) { renderProdModal(p); }
 };
-window.pmMinus = async function (pid) {
+window.pmMinus = async function (pid, _srcBtn) {
+  const btn = _srcBtn || document.querySelectorAll('.pm-addrow-side')[0];
+  btnLoad(btn);
   await pcMinus(pid);
   const p   = prods.find(x => x.id === pid);
   const qty = getCartQty(pid);
@@ -1243,6 +1254,7 @@ window.pmMinus = async function (pid) {
     qEl.textContent = qty;
     const priceEl = document.querySelector('.pm-addrow-price');
     if (priceEl && p) priceEl.textContent = `${p.price * qty} TJS`;
+    btnDone(btn);
   } else if (p) { renderProdModal(p); }
 };
 
@@ -1250,20 +1262,29 @@ window.closeProdModal = function () {
   Sheet.close('product');
 };
 
-window.pcPlus  = async function (pid) { await addToCart(pid); };
-window.pcMinus = async function (pid) {
+window.pcPlus  = async function (pid, _srcBtn) {
+  const btn = _srcBtn || findCartBtn(pid, 'plus');
+  btnLoad(btn);
+  await addToCart(pid);
+  // renderHomeProds/renderCatalog/renderStoreProds called inside addToCart, btn removed from DOM — no btnDone needed
+};
+window.pcMinus = async function (pid, _srcBtn) {
   const item = cart.find(c => c.productId === pid);
   if (!item) return;
+  const btn = _srcBtn || findCartBtn(pid, 'minus');
+  btnLoad(btn);
   const nq = item.quantity - 1;
   const cr = doc(db, 'users', CU.uid, 'cart', pid);
-  if (nq <= 0) {
-    await deleteDoc(cr);
-    cart = cart.filter(c => c.productId !== pid);
-  } else {
-    await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
-    item.quantity = nq;
-  }
-  renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+  try {
+    if (nq <= 0) {
+      await deleteDoc(cr);
+      cart = cart.filter(c => c.productId !== pid);
+    } else {
+      await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
+      item.quantity = nq;
+    }
+    renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+  } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
 
 
@@ -1382,10 +1403,27 @@ async function loadCart() {
   updateBadges();
 }
 
-window.addToCart = async function (pid) {
+// ─── Spinner helpers ──────────────────────────────────────────
+function btnLoad(btn) { if (btn) { btn.classList.add('btn-loading'); btn.disabled = true; } }
+function btnDone(btn) { if (btn) { btn.classList.remove('btn-loading'); btn.disabled = false; } }
+function findCartBtn(pid, type) {
+  // type: 'add' | 'plus' | 'minus'
+  if (type === 'add') {
+    return document.querySelector(`.pc[onclick*="'${pid}'"] .add-btn-full`) ||
+           document.querySelector(`.add-btn-full[onclick*="'${pid}'"]`);
+  }
+  if (type === 'plus')  return document.querySelector(`.pc-qty-btn[onclick*="pcPlus('${pid}')"]`);
+  if (type === 'minus') return document.querySelector(`.pc-qty-btn[onclick*="pcMinus('${pid}')"]`);
+  return null;
+}
+
+window.addToCart = async function (pid, _srcBtn) {
   if (!requireAuth('Войдите, чтобы добавить в корзину')) return;
   const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
   if (!p || !CU) return;
+
+  const btn = _srcBtn || findCartBtn(pid, 'add');
+  btnLoad(btn);
 
   const cr = doc(db, 'users', CU.uid, 'cart', p.id);
   const ex = cart.find(c => c.productId === p.id);
@@ -1400,7 +1438,7 @@ window.addToCart = async function (pid) {
     }
     toast(p.name + ' добавлен в корзину', 'ok');
     renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
-  } catch { toast('Ошибка', 'err'); }
+  } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
 
 window.updateQty = async function (pid, d) {
