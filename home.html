@@ -1798,9 +1798,38 @@ select.addr-inp{cursor:pointer}
             <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
 
+          <!-- Адрес доставки — под Личные данные -->
+          <div id="prof-addr-row" onclick="openProfileAddrs()" style="display:flex;align-items:center;gap:13px;background:var(--s1);border-top:1.5px solid var(--b0);padding:13px 16px;cursor:pointer;transition:background .15s;width:100%;text-align:left;box-sizing:border-box" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
+            <div class="prof-row-icon" style="background:#22C55E">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Адрес доставки</div>
+              <div class="prof-row-sub" id="prof-addr-display" style="color:var(--acc);font-weight:600">Указать адрес →</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
 
-          <!-- Support row -->
-          <button class="prof-row prof-group-end" onclick="openSupport()" style="border-top:1.5px solid var(--b0)">
+      <div id="prof-nav-section" style="max-width:540px">
+
+
+        <!-- Прочее -->
+        <div class="prof-section-lbl">Прочее</div>
+        <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
+          <!-- Понравившиеся товары -->
+          <button class="prof-row prof-group-start" onclick="openLikesSheet()">
+            <div class="prof-row-icon" style="background:#EF4444">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Понравившиеся товары</div>
+              <div class="prof-row-sub">Сохранённые позиции</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <!-- Техподдержка -->
+          <button class="prof-row" style="border-top:1.5px solid var(--b0)" onclick="openSupport()">
             <div class="prof-row-icon" style="background:#6366F1">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </div>
@@ -1811,58 +1840,7 @@ select.addr-inp{cursor:pointer}
             <span class="sup-entry-badge" id="support-entry-badge" style="display:none">0</span>
             <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </button>
-        </div>
-
-      <div id="prof-nav-section" style="max-width:540px">
-
-
-        <!-- Адрес доставки -->
-        <div class="prof-section-lbl">Доставка</div>
-        <div id="prof-addr-row" onclick="openProfileAddrs()" style="display:flex;align-items:center;gap:13px;background:var(--s1);border:1.5px solid var(--b0);padding:13px 16px;cursor:pointer;border-radius:13px;transition:background .15s;width:100%;text-align:left;box-sizing:border-box" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
-          <div class="prof-row-icon" style="background:#22C55E">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          </div>
-          <div class="prof-row-body">
-            <div class="prof-row-title">Адрес доставки</div>
-            <div class="prof-row-sub" id="prof-addr-display" style="color:var(--acc);font-weight:600">Указать адрес →</div>
-          </div>
-          <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-
-
-        <!-- Понравившиеся товары -->
-        <div class="prof-section-lbl">Избранное</div>
-        <div style="border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
-          <button class="prof-row prof-group-single" onclick="openLikesSheet()">
-            <div class="prof-row-icon" style="background:#EF4444">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </div>
-            <div class="prof-row-body">
-              <div class="prof-row-title">Понравившиеся товары</div>
-              <div class="prof-row-sub">Сохранённые позиции</div>
-            </div>
-            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
-
-        <!-- Заказы (только авторизованным) -->
-        <div class="prof-section-lbl pn-guest-hidden">Заказы</div>
-        <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)" class="pn-guest-hidden">
-          <button class="prof-row prof-group-single" onclick="goPage('orders')">
-            <div class="prof-row-icon" style="background:#F59E0B">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-            </div>
-            <div class="prof-row-body"><div class="prof-row-title">Мои заказы</div></div>
-            <span class="ni-badge amber" id="prof-orders-nb" style="display:none">0</span>
-            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
-
-        <!-- Прочее -->
-        <div class="prof-section-lbl">Прочее</div>
-        <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
-          <button class="prof-row prof-group-start" onclick="openLangSheet()">
+          <button class="prof-row" style="border-top:1.5px solid var(--b0)" onclick="openLangSheet()">
             <div class="prof-row-icon" style="background:#0EA5E9">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             </div>
