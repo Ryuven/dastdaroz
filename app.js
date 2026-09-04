@@ -2179,6 +2179,11 @@ window.openOrderModal = function (oid) {
 
     <div class="booking-order-card">
 
+      <div class="booking-order-header">
+        <div class="booking-order-num">Заказ ${num}</div>
+        <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10;font-size:.62rem;font-weight:700;padding:4px 10px;border-radius:99px;border:1.5px solid">${l}</div>
+      </div>
+
       <div class="booking-items">
         ${(o.items || []).map(i => `
           <div class="booking-item">
