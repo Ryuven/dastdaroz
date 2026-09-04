@@ -2127,19 +2127,21 @@ window.openOrderModal = function (oid) {
     </div>`
   ).join('');
 
-  document.getElementById('order-modal-title').textContent = `Заказ ${num}`;
-  document.getElementById('order-modal-body').innerHTML = `
+  const _odBody = document.getElementById('order-modal-body');
+  _odBody.dataset.oid = o.id;
+  _odBody.innerHTML = `
 
-    <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 3px 14px var(--acc-shadow)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Посмотреть статус заказа
-    </button>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <button onclick="closeOrderModal()" style="width:46px;height:46px;flex-shrink:0;background:var(--s1);border:1.5px solid var(--b1);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);transition:background .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <button onclick="closeOrderModal();viewOrderStatus('${o.id}')" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:14px;color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 14px var(--acc-shadow)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Статус заказа
+      </button>
+    </div>
 
     <div class="booking-order-card">
-      <div class="booking-order-header">
-        <div class="booking-order-num">Заказ ${num}</div>
-        <div class="booking-order-total">${o.total} TJS</div>
-      </div>
 
       <div class="booking-items">
         ${(o.items || []).map(i => `
@@ -2288,7 +2290,7 @@ function listenLive(oid, col = 'dastdarozOrders') {
     const odActive = document.getElementById('page-order-detail')?.classList.contains('active');
     if (odActive) {
       const num = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
-      if (document.getElementById('order-modal-title')?.textContent.includes(num.replace('#', ''))) {
+      if (document.getElementById('order-modal-body')?.dataset.oid === o.id) {
         openOrderModal(oid);
       }
     }
