@@ -1982,6 +1982,9 @@ window.openOrderModal = function (oid) {
   const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
   const sub      = (o.items || []).reduce((s, i) => s + i.price * i.quantity, 0);
   const delivery = o.total - sub;
+  const svcObjOrd  = deliveryServices.find(s => s.id === o.deliveryService);
+  const svcNameOrd = svcObjOrd ? svcObjOrd.name : (o.deliveryService || '—');
+  const coordsOrd  = (o.lat && o.lng) ? `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}` : '—';
 
   // ════ БРОНИРОВАНИЕ — специальный UI ════
   if (o.status === 'reserved') {
@@ -2160,8 +2163,24 @@ window.openOrderModal = function (oid) {
 
       <div class="booking-delivery-info">
         <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Способ доставки</span>
+          <span class="booking-delivery-val">${escHtml(svcNameOrd)}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Имя</span>
+          <span class="booking-delivery-val">${escHtml(o.clientName || '—')}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Номер телефона</span>
+          <span class="booking-delivery-val">${escHtml(o.clientPhone || '—')}</span>
+        </div>
+        <div class="booking-delivery-row">
           <span class="booking-delivery-label">Адрес</span>
           <span class="booking-delivery-val">${escHtml(o.address || '—')}</span>
+        </div>
+        <div class="booking-delivery-row">
+          <span class="booking-delivery-label">Координаты</span>
+          <span class="booking-delivery-val booking-delivery-coords">${escHtml(coordsOrd)}</span>
         </div>
         <div class="booking-delivery-row">
           <span class="booking-delivery-label">Оплата</span>
