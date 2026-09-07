@@ -77,7 +77,7 @@ let jsonMenuData     = null;
 let jsonProdsMap     = {};
 let deliveryService  = 'mavsimi';
 let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
-let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'mavsimiOrders' | 'retailerOrders'
+let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'orders'
 
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
@@ -1837,24 +1837,29 @@ async function loadOrders() {
     }
   };
 
-  const [booked, dast, mav, ret] = await Promise.all([
+  const [booked, dast, ord] = await Promise.all([
     safeQuery('bookedOrders'),
     safeQuery('dastdarozOrders'),
-    safeQuery('mavsimiOrders'),
-    safeQuery('retailerOrders'),
+    safeQuery('orders'),
   ]);
 
-  orders = [...booked, ...dast, ...mav, ...ret].sort(
+  // Дедупликация по id — если один заказ попал в несколько коллекций
+  const seen = new Set();
+  orders = [...booked, ...dast, ...ord]
+    .filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true; })
+    .sort(
     (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
   );
 
-  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status) && o._col !== 'dastdarozOrders');
+  // dastdarozOrders имеет свой listenLive — banner берём из orders или bookedOrders
   if (live) {
     activeOid        = live.id;
     activeCollection = live._col;
     // Live-слежение только для dastdaroz (mavsimi — через бэкенд в будущем)
-    if (!unsubLive && live.status !== 'reserved' && live._col === 'dastdarozOrders') {
-      listenLive(live.id, 'dastdarozOrders');
+    if (!unsubLive && live.status !== 'reserved') {
+      const liveCol = live._col === 'dastdarozOrders' ? 'dastdarozOrders' : 'orders';
+      listenLive(live.id, liveCol);
     }
   }
 
@@ -2281,7 +2286,7 @@ window.cancelO = async function (id) {
   if (!confirm('Отменить заказ?')) return;
   try {
     const o   = orders.find(x => x.id === id);
-    const col = o?._col || (o?.retailerId ? 'retailerOrders' : 'dastdarozOrders');
+    const col = o?._col || (o?.retailerId ? 'orders' : 'dastdarozOrders');
     await updateDoc(doc(db, col, id), { status: 'cancelled', updatedAt: serverTimestamp() });
     toast('Заказ отменён', 'ok');
     await loadOrders();
