@@ -1127,11 +1127,63 @@ function renderStoreProds() {
 
 
 // ─── 10. Товары ───────────────────────────────────────────────
+// Загружаем товары из каталогов точек ритейлеров (не из глобальной коллекции products)
 async function loadProds() {
   try {
-    const s = await getDocs(query(collection(db, 'products'), orderBy('name')));
-    prods = s.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {}
+    const cityId = _selectedCityId;
+
+    // Получаем всех активных ритейлеров в текущем городе
+    const [byPrimary, byCityIds] = await Promise.all([
+      getDocs(query(collection(db, 'retailers'), where('primaryCityId', '==', cityId))),
+      getDocs(query(collection(db, 'retailers'), where('cityIds', 'array-contains', cityId))),
+    ]);
+    const seenRet = new Set();
+    const retailers = [...byPrimary.docs, ...byCityIds.docs]
+      .filter(d => {
+        if (seenRet.has(d.id) || d.data().active === false) return false;
+        seenRet.add(d.id);
+        return true;
+      })
+      .map(d => ({ id: d.id, ...d.data() }));
+
+    // По каждому ритейлеру — загружаем его точки, а потом их каталоги
+    const allProds = [];
+    await Promise.all(retailers.map(async (retailer) => {
+      try {
+        const locSnap = await getDocs(
+          query(collection(db, 'retailers', retailer.id, 'locations'), where('cityId', '==', cityId))
+        );
+        await Promise.all(locSnap.docs.map(async (locDoc) => {
+          try {
+            const catSnap = await getDocs(
+              query(
+                collection(db, 'retailers', retailer.id, 'locations', locDoc.id, 'catalog'),
+                where('available', '==', true)
+              )
+            );
+            catSnap.docs.forEach(d => allProds.push({
+              id: d.id,
+              ...d.data(),
+              storeId:      retailer.id,
+              locationId:   locDoc.id,
+              retailerName: retailer.name,
+              available:    true,
+            }));
+          } catch {}
+        }));
+      } catch {}
+    }));
+
+    // Дедупликация по id, сортировка по имени
+    const dedupMap = new Map();
+    allProds.forEach(p => { if (!dedupMap.has(p.id)) dedupMap.set(p.id, p); });
+    prods = [...dedupMap.values()].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'ru')
+    );
+  } catch (e) {
+    console.error('loadProds:', e);
+    prods = [];
+  }
   renderHomeProds();
   renderCatalog();
   renderHomeCats();
@@ -1153,9 +1205,14 @@ function renderPC(p) {
       ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
       : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
 
+  const retailerTag = p.retailerName
+    ? `<div class="pc-retailer">${escHtml(p.retailerName)}</div>`
+    : '';
+
   return `<div class="pc" onclick="openProdModal('${p.id}')">
     <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
     <div class="pc-body">
+      ${retailerTag}
       <div class="pc-price">${p.price}<span> TJS</span></div>
       <div class="pc-name">${p.name}</div>
       <div class="pc-desc">${p.description || ''}</div>
@@ -3384,6 +3441,7 @@ window.selectCity = function (id, name) {
   });
 
   loadStores();
+  loadProds();
   setTimeout(closeCitySheet, 260);
 };
 
