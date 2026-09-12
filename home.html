@@ -251,6 +251,15 @@ a{color:inherit;text-decoration:none}
 .o-modal-title{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx)}
 .o-modal-close{width:30px;height:30px;border-radius:50%;background:var(--s2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx3);transition:all var(--tf)}
 .o-modal-close:hover{background:var(--s3);color:var(--tx)}
+/* ── HOME RETAILER FEED ── */
+.hrf-block{margin-bottom:0}
+.hrf-block + .hrf-block{padding-top:10px}
+.hrf-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.hrf-logo{width:46px;height:46px;border-radius:14px;object-fit:cover;border:1.5px solid var(--b0);flex-shrink:0;background:var(--s2)}
+.hrf-logo.skl-block{border:none}
+.hrf-logo-placeholder{width:46px;height:46px;border-radius:14px;border:1.5px solid var(--b0);flex-shrink:0;background:var(--accd);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--acc)}
+.hrf-name{font-family:var(--fd);font-weight:900;font-size:.92rem;color:var(--tx);flex:1;letter-spacing:-.015em}
+.hrf-all{font-size:.68rem;color:var(--tx3);font-weight:600;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:3px}
 /* ── CATALOG FILTER ── */
 .cat-filter-wrap{margin:0 -22px 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cat-filter-wrap::-webkit-scrollbar{display:none}
@@ -1533,14 +1542,32 @@ select.addr-inp{cursor:pointer}
           Все категории
         </button>
       </div>
-      <div class="sh"><div><div class="sh-tag">Популярное</div><div class="sh-title">Хиты <em>меню</em></div></div><button class="sh-link" onclick="goPage('catalog')">Весь каталог →</button></div>
-      <div class="pg" id="home-prods">
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:11px;width:82%"></div><div class="skl-block" style="height:8px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:36%"></div><div class="skl-block" style="height:11px;width:90%"></div><div class="skl-block" style="height:8px;width:72%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:78%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:38%"></div><div class="skl-block" style="height:11px;width:86%"></div><div class="skl-block" style="height:8px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
-        <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:46%"></div><div class="skl-block" style="height:11px;width:80%"></div><div class="skl-block" style="height:8px;width:64%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
+      <div id="home-retailer-feed">
+        <!-- skeleton placeholders while loading -->
+        <div class="hrf-block">
+          <div class="hrf-header">
+            <div class="hrf-logo skl-block"></div>
+            <div class="skl-block" style="height:14px;width:110px;border-radius:6px"></div>
+          </div>
+          <div class="pg">
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:9px;width:82%"></div><div class="skl-block" style="height:7px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:9px;width:78%"></div><div class="skl-block" style="height:7px;width:60%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:38%"></div><div class="skl-block" style="height:9px;width:86%"></div><div class="skl-block" style="height:7px;width:70%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:9px;width:80%"></div><div class="skl-block" style="height:7px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+          </div>
+        </div>
+        <div class="hrf-block">
+          <div class="hrf-header">
+            <div class="hrf-logo skl-block"></div>
+            <div class="skl-block" style="height:14px;width:130px;border-radius:6px"></div>
+          </div>
+          <div class="pg">
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:36%"></div><div class="skl-block" style="height:9px;width:84%"></div><div class="skl-block" style="height:7px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:46%"></div><div class="skl-block" style="height:9px;width:76%"></div><div class="skl-block" style="height:7px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:41%"></div><div class="skl-block" style="height:9px;width:88%"></div><div class="skl-block" style="height:7px;width:64%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+            <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:43%"></div><div class="skl-block" style="height:9px;width:81%"></div><div class="skl-block" style="height:7px;width:66%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1705,7 +1732,7 @@ select.addr-inp{cursor:pointer}
         Главная страница
       </button>
       <div id="store-header"></div>
-      <div class="cats" id="store-cats"><button class="cat active" onclick="filterStoreCat('all')">Все</button></div>
+      <div class="cat-filter-wrap"><div class="cat-filter-scroll" id="store-cats"><button class="cat-filter-pill active" onclick="filterStoreCat('all')">Все</button></div></div>
       <div class="pg" id="store-prods">
         <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
         <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:44%"></div><div class="skl-block" style="height:11px;width:82%"></div><div class="skl-block" style="height:8px;width:58%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>

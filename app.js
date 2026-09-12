@@ -777,6 +777,79 @@ async function loadStores() {
     } catch { stores = []; }
   }
   renderStoresGrid();
+  renderHomeRetailerFeed();
+}
+
+async function renderHomeRetailerFeed() {
+  const feedEl = document.getElementById('home-retailer-feed');
+  if (!feedEl || !stores.length) return;
+
+  const skl = () => Array(4).fill(0).map(() =>
+    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:9px;width:82%"></div><div class="skl-block" style="height:7px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>`
+  ).join('');
+
+  // Skeleton blocks
+  feedEl.innerHTML = stores.map(s => `
+    <div class="hrf-block" id="hrf-${s.id}">
+      <div class="hrf-header">
+        <div class="hrf-logo skl-block"></div>
+        <div class="skl-block" style="height:14px;width:120px;border-radius:6px"></div>
+      </div>
+      <div class="pg">${skl()}</div>
+    </div>`
+  ).join('');
+
+  // Load each retailer's first location + 4 products in parallel
+  await Promise.all(stores.map(async store => {
+    const block = document.getElementById(`hrf-${store.id}`);
+    if (!block) return;
+    try {
+      // First location in current city
+      let locId = null;
+      const locSnap = await getDocs(
+        query(collection(db, 'retailers', store.id, 'locations'),
+              where('cityId', '==', _selectedCityId), limit(1))
+      );
+      if (!locSnap.empty) {
+        locId = locSnap.docs[0].id;
+      } else {
+        const locFb = await getDocs(
+          query(collection(db, 'retailers', store.id, 'locations'), limit(1))
+        );
+        if (!locFb.empty) locId = locFb.docs[0].id;
+      }
+      if (!locId) { block.remove(); return; }
+
+      // First 4 available products
+      const prodSnap = await getDocs(
+        query(collection(db, 'retailers', store.id, 'locations', locId, 'catalog'),
+              where('available', '==', true), limit(4))
+      );
+      const prods = prodSnap.docs.map(d => ({
+        id: d.id, ...d.data(), storeId: store.id, locationId: locId
+      }));
+      prods.forEach(p => { jsonProdsMap[p.id] = p; });
+
+      const logoHtml = store.logoSquareUrl
+        ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(store.name)}" loading="lazy">`
+        : `<div class="hrf-logo-placeholder">${store.name[0]}</div>`;
+
+      const prodsHtml = prods.length
+        ? prods.map(p => renderPC(p)).join('')
+        : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
+
+      block.innerHTML = `
+        <div class="hrf-header" onclick="openStore('${store.id}')">
+          ${logoHtml}
+          <div class="hrf-name">${escHtml(store.name)}</div>
+          <div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="pg">${prodsHtml}</div>`;
+    } catch (e) {
+      console.warn('hrf:', store.name, e?.message);
+      block.remove();
+    }
+  }));
 }
 
 function renderStoresGrid() {
@@ -1078,15 +1151,15 @@ function renderStoreCatPills() {
   const el = document.getElementById('store-cats');
   if (!el) return;
 
-  const all = `<button class="cat${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
+  const all = `<button class="cat-filter-pill${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
 
   if (jsonMenuData) {
     el.innerHTML = all + (jsonMenuData.categories || []).map(c =>
-      `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+      `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
     ).join('');
   } else {
     el.innerHTML = all + getStoreCats().map(c =>
-      `<button class="cat${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+      `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
     ).join('');
   }
 }
