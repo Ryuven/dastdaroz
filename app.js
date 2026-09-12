@@ -480,7 +480,43 @@ onAuthStateChanged(auth, async u => {
   listenSupportBadge();
   loadHomePromo();
   checkAddressBanner(u.uid);
+
+  // Если Android уже передал FCM токен до авторизации — сохраняем сейчас
+  if (window._pendingFcmToken) {
+    saveFcmToken(window._pendingFcmToken);
+    window._pendingFcmToken = null;
+  }
 });
+
+// ─── FCM токен: получаем от Android и сохраняем в Firestore ──
+/**
+ * Вызывается из Android (MainActivity.java) через evaluateJavascript
+ * Сохраняет FCM токен текущего пользователя в users/{uid}.fcmToken
+ */
+window.onFcmToken = function(token) {
+  if (!token) return;
+  if (CU) {
+    // Пользователь уже авторизован — сохраняем сразу
+    saveFcmToken(token);
+  } else {
+    // Авторизация ещё не завершилась — держим токен, сохраним после
+    window._pendingFcmToken = token;
+  }
+};
+
+async function saveFcmToken(token) {
+  if (!CU || !token) return;
+  try {
+    await setDoc(
+      doc(db, 'users', CU.uid),
+      { fcmToken: token, fcmUpdatedAt: new Date().toISOString() },
+      { merge: true }
+    );
+    console.log('[FCM] Токен сохранён в Firestore');
+  } catch (e) {
+    console.warn('[FCM] Не удалось сохранить токен:', e);
+  }
+}
 
 /** Загрузка промо-баннера на главной */
 async function loadHomePromo() {
