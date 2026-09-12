@@ -825,17 +825,17 @@ async function renderHomeRetailerFeed() {
         query(collection(db, 'retailers', store.id, 'locations', locId, 'catalog'),
               where('available', '==', true), limit(4))
       );
-      const prods = prodSnap.docs.map(d => ({
+      const hrfProds = prodSnap.docs.map(d => ({
         id: d.id, ...d.data(), storeId: store.id, locationId: locId
       }));
-      prods.forEach(p => { jsonProdsMap[p.id] = p; });
+      hrfProds.forEach(p => { jsonProdsMap[p.id] = p; });
 
       const logoHtml = store.logoSquareUrl
         ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(store.name)}" loading="lazy">`
         : `<div class="hrf-logo-placeholder">${store.name[0]}</div>`;
 
-      const prodsHtml = prods.length
-        ? prods.map(p => renderPC(p)).join('')
+      const prodsHtml = hrfProds.length
+        ? hrfProds.map(p => renderPC(p)).join('')
         : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
 
       block.innerHTML = `
@@ -1257,7 +1257,6 @@ async function loadProds() {
     console.error('loadProds:', e);
     prods = [];
   }
-  renderHomeProds();
   renderCatalog();
   renderHomeCats();
   renderStoreProds();
@@ -1294,13 +1293,19 @@ function renderPC(p) {
   </div>`;
 }
 
-function renderHomeProds() {
-  const el = document.getElementById('home-prods');
-  if (!el) return;
-  const list = prods.filter(p => p.available !== false).slice(0, 8);
-  el.innerHTML = list.length
-    ? list.map(renderPC).join('')
-    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Товаров нет</div></div>`;
+// Обновляет карточки в home-retailer-feed без повторного запроса в Firestore.
+// Используется вместо renderHomeProds (элемента #home-prods в DOM нет).
+function refreshHrfCards() {
+  document.querySelectorAll('#home-retailer-feed .pc:not(.pc-skeleton)').forEach(pcEl => {
+    const m = pcEl.getAttribute('onclick')?.match(/openProdModal\('([^']+)'\)/);
+    if (!m) return;
+    const pid = m[1];
+    const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
+    if (!p) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = renderPC(p);
+    pcEl.replaceWith(tmp.firstElementChild);
+  });
 }
 
 function renderCatalog() {
@@ -1433,7 +1438,7 @@ window.pcPlus  = async function (pid, _srcBtn) {
   const btn = _srcBtn || findCartBtn(pid, 'plus');
   btnLoad(btn);
   await addToCart(pid);
-  // renderHomeProds/renderCatalog/renderStoreProds called inside addToCart, btn removed from DOM — no btnDone needed
+  // refreshHrfCards/renderCatalog/renderStoreProds called inside addToCart, btn removed from DOM — no btnDone needed
 };
 window.pcMinus = async function (pid, _srcBtn) {
   const item = cart.find(c => c.productId === pid);
@@ -1450,7 +1455,7 @@ window.pcMinus = async function (pid, _srcBtn) {
       await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
       item.quantity = nq;
     }
-    renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+    renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
   } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
 
@@ -1592,6 +1597,30 @@ window.addToCart = async function (pid, _srcBtn) {
   const btn = _srcBtn || findCartBtn(pid, 'add');
   btnLoad(btn);
 
+  // ── Проверка: нельзя смешивать товары разных ритейлеров ──────
+  const pStoreId = p.storeId || null;
+  if (pStoreId && cart.length > 0) {
+    const existingStoreId = cart[0].storeId ||
+      (prods.find(x => x.id === cart[0].productId) || jsonProdsMap[cart[0].productId])?.storeId || null;
+
+    if (existingStoreId && existingStoreId !== pStoreId) {
+      const fromStore = stores.find(s => s.id === existingStoreId);
+      const toStore   = stores.find(s => s.id === pStoreId);
+      const ok = confirm(
+        `В корзине уже есть товары из «${fromStore?.name || 'другого магазина'}».\n` +
+        `Очистить корзину и добавить товары из «${toStore?.name || 'этого магазина'}»?`
+      );
+      if (!ok) { btnDone(btn); return; }
+      try {
+        const b = writeBatch(db);
+        cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
+        await b.commit();
+        cart = [];
+        renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
+      } catch { toast('Ошибка очистки корзины', 'err'); btnDone(btn); return; }
+    }
+  }
+
   const cr = doc(db, 'users', CU.uid, 'cart', p.id);
   const ex = cart.find(c => c.productId === p.id);
   try {
@@ -1599,12 +1628,22 @@ window.addToCart = async function (pid, _srcBtn) {
       await updateDoc(cr, { quantity: increment(1), updatedAt: serverTimestamp() });
       ex.quantity++;
     } else {
-      const item = { productId: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl || '', quantity: 1, addedAt: serverTimestamp(), updatedAt: serverTimestamp() };
+      const item = {
+        productId:  p.id,
+        name:       p.name,
+        price:      p.price,
+        imageUrl:   p.imageUrl || '',
+        quantity:   1,
+        storeId:    p.storeId    || null,
+        locationId: p.locationId || null,
+        addedAt:    serverTimestamp(),
+        updatedAt:  serverTimestamp(),
+      };
       await setDoc(cr, item);
       cart.push({ id: p.id, ...item });
     }
     toast(p.name + ' добавлен в корзину', 'ok');
-    renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+    renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
   } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
 
@@ -1626,7 +1665,7 @@ window.updateQty = async function (pid, d) {
 window.removeCI = async function (pid) {
   await deleteDoc(doc(db, 'users', CU.uid, 'cart', pid));
   cart = cart.filter(c => c.productId !== pid);
-  renderCart(); renderHomeProds(); renderCatalog(); updateBadges();
+  renderCart(); refreshHrfCards(); renderCatalog(); updateBadges();
 };
 
 window.clearCartUI = async function () {
@@ -1635,7 +1674,7 @@ window.clearCartUI = async function () {
   cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
   await b.commit();
   cart = [];
-  renderCart(); renderHomeProds(); renderCatalog(); renderStoreProds(); updateBadges();
+  renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
 };
 
 function renderCart() {
@@ -1782,8 +1821,8 @@ window.doCheckout = async function () {
       comment:         document.getElementById('cart-comment')?.value.trim() || '',
       paymentMethod:   payMethod,
       deliveryService,
-      retailerId:      activeRetailerId || null,
-      locationId:      activeLocId      || null,
+      retailerId:      activeRetailerId || cart[0]?.storeId    || null,
+      locationId:      activeLocId      || cart[0]?.locationId || null,
       status:          'reserved',
       courierId:       null,
       courierName:     null,
