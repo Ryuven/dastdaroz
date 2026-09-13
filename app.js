@@ -506,6 +506,10 @@ window.onFcmToken = function(token) {
 
 async function saveFcmToken(token) {
   if (!CU || !token) return;
+  // Ждём пока UD загрузится (если ещё не загружен)
+  if (!UD) {
+    await loadUD();
+  }
   try {
     await setDoc(
       doc(db, 'users', CU.uid),
@@ -546,7 +550,10 @@ async function loadUD() {
       ? s.data()
       : { displayName: CU.displayName || '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
   } catch {
-    UD = { displayName: '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+    // Не сбрасываем UD если он уже загружен — сохраняем старые данные
+    if (!UD) {
+      UD = { displayName: '', phone: fallbackPhone, address: '', lat: null, lng: null, role: 'client', avatarUrl: '' };
+    }
   }
 }
 
