@@ -1397,7 +1397,7 @@ function renderCatalog() {
           <div class="hrf-name">${escHtml(name)}</div>
           ${sid !== '__none__' ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
         </div>
-        <div class="pg">${gp.map(renderPC).join('')}</div>
+        <div class="pg">${gp.slice(0, 4).map(renderPC).join('')}</div>
       </div>`;
   }).join('');
 }
