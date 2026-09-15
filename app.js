@@ -1360,9 +1360,46 @@ function renderCatalog() {
     p.name.toLowerCase().includes(searchQ.toLowerCase()) ||
     (p.description || '').toLowerCase().includes(searchQ.toLowerCase())
   );
-  el.innerHTML = list.length
-    ? list.map(renderPC).join('')
-    : `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ничего не найдено</div></div>`;
+
+  if (!list.length) {
+    el.className = 'pg';
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-t">Ничего не найдено</div></div>`;
+    return;
+  }
+
+  // Группируем товары по ритейлеру (storeId)
+  const groups = new Map();
+  list.forEach(p => {
+    const sid = p.storeId || '__none__';
+    if (!groups.has(sid)) groups.set(sid, { store: stores.find(s => s.id === sid), prods: [] });
+    groups.get(sid).prods.push(p);
+  });
+
+  // Если только одна группа без storeId — плоский грид
+  if (groups.size === 1 && groups.has('__none__')) {
+    el.className = 'pg';
+    el.innerHTML = list.map(renderPC).join('');
+    return;
+  }
+
+  // Рендерим блоки в стиле главной (hrf-block + hrf-header + .pg)
+  el.className = '';
+  el.innerHTML = [...groups.entries()].map(([sid, { store, prods: gp }]) => {
+    const name = store?.name || gp[0]?.retailerName || 'Магазин';
+    const logoHtml = store?.logoSquareUrl
+      ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(name)}" loading="lazy">`
+      : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
+    const clickAttr = sid !== '__none__' ? `onclick="openRetailer('${sid}')"` : '';
+    return `
+      <div class="hrf-block">
+        <div class="hrf-header" ${clickAttr}>
+          ${logoHtml}
+          <div class="hrf-name">${escHtml(name)}</div>
+          ${sid !== '__none__' ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
+        </div>
+        <div class="pg">${gp.map(renderPC).join('')}</div>
+      </div>`;
+  }).join('');
 }
 
 // Модалка товара
