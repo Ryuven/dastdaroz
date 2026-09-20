@@ -826,29 +826,12 @@ async function loadStores() {
 
 async function renderHomeRetailerFeed() {
   const feedEl = document.getElementById('home-retailer-feed');
-  if (!feedEl || !stores.length) return;
+  if (!feedEl || !stores.length) { if (feedEl) feedEl.innerHTML = ''; return; }
 
-  const skl = () => Array(4).fill(0).map(() =>
-    `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:9px;width:82%"></div><div class="skl-block" style="height:7px;width:65%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;width:100%;border-radius:10px"></div></div></div></div>`
-  ).join('');
-
-  // Skeleton blocks
-  feedEl.innerHTML = stores.map(s => `
-    <div class="hrf-block" id="hrf-${s.id}">
-      <div class="hrf-header">
-        <div class="hrf-logo skl-block"></div>
-        <div class="skl-block" style="height:14px;width:120px;border-radius:6px"></div>
-      </div>
-      <div class="pg">${skl()}</div>
-    </div>`
-  ).join('');
-
-  // Load each retailer's first location + 4 products in parallel
-  await Promise.all(stores.map(async store => {
-    const block = document.getElementById(`hrf-${store.id}`);
-    if (!block) return;
+  // Грузим все данные параллельно — без промежуточного скелетона в JS
+  const results = await Promise.all(stores.map(async store => {
     try {
-      // First location in current city
+      // Первая точка в текущем городе
       let locId = null;
       const locSnap = await getDocs(
         query(collection(db, 'retailers', store.id, 'locations'),
@@ -862,42 +845,60 @@ async function renderHomeRetailerFeed() {
         );
         if (!locFb.empty) locId = locFb.docs[0].id;
       }
-      if (!locId) { block.remove(); return; }
+      if (!locId) return null;
 
       // Сохраняем данные точки для проверки режима работы
       const locData = locSnap.empty ? null : { id: locId, ...locSnap.docs[0].data() };
       if (locData) window._locDataMap = { ...(window._locDataMap || {}), [locId]: locData };
 
-      // First 4 available products
+      // Тянем до 15 доступных товаров, потом рандомно выбираем 2
       const prodSnap = await getDocs(
         query(collection(db, 'retailers', store.id, 'locations', locId, 'catalog'),
-              where('available', '==', true), limit(4))
+              where('available', '==', true), limit(15))
       );
-      const hrfProds = prodSnap.docs.map(d => ({
+      const allProds = prodSnap.docs.map(d => ({
         id: d.id, ...d.data(), storeId: store.id, locationId: locId
       }));
+      // Fisher-Yates shuffle → берём первые 2
+      for (let i = allProds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allProds[i], allProds[j]] = [allProds[j], allProds[i]];
+      }
+      const hrfProds = allProds.slice(0, 2);
       hrfProds.forEach(p => { jsonProdsMap[p.id] = p; });
 
-      const logoHtml = store.logoSquareUrl
-        ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(store.name)}" loading="lazy">`
-        : `<div class="hrf-logo-placeholder">${store.name[0]}</div>`;
-
-      const prodsHtml = hrfProds.length
-        ? hrfProds.map(p => renderPC(p)).join('')
-        : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
-
-      block.innerHTML = `
-        <div class="hrf-header" onclick="openStore('${store.id}')">
-          ${logoHtml}
-          <div class="hrf-name">${escHtml(store.name)}</div>
-          <div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>
-        </div>
-        <div class="pg">${prodsHtml}</div>`;
+      return { store, hrfProds, locData };
     } catch (e) {
       console.warn('hrf:', store.name, e?.message);
-      block.remove();
+      return null;
     }
   }));
+
+  // Один раз рендерим всё — заменяем HTML-скелетон реальным контентом
+  feedEl.innerHTML = results
+    .filter(Boolean)
+    .map(({ store, hrfProds, locData }) => {
+      const logoHtml = store.logoSquareUrl
+        ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(store.name)}" loading="lazy">`
+        : `<div class="hrf-logo-placeholder">${(store.name[0] || '?').toUpperCase()}</div>`;
+
+      const prodsHtml = hrfProds.length
+        ? hrfProds.map(p => renderPC(p, true)).join('')
+        : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
+
+      return `
+        <div class="hrf-block" id="hrf-${store.id}">
+          <div class="hrf-header" onclick="openStore('${store.id}')">
+            ${logoHtml}
+            <div class="hrf-name">${escHtml(store.name)}</div>
+            <div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>
+          </div>
+          <div class="pg-wrap">
+            <div class="pg">${prodsHtml}</div>
+            ${locData && !isLocationOpen(locData) ? '<div class="pg-closed-overlay"><span class="pg-closed-overlay-lbl">ЗАКРЫТО</span></div>' : ''}
+          </div>
+        </div>`;
+    }).join('');
 }
 
 function renderStoresGrid() {
@@ -1340,7 +1341,7 @@ async function loadProds() {
   renderStoresGrid();
 }
 
-function renderPC(p) {
+function renderPC(p, preview = false) {
   const qty     = getCartQty(p.id);
   const unavail = !p.available;
   const ic      = catIcon(p.categoryId, catName(p.categoryId));
@@ -1354,19 +1355,28 @@ function renderPC(p) {
     : (window._locDataMap?.[p.locationId] || null);
   const locClosed = _pLocData ? !isLocationOpen(_pLocData) : false;
 
-  const controls = unavail
-    ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
-    : locClosed
+  // preview-режим: вся карточка и кнопка ведут в меню ритейлера
+  const cardClick = preview
+    ? `openRetailer('${p.storeId}')`
+    : `openProdModal('${p.id}')`;
+
+  const controls = preview
+    ? locClosed
       ? `<button class="add-btn-full add-btn-closed" disabled>Закрыто</button>`
-      : qty > 0
-        ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
-        : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
+      : `<button class="add-btn-full" onclick="event.stopPropagation();openRetailer('${p.storeId}')">В корзину</button>`
+    : unavail
+      ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
+      : locClosed
+        ? `<button class="add-btn-full add-btn-closed" disabled>Закрыто</button>`
+        : qty > 0
+          ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
+          : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
 
   const retailerTag = p.retailerName
     ? `<div class="pc-retailer">${escHtml(p.retailerName)}</div>`
     : '';
 
-  return `<div class="pc" onclick="openProdModal('${p.id}')">
+  return `<div class="pc" onclick="${cardClick}">
     <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
     <div class="pc-body">
       ${retailerTag}
@@ -1388,7 +1398,7 @@ function refreshHrfCards() {
     const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
     if (!p) return;
     const tmp = document.createElement('div');
-    tmp.innerHTML = renderPC(p);
+    tmp.innerHTML = renderPC(p, true);
     pcEl.replaceWith(tmp.firstElementChild);
   });
 }
@@ -1420,7 +1430,7 @@ function renderCatalog() {
   // Если только одна группа без storeId — плоский грид
   if (groups.size === 1 && groups.has('__none__')) {
     el.className = 'pg';
-    el.innerHTML = list.map(renderPC).join('');
+    el.innerHTML = list.map(p => renderPC(p, true)).join('');
     return;
   }
 
@@ -1432,6 +1442,15 @@ function renderCatalog() {
       ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(name)}" loading="lazy">`
       : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
     const clickAttr = sid !== '__none__' ? `onclick="openRetailer('${sid}')"` : '';
+    const firstLocId = gp[0]?.locationId;
+    const grpLocData = firstLocId ? (window._locDataMap?.[firstLocId] || null) : null;
+    const grpClosed  = grpLocData ? !isLocationOpen(grpLocData) : false;
+    const s = [...gp];
+    for (let i = s.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [s[i], s[j]] = [s[j], s[i]];
+    }
+    const grpProdsHtml = s.slice(0, 2).map(p => renderPC(p, true)).join('');
     return `
       <div class="hrf-block">
         <div class="hrf-header" ${clickAttr}>
@@ -1439,7 +1458,10 @@ function renderCatalog() {
           <div class="hrf-name">${escHtml(name)}</div>
           ${sid !== '__none__' ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
         </div>
-        <div class="pg">${gp.slice(0, 4).map(renderPC).join('')}</div>
+        <div class="pg-wrap">
+          <div class="pg">${grpProdsHtml}</div>
+          ${grpClosed ? '<div class="pg-closed-overlay"><span class="pg-closed-overlay-lbl">ЗАКРЫТО</span></div>' : ''}
+        </div>
       </div>`;
   }).join('');
 }
