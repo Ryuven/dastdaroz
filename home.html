@@ -1967,6 +1967,16 @@ select.addr-inp{cursor:pointer}
 </nav>
 
 <!-- Вся логика в app.js -->
+<script>
+// ✅ ФИКС: определяем window.onFcmToken СИНХРОННО при парсинге HTML,
+// до загрузки app.js (module). Android вызывает эту функцию из onAuthResult —
+// если она не определена, вызов тихо падает и токен теряется.
+// Здесь просто сохраняем токен; app.js заберёт его через _pendingFcmToken
+// в onAuthStateChanged и сохранит в Firestore.
+window.onFcmToken = function(t) {
+  if (t) window._pendingFcmToken = t;
+};
+</script>
 <script type="module" src="./app.js"></script>
 
 <!-- ORDER DETAIL MODAL -->
