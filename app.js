@@ -72,6 +72,7 @@ let currentOTab      = 'all';
 let activeStore      = null;
 let activeRetailerId = null;  // ID ритейлера выбранной точки
 let activeLocId      = null;  // ID выбранной точки (location)
+let activeLocData    = null;  // Данные текущей точки (workingHours, isManuallyClosed и т.д.)
 let storeCatFilter   = 'all';
 let jsonMenuData     = null;
 let jsonProdsMap     = {};
@@ -620,8 +621,8 @@ window.goPage = function (page) {
     }[page] || 'dastdaroz';
   }
 
-  if (page === 'orders') { showOrdersSkeleton(); loadOrders(); }
-  if (page === 'store')  renderStorePage();
+  if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
+  if (page === 'store')   renderStorePage();
 
   closeSB();
   document.getElementById('pages').scrollTop = 0;
@@ -863,6 +864,10 @@ async function renderHomeRetailerFeed() {
       }
       if (!locId) { block.remove(); return; }
 
+      // Сохраняем данные точки для проверки режима работы
+      const locData = locSnap.empty ? null : { id: locId, ...locSnap.docs[0].data() };
+      if (locData) window._locDataMap = { ...(window._locDataMap || {}), [locId]: locData };
+
       // First 4 available products
       const prodSnap = await getDocs(
         query(collection(db, 'retailers', store.id, 'locations', locId, 'catalog'),
@@ -928,6 +933,7 @@ window.openRetailer = async function (sid) {
   storeCatFilter = 'all';
   jsonMenuData   = null;
   jsonProdsMap   = {};
+  activeLocData  = null;  // сбрасываем данные точки при возврате к списку
   if (!activeStore) return;
   goPage('store');
   // Сбросить кнопку назад на «Главная»
@@ -948,6 +954,7 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   jsonProdsMap     = {};
   activeRetailerId = rid;
   activeLocId      = locId;
+  activeLocData    = null; // будет загружено ниже
 
   const prodsEl = document.getElementById('store-prods');
   const catsEl  = document.getElementById('store-cats');
@@ -1007,6 +1014,26 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   ).join('');
 
   try {
+    // Загружаем данные точки (режим работы)
+    try {
+      const locSnap = await getDoc(doc(db, 'retailers', rid, 'locations', locId));
+      if (locSnap.exists()) activeLocData = locSnap.data();
+    } catch (_) {}
+
+    // Показываем баннер если точка закрыта
+    if (activeLocData && !isLocationOpen(activeLocData)) {
+      const prodsEl2 = document.getElementById('store-prods');
+      const statusTxt = locationStatusText(activeLocData);
+      const closedBanner = `<div class="loc-closed-banner" style="grid-column:1/-1;margin-bottom:4px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div>
+          <div class="loc-closed-banner-title">Точка сейчас закрыта</div>
+          ${statusTxt ? `<div class="loc-closed-banner-sub">${statusTxt}</div>` : ''}
+        </div>
+      </div>`;
+      if (prodsEl2) prodsEl2.insertAdjacentHTML('afterbegin', closedBanner);
+    }
+
     const snap = await getDocs(
       query(collection(db, 'retailers', rid, 'locations', locId, 'catalog'), where('available', '==', true))
     );
@@ -1111,16 +1138,23 @@ async function renderRetailerPage(retailer) {
     }
 
     listEl.innerHTML = locations.map(loc => {
-      const mapsUrl  = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
-      const safeAddr = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const mapsUrl    = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
+      const safeAddr   = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const locOpen    = isLocationOpen(loc);
+      const locTxt     = locationStatusText(loc);
+      const closedCls  = locOpen ? '' : 'retailer-loc-card-closed';
+      const statusBadge = locOpen
+        ? (loc.noSchedule ? '' : (loc.workingHours ? `<div class="retailer-loc-hours">${loc.workingHours.from}–${loc.workingHours.to}</div>` : ''))
+        : `<div class="retailer-loc-closed-tag">🔴 Закрыто${locTxt ? ' · ' + locTxt : ''}</div>`;
       return `
-      <div class="retailer-loc-card" style="cursor:pointer"
+      <div class="retailer-loc-card ${closedCls}" style="cursor:pointer"
            onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
-        <div class="retailer-loc-ico">
+        <div class="retailer-loc-ico" style="${locOpen ? '' : 'background:var(--rlclosed-ico-bg,rgba(244,63,94,.12));border-color:rgba(244,63,94,.2);color:#f43f5e'}">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <div class="retailer-loc-body">
           <div class="retailer-loc-addr">${loc.address || '—'}</div>
+          ${statusBadge}
           ${loc.lat && loc.lng ? `<div class="retailer-loc-coords">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}</div>` : ''}
         </div>
         ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener"
@@ -1314,11 +1348,19 @@ function renderPC(p) {
     ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy">`
     : `<div style="width:64px;height:64px;opacity:.2">${ic.svg.replace('width="26" height="26"', 'width="64" height="64"')}</div>`;
 
+  // Проверяем режим работы точки для этого товара
+  const _pLocData  = (activeLocData && p.locationId === activeLocId)
+    ? activeLocData
+    : (window._locDataMap?.[p.locationId] || null);
+  const locClosed = _pLocData ? !isLocationOpen(_pLocData) : false;
+
   const controls = unavail
     ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
-    : qty > 0
-      ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
-      : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
+    : locClosed
+      ? `<button class="add-btn-full add-btn-closed" disabled>Закрыто</button>`
+      : qty > 0
+        ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
+        : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
 
   const retailerTag = p.retailerName
     ? `<div class="pc-retailer">${escHtml(p.retailerName)}</div>`
@@ -1669,6 +1711,32 @@ function findCartBtn(pid, type) {
   return null;
 }
 
+// ── Режим работы: проверка открытости точки ─────────────────
+function isLocationOpen(loc) {
+  if (!loc) return true;  // нет данных = открыто
+  if (loc.isManuallyClosed) return false;
+  if (loc.noSchedule) return true;
+  if (loc.workingHours && loc.workingHours.from && loc.workingHours.to) {
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const [fh, fm] = loc.workingHours.from.split(':').map(Number);
+    const [th, tm] = loc.workingHours.to.split(':').map(Number);
+    const f = fh * 60 + fm, t = th * 60 + tm;
+    return f <= t ? cur >= f && cur < t : cur >= f || cur < t;
+  }
+  return true;
+}
+
+function locationStatusText(loc) {
+  if (!loc) return '';
+  if (loc.isManuallyClosed) return 'Точка временно закрыта';
+  if (loc.workingHours && loc.workingHours.from && loc.workingHours.to) {
+    return `Работает ${loc.workingHours.from}–${loc.workingHours.to}`;
+  }
+  return '';
+}
+
+
 window.addToCart = async function (pid, _srcBtn) {
   if (!requireAuth('Войдите, чтобы добавить в корзину')) return;
   const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
@@ -1676,6 +1744,15 @@ window.addToCart = async function (pid, _srcBtn) {
 
   const btn = _srcBtn || findCartBtn(pid, 'add');
   btnLoad(btn);
+
+  // ── Проверка режима работы точки ─────────────────────────────
+  const locDataForCheck = activeLocData && p.locationId === activeLocId ? activeLocData : null;
+  if (locDataForCheck && !isLocationOpen(locDataForCheck)) {
+    const statusTxt = locationStatusText(locDataForCheck);
+    toast('Точка закрыта' + (statusTxt ? ' · ' + statusTxt : ''), 'warn');
+    btnDone(btn);
+    return;
+  }
 
   // ── Проверка: нельзя смешивать товары разных ритейлеров ──────
   const pStoreId = p.storeId || null;
