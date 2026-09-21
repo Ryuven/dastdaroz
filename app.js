@@ -2036,6 +2036,8 @@ window.doCheckout = async function () {
       deliveryService,
       retailerId:      activeRetailerId || cart[0]?.storeId    || null,
       locationId:      activeLocId      || cart[0]?.locationId || null,
+      retailerName:    stores.find(s => s.id === (activeRetailerId || cart[0]?.storeId))?.name || null,
+      locationAddress: activeLocData?.address || window._locDataMap?.[activeLocId || cart[0]?.locationId]?.address || null,
       status:          'reserved',
       courierId:       null,
       courierName:     null,
@@ -2419,6 +2421,17 @@ window.openOrderModal = function (oid) {
   const svcNameOrd = svcObjOrd ? svcObjOrd.name : (o.deliveryService || '—');
   const coordsOrd  = (o.lat && o.lng) ? `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}` : '—';
 
+  const _omSt      = stores.find(s => s.id === o.retailerId);
+  const _omLocAddr = o.locationAddress || window._locDataMap?.[o.locationId]?.address || '';
+  const omRetailerHtml = (() => {
+    const name = o.retailerName || _omSt?.name || '';
+    if (!name) return '';
+    const logo = _omSt?.logoSquareUrl
+      ? `<img class="om-retailer-logo" src="${escHtml(_omSt.logoSquareUrl)}" alt="" style="width:36px;height:36px;min-width:36px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+      : `<div class="om-retailer-logo om-retailer-logo-ph">${(name[0] || '?').toUpperCase()}</div>`;
+    return `<div class="om-retailer">${logo}<span class="om-retailer-info">${escHtml(name)}${_omLocAddr ? ' · ' + escHtml(_omLocAddr) : ''}</span></div>`;
+  })();
+
   // ════ БРОНИРОВАНИЕ — специальный UI ════
   if (o.status === 'reserved') {
     const svcObj  = deliveryServices.find(s => s.id === o.deliveryService);
@@ -2443,6 +2456,7 @@ window.openOrderModal = function (oid) {
         <div class="booking-order-header">
           <div class="booking-order-num">Заказ ${num}</div>
         </div>
+        ${omRetailerHtml}
 
         <!-- 1. Список товаров -->
         <div class="booking-items">
@@ -2580,6 +2594,7 @@ window.openOrderModal = function (oid) {
         <div class="booking-order-num">Заказ ${num}</div>
         <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10;font-size:.62rem;font-weight:700;padding:4px 10px;border-radius:99px;border:1.5px solid">${l}</div>
       </div>
+      ${omRetailerHtml}
 
       <div class="booking-items">
         ${(o.items || []).map(i => `
