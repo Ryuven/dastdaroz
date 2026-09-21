@@ -293,8 +293,9 @@ a{color:inherit;text-decoration:none}
 .pc-qty-val{flex:1;height:32px;text-align:center;line-height:32px;font-size:.8rem;font-weight:700;color:var(--tx);border-inline:1px solid var(--b0)}
 /* ── CLOSED OVERLAY на гриде карточек ── */
 .pg-wrap{position:relative;border-radius:16px}
-.pg-closed-overlay{position:absolute;inset:0;z-index:5;background:rgba(210,60,70,.62);border-radius:16px;display:flex;align-items:center;justify-content:center;pointer-events:none;backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)}
+.pg-closed-overlay{position:absolute;inset:0;z-index:5;background:rgba(210,60,70,.62);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;pointer-events:none;backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px)}
 .pg-closed-overlay-lbl{font-family:var(--fd);font-weight:900;font-size:1.4rem;color:#fff;letter-spacing:.14em;user-select:none}
+.pg-closed-overlay-sub{font-size:.72rem;font-weight:500;color:rgba(255,255,255,.88);letter-spacing:.02em;user-select:none}
 
 /* ── CART ── */
 .cart-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-width:0}
@@ -345,10 +346,8 @@ select.addr-inp{cursor:pointer}
 .bookings-btn:hover{background:rgba(34,197,94,.15)}
 .bookings-btn:active{transform:scale(.98)}
 .bookings-btn-badge{background:var(--acc);color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 8px;line-height:1.6}
-.oc{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:14px 16px;margin-bottom:9px;transition:all var(--tf);position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.oc{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:15px 16px;margin-bottom:9px;transition:all var(--tf);position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .oc:hover{border-color:var(--accg);box-shadow:var(--shadow-md)}
-.oc::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3.5px;border-radius:3.5px 0 0 3.5px}
-.oc.st-pending::before{background:var(--amber)}.oc.st-confirmed::before{background:var(--blue)}.oc.st-preparing::before{background:var(--purple)}.oc.st-delivering::before{background:var(--acc)}.oc.st-delivered::before{background:var(--acc)}.oc.st-cancelled::before{background:var(--red)}
 .oc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap}
 .oc-num{font-family:var(--fd);font-size:.82rem;font-weight:900;color:var(--tx);letter-spacing:-.01em}
 .oc-status{font-size:.54rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:99px;border:1px solid;white-space:nowrap}
@@ -356,6 +355,10 @@ select.addr-inp{cursor:pointer}
 .oc-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .oc-total{font-family:var(--fd);font-weight:900;font-size:.98rem;color:var(--tx)}
 .oc-meta{font-size:.58rem;color:var(--tx3);margin-top:1px}
+.oc-retailer{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.oc-retailer-logo{width:22px;height:22px;border-radius:5px;object-fit:cover;flex-shrink:0;border:1px solid var(--b0)}
+.oc-retailer-logo-ph{background:var(--acc);color:#fff;font-size:.56rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:none}
+.oc-retailer-name{font-size:.7rem;font-weight:700;color:var(--tx);line-height:1;letter-spacing:.01em}
 .oc-actions{display:flex;gap:7px}
 .btn-sm{padding:5px 12px;background:none;border:1.5px solid var(--b1);border-radius:7px;color:var(--tx3);font-size:.6rem;font-family:var(--fs);cursor:pointer;transition:all var(--tf);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;font-weight:600}
 .btn-sm:hover{border-color:var(--b2);color:var(--tx)}

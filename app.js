@@ -895,7 +895,7 @@ async function renderHomeRetailerFeed() {
           </div>
           <div class="pg-wrap">
             <div class="pg">${prodsHtml}</div>
-            ${locData && !isLocationOpen(locData) ? '<div class="pg-closed-overlay"><span class="pg-closed-overlay-lbl">ЗАКРЫТО</span></div>' : ''}
+            ${buildClosedOverlay(locData)}
           </div>
         </div>`;
     }).join('');
@@ -1460,7 +1460,7 @@ function renderCatalog() {
         </div>
         <div class="pg-wrap">
           <div class="pg">${grpProdsHtml}</div>
-          ${grpClosed ? '<div class="pg-closed-overlay"><span class="pg-closed-overlay-lbl">ЗАКРЫТО</span></div>' : ''}
+          ${buildClosedOverlay(grpLocData)}
         </div>
       </div>`;
   }).join('');
@@ -1749,6 +1749,16 @@ function isLocationOpen(loc) {
   return true;
 }
 
+function getOpenTimeText(loc) {
+  if (!loc || loc.isManuallyClosed || loc.noSchedule) return '';
+  return loc.workingHours?.from ? 'Откроется в ' + loc.workingHours.from : '';
+}
+function buildClosedOverlay(loc) {
+  if (!loc || isLocationOpen(loc)) return '';
+  const sub = getOpenTimeText(loc);
+  return `<div class="pg-closed-overlay"><span class="pg-closed-overlay-lbl">ЗАКРЫТО</span>${sub ? `<span class="pg-closed-overlay-sub">${sub}</span>` : ''}</div>`;
+}
+
 function locationStatusText(loc) {
   if (!loc) return '';
   if (loc.isManuallyClosed) return 'Точка временно закрыта';
@@ -1788,6 +1798,30 @@ window.addToCart = async function (pid, _srcBtn) {
       const ok = confirm(
         `В корзине уже есть товары из «${fromStore?.name || 'другого магазина'}».\n` +
         `Очистить корзину и добавить товары из «${toStore?.name || 'этого магазина'}»?`
+      );
+      if (!ok) { btnDone(btn); return; }
+      try {
+        const b = writeBatch(db);
+        cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
+        await b.commit();
+        cart = [];
+        renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
+      } catch { toast('Ошибка очистки корзины', 'err'); btnDone(btn); return; }
+    }
+  }
+
+  // ── Проверка: нельзя смешивать товары из разных точек одного ритейлера ──
+  const pLocId = p.locationId || null;
+  if (pLocId && cart.length > 0) {
+    const existingLocId = cart[0].locationId ||
+      (prods.find(x => x.id === cart[0].productId) || jsonProdsMap[cart[0].productId])?.locationId || null;
+
+    if (existingLocId && existingLocId !== pLocId) {
+      const fromAddr = window._locDataMap?.[existingLocId]?.address || 'другой точки';
+      const toAddr   = window._locDataMap?.[pLocId]?.address       || 'этой точки';
+      const ok = confirm(
+        `В корзине уже есть товары из точки «${fromAddr}».\n` +
+        `Очистить корзину и добавить товары из «${toAddr}»?`
       );
       if (!ok) { btnDone(btn); return; }
       try {
@@ -2329,15 +2363,25 @@ function renderOrders() {
     const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
     const items    = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
     const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
+    const st = stores.find(s => s.id === o.retailerId);
+    const retailerHtml = o.retailerName ? (() => {
+      const logo = st?.logoSquareUrl
+        ? `<img class="oc-retailer-logo" src="${escHtml(st.logoSquareUrl)}" alt="">`
+        : `<div class="oc-retailer-logo oc-retailer-logo-ph">${(o.retailerName[0] || '?').toUpperCase()}</div>`;
+      return `<div class="oc-retailer">${logo}<span class="oc-retailer-name">${escHtml(o.retailerName)}</span></div>`;
+    })() : '';
     return `<div class="oc st-${o.status}" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
       <div class="oc-head">
         <div class="oc-num">Заказ ${num}</div>
         <div class="oc-status" style="color:${c};border-color:${c}30;background:${c}10">${l}</div>
       </div>
-      ${o.retailerName ? `<div class="oc-items" style="color:var(--acc);font-size:.64rem;font-weight:600;margin-bottom:2px">🏪 ${escHtml(o.retailerName)}</div>` : ''}
+      ${retailerHtml}
       <div class="oc-items">${items}</div>
       <div class="oc-footer">
-        <div><div class="oc-total">${o.total} TJS</div><div class="oc-meta">${fmtDate(o.createdAt)} · ${o.address || ''}</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <div class="oc-total">${o.total} TJS</div>
+          <div class="oc-meta">${fmtDate(o.createdAt)}</div>
+        </div>
         <div class="oc-actions" onclick="event.stopPropagation()">
           ${isActive ? `<div style="width:7px;height:7px;border-radius:50%;background:${c};animation:rpulse 2s infinite;flex-shrink:0"></div>` : ''}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
