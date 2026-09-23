@@ -663,6 +663,60 @@ select.addr-inp{cursor:pointer}
   box-shadow:0 4px 12px rgba(0,0,0,.07);
 }
 
+/* ── IMMERSIVE MODE: топбар скрыт, баннер от края до края ── */
+.main.immersive .topbar,
+.main.immersive .guest-topbar{display:none!important}
+
+#page-store.page--full-banner{
+  padding-top:0!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+/* Баннер ret-xbanner: убираем отступы, скругления, рамку */
+#page-store.page--full-banner .ret-xbanner-wrap{margin:0 0 14px!important}
+#page-store.page--full-banner .ret-xbanner{
+  border-radius:0!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+/* Стандартный hero-header (без extraBannerUrl) — тоже на весь экран */
+#page-store.page--full-banner .store-cat-header{
+  border-radius:0!important;
+  border:none!important;
+  box-shadow:none!important;
+  margin:0 0 14px!important;
+}
+/* Скроллбар прячем в иммерсивном режиме — не должен перекрывать баннер */
+.main.immersive .pages::-webkit-scrollbar{display:none}
+.main.immersive .pages{scrollbar-width:none}
+
+/* Кнопка назад внутри баннера: учитываем safe-area (iPhone notch) */
+#page-store.page--full-banner .ret-xbanner-back{
+  top:max(12px, calc(env(safe-area-inset-top,0px) + 8px));
+  left:max(12px, calc(env(safe-area-inset-left,0px) + 8px));
+}
+/* Возвращаем боковые отступы контенту ниже баннера */
+#page-store.page--full-banner .cat-filter-wrap{
+  padding-left:22px;padding-right:22px;
+}
+#page-store.page--full-banner #store-prods{
+  padding-left:22px;padding-right:22px;box-sizing:border-box;
+}
+#page-store.page--full-banner .store-cat-back{
+  margin-left:22px;
+}
+@media(max-width:860px){
+  #page-store.page--full-banner .cat-filter-wrap{
+    padding-left:14px;padding-right:14px;
+  }
+  #page-store.page--full-banner #store-prods{
+    padding-left:14px;padding-right:14px;
+  }
+  #page-store.page--full-banner .store-cat-back{
+    margin-left:14px;
+  }
+}
+
 /* ── MOBILE ── */
 .mob-nav{display:none}
 .sb-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.38);backdrop-filter:blur(4px)}

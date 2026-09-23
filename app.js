@@ -629,7 +629,21 @@ let _odFromPage = 'orders';
 let _authFromPage = 'home';
 window.goAuthBack = function () { goPage(_authFromPage || 'home'); };
 
+// ── Иммерсивный режим: скрывает топбар и убирает отступы страницы
+//    чтобы баннер ритейлера прилегал к краям экрана ─────────────
+function enterImmersiveMode() {
+  document.querySelector('.main')?.classList.add('immersive');
+  document.getElementById('page-store')?.classList.add('page--full-banner');
+}
+function exitImmersiveMode() {
+  document.querySelector('.main')?.classList.remove('immersive');
+  document.getElementById('page-store')?.classList.remove('page--full-banner');
+}
+
 window.goPage = function (page) {
+  // При уходе со страницы ритейлера — выходим из иммерсивного режима
+  if (page !== 'store') exitImmersiveMode();
+
   if (GUEST && ['orders', 'cart', 'profile'].includes(page)) {
     _authFromPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'home';
     page = 'auth';
@@ -973,6 +987,7 @@ window.openRetailer = async function (sid) {
   if (_catScrollObserver) { _catScrollObserver.disconnect(); _catScrollObserver = null; }
   if (!activeStore) return;
   goPage('store');
+  enterImmersiveMode();
   // Сбросить кнопку назад на «Главная»
   const backBtn = document.querySelector('.store-cat-back');
   if (backBtn) {
@@ -986,6 +1001,7 @@ window.openStore = window.openRetailer; // алиас для совместим�
 // Открыть каталог конкретной точки ритейлера
 window.openRetailerCatalog = async function (rid, locId, locAddr) {
   document.getElementById('pages').scrollTop = 0;
+  enterImmersiveMode();
   storeCatFilter   = 'all';
   jsonMenuData     = null;
   jsonProdsMap     = {};
