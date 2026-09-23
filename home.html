@@ -633,6 +633,36 @@ select.addr-inp{cursor:pointer}
 .store-cat-empty-t{font-size:.88rem;font-weight:700;color:var(--tx3);margin-bottom:5px}
 .store-cat-empty-s{font-size:.72rem;color:var(--tx3)}
 
+/* ── RETAILER CATALOG: скролл-секции по категориям ── */
+.store-prods-sectioned{display:flex;flex-direction:column;gap:0}
+.cat-section{margin-bottom:28px}
+.cat-section:last-child{margin-bottom:0}
+.cat-section-header{
+  font-family:var(--fd);font-weight:900;font-size:.92rem;
+  color:var(--tx);letter-spacing:-.02em;line-height:1.1;
+  margin-bottom:12px;padding-bottom:9px;
+  border-bottom:1.5px solid var(--b0);
+  display:flex;align-items:center;gap:8px;
+}
+.cat-section-header::before{
+  content:'';display:inline-block;
+  width:3px;height:14px;border-radius:2px;
+  background:var(--acc);flex-shrink:0;
+}
+.cat-closed-notice{margin-bottom:14px}
+/* Пилюли категорий — прилипают к верху при скролле в каталоге точки */
+/* overflow-x:clip = клипает как hidden, но НЕ ломает position:sticky */
+#page-store{overflow-x:clip}
+#page-store .cat-filter-wrap{
+  position:sticky;top:0;z-index:20;
+  background:var(--bg);
+  padding-top:8px;padding-bottom:4px;
+  transition:box-shadow .2s;
+}
+#page-store .cat-filter-wrap.stuck{
+  box-shadow:0 4px 12px rgba(0,0,0,.07);
+}
+
 /* ── MOBILE ── */
 .mob-nav{display:none}
 .sb-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.38);backdrop-filter:blur(4px)}
@@ -1854,6 +1884,30 @@ select.addr-inp{cursor:pointer}
 
       <div id="prof-nav-section" style="max-width:540px">
 
+        <!-- ── Промокод ─────────────────────────────────────── -->
+        <div class="prof-section-lbl">Акции</div>
+        <div style="display:flex;flex-direction:column;border-radius:13px;overflow:hidden;border:1.5px solid var(--b0)">
+          <button class="prof-row prof-group-start" onclick="openPromoSheet()">
+            <div class="prof-row-icon" style="background:#F59E0B">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Промокод</div>
+              <div class="prof-row-sub">Ввести промокод для приза</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="prof-row prof-group-end" style="border-top:1.5px solid var(--b0)" onclick="openAchievementsSheet()">
+            <div class="prof-row-icon" style="background:#7C3AED">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+            </div>
+            <div class="prof-row-body">
+              <div class="prof-row-title">Достижения</div>
+              <div class="prof-row-sub">Ваши награды и прогресс</div>
+            </div>
+            <svg class="prof-row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
 
         <!-- Прочее -->
         <div class="prof-section-lbl">Прочее</div>

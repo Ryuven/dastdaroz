@@ -79,6 +79,7 @@ let jsonProdsMap     = {};
 let deliveryService  = 'mavsimi';
 let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
 let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'orders'
+let _catScrollObserver = null;    // IntersectionObserver для скролл-шпиона категорий
 
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
@@ -396,6 +397,39 @@ function _initSheets() {
   // ── Редактирование профиля ────────────────────────────────
   Sheet.define({ id: 'profile-edit', title: 'Редактировать профиль', zIndex: 700 });
   Sheet.body('profile-edit').style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+
+  // ── Достижения ────────────────────────────────────────────
+  Sheet.define({ id: 'achievements', title: 'Достижения', zIndex: 700 });
+  Sheet.body('achievements').style.cssText = 'display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 24px);';
+
+  // ── Промокод ──────────────────────────────────────────────
+  Sheet.define({ id: 'promo', title: 'Промокод', zIndex: 700 });
+  const _promoBody = Sheet.body('promo');
+  _promoBody.style.cssText = 'display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 24px);';
+  _promoBody.innerHTML = `
+    <div style="position:relative;margin-bottom:14px">
+      <input
+        id="promo-inp"
+        type="text"
+        placeholder="Введите промокод"
+        autocomplete="off"
+        autocapitalize="characters"
+        style="width:100%;box-sizing:border-box;background:var(--s2);border:1.5px solid var(--b1);border-radius:14px;padding:15px 18px;font-family:var(--fs);font-size:.9rem;font-weight:600;color:var(--tx);letter-spacing:.06em;outline:none;transition:border-color .15s,box-shadow .15s;text-transform:uppercase"
+        oninput="this.value=this.value.toUpperCase()"
+        onfocus="this.style.borderColor='var(--acc)';this.style.boxShadow='0 0 0 3px var(--accd)'"
+        onblur="this.style.borderColor='var(--b1)';this.style.boxShadow='none'"
+      />
+    </div>
+    <button
+      id="promo-apply-btn"
+      onclick="applyPromoCode()"
+      style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-family:var(--fd);font-weight:800;font-size:.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px var(--acc-shadow);transition:opacity .15s,transform .12s;letter-spacing:.01em"
+      ontouchstart="this.style.opacity='.85';this.style.transform='scale(.98)'"
+      ontouchend="this.style.opacity='';this.style.transform=''"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+      Применить
+    </button>`;
 }
 
 _initSheets();
@@ -935,6 +969,8 @@ window.openRetailer = async function (sid) {
   jsonMenuData   = null;
   jsonProdsMap   = {};
   activeLocData  = null;  // сбрасываем данные точки при возврате к списку
+  window._retailerClosedBanner = '';
+  if (_catScrollObserver) { _catScrollObserver.disconnect(); _catScrollObserver = null; }
   if (!activeStore) return;
   goPage('store');
   // Сбросить кнопку назад на «Главная»
@@ -956,6 +992,8 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   activeRetailerId = rid;
   activeLocId      = locId;
   activeLocData    = null; // будет загружено ниже
+  window._retailerClosedBanner = '';
+  if (_catScrollObserver) { _catScrollObserver.disconnect(); _catScrollObserver = null; }
 
   const prodsEl = document.getElementById('store-prods');
   const catsEl  = document.getElementById('store-cats');
@@ -1021,18 +1059,16 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
       if (locSnap.exists()) activeLocData = locSnap.data();
     } catch (_) {}
 
-    // Показываем баннер если точка закрыта
+    // Баннер «точка закрыта» — сохраняем, renderStoreProds вставит его сам
     if (activeLocData && !isLocationOpen(activeLocData)) {
-      const prodsEl2 = document.getElementById('store-prods');
       const statusTxt = locationStatusText(activeLocData);
-      const closedBanner = `<div class="loc-closed-banner" style="grid-column:1/-1;margin-bottom:4px">
+      window._retailerClosedBanner = `<div class="loc-closed-banner">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <div>
           <div class="loc-closed-banner-title">Точка сейчас закрыта</div>
           ${statusTxt ? `<div class="loc-closed-banner-sub">${statusTxt}</div>` : ''}
         </div>
       </div>`;
-      if (prodsEl2) prodsEl2.insertAdjacentHTML('afterbegin', closedBanner);
     }
 
     const snap = await getDocs(
@@ -1194,10 +1230,30 @@ async function loadJsonMenu(url) {
 }
 
 window.filterStoreCat = function (id) {
-  storeCatFilter = id;
-  renderStoreCatPills();
-  renderStoreProds();
+  if (jsonMenuData) {
+    // Режим ритейлера: скроллим к секции, не фильтруем
+    storeCatFilter = id;
+    _setActiveCatPill(id);
+    _scrollToCatSection(id);
+  } else {
+    storeCatFilter = id;
+    renderStoreCatPills();
+    renderStoreProds();
+  }
 };
+
+function _scrollToCatSection(catId) {
+  const pagesEl = document.getElementById('pages');
+  if (!pagesEl) return;
+  if (catId === 'all') { pagesEl.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  const section = document.getElementById('cat-section-' + catId);
+  if (!section) return;
+  const pillBar = document.querySelector('#page-store .cat-filter-wrap');
+  const pillH   = pillBar ? pillBar.offsetHeight : 0;
+  const pagesRect   = pagesEl.getBoundingClientRect();
+  const sectionRect = section.getBoundingClientRect();
+  pagesEl.scrollBy({ top: sectionRect.top - pagesRect.top - pillH - 6, behavior: 'smooth' });
+}
 
 function renderStorePage() {
   if (!activeStore) return;
@@ -1229,13 +1285,14 @@ function renderStoreCatPills() {
   const el = document.getElementById('store-cats');
   if (!el) return;
 
-  const all = `<button class="cat-filter-pill${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
-
   if (jsonMenuData) {
-    el.innerHTML = all + (jsonMenuData.categories || []).map(c =>
-      `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+    // Режим ритейлера: пилюли — якоря скролла, не фильтры
+    const cats = jsonMenuData.categories || [];
+    el.innerHTML = cats.map((c, i) =>
+      `<button class="cat-filter-pill${i === 0 ? ' active' : ''}" data-cat-id="${escHtml(c.id)}" onclick="filterStoreCat(this.dataset.catId)">${escHtml(c.name)}</button>`
     ).join('');
   } else {
+    const all = `<button class="cat-filter-pill${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
     el.innerHTML = all + getStoreCats().map(c =>
       `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
     ).join('');
@@ -1254,6 +1311,7 @@ function renderStoreProds() {
 
   if (jsonMenuData) {
     if (jsonMenuData.error && !jsonMenuData.products?.length) {
+      el.className = 'pg';
       el.innerHTML = `<div class="store-cat-empty" style="grid-column:1/-1">
         <span class="store-cat-empty-ico">⚠️</span>
         <div class="store-cat-empty-t">Ошибка при загрузке</div>
@@ -1261,14 +1319,44 @@ function renderStoreProds() {
       </div>`;
       return;
     }
-    let list = jsonMenuData.products || [];
-    if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
-    el.innerHTML = list.length
-      ? list.map(p => renderPC({ ...p, storeId: activeStore.id })).join('')
-      : `<div class="store-cat-empty" style="grid-column:1/-1"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товары не найдены</div></div>`;
+
+    // ── Секционный скролл по категориям ──────────────────────────
+    const allProds   = jsonMenuData.products   || [];
+    const categories = jsonMenuData.categories || [];
+
+    el.className = 'store-prods-sectioned';
+
+    // Баннер «точка закрыта» (сохранённый из openRetailerCatalog)
+    const bannerHtml = window._retailerClosedBanner || '';
+
+    let sectionsHtml = '';
+    categories.forEach(cat => {
+      const catProds = allProds.filter(p => p.categoryId === cat.id);
+      if (!catProds.length) return;
+      sectionsHtml += `<div class="cat-section" id="cat-section-${escHtml(cat.id)}">
+        <div class="cat-section-header">${escHtml(cat.name)}</div>
+        <div class="pg">${catProds.map(p => renderPC({ ...p, storeId: activeStore.id })).join('')}</div>
+      </div>`;
+    });
+
+    // Товары без категории
+    const uncategorized = allProds.filter(p => !categories.find(c => c.id === p.categoryId));
+    if (uncategorized.length) {
+      sectionsHtml += `<div class="cat-section" id="cat-section-__other">
+        <div class="cat-section-header">Прочее</div>
+        <div class="pg">${uncategorized.map(p => renderPC({ ...p, storeId: activeStore.id })).join('')}</div>
+      </div>`;
+    }
+
+    el.innerHTML = (bannerHtml ? `<div class="cat-closed-notice">${bannerHtml}</div>` : '')
+      + (sectionsHtml || `<div class="store-cat-empty"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товары не найдены</div></div>`);
+
+    // Запускаем скролл-шпион и sticky-детектор
+    setTimeout(() => { _initCatScrollSpy(); _initStickyPillsDetector(); }, 150);
     return;
   }
 
+  el.className = 'pg';
   let list = prods.filter(p => p.storeId === activeStore.id);
   if (storeCatFilter !== 'all') list = list.filter(p => p.categoryId === storeCatFilter);
   el.innerHTML = list.length
@@ -1276,6 +1364,70 @@ function renderStoreProds() {
     : `<div class="store-cat-empty" style="grid-column:1/-1"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товаров пока нет</div></div>`;
 }
 
+
+// ─── Скролл-шпион категорий (retailer catalog) ───────────────
+function _initCatScrollSpy() {
+  if (_catScrollObserver) { _catScrollObserver.disconnect(); _catScrollObserver = null; }
+  const sections = document.querySelectorAll('#store-prods .cat-section');
+  if (!sections.length) return;
+  const pagesEl = document.getElementById('pages');
+  if (!pagesEl) return;
+  const pillBar = document.querySelector('#page-store .cat-filter-wrap');
+  const rootMarginTop = (pillBar ? pillBar.offsetHeight : 40) + 8;
+  _catScrollObserver = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting);
+    if (!visible.length) return;
+    visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    const catId = visible[0].target.id.slice('cat-section-'.length);
+    _setActiveCatPill(catId);
+  }, {
+    root: pagesEl,
+    rootMargin: `-${rootMarginTop}px 0px -40% 0px`,
+    threshold: 0,
+  });
+  sections.forEach(s => _catScrollObserver.observe(s));
+}
+
+function _setActiveCatPill(catId) {
+  // Берём враппер — он горизонтально скроллится, а не #pages
+  const wrap = document.querySelector('#page-store .cat-filter-wrap');
+  document.querySelectorAll('#store-cats .cat-filter-pill').forEach(p => {
+    const active = p.dataset.catId === catId;
+    p.classList.toggle('active', active);
+    if (active && wrap) {
+      // Скроллим ТОЛЬКО горизонтально — без scrollIntoView
+      // scrollIntoView дёргает и #pages вертикально → snap-back
+      const wrapRect = wrap.getBoundingClientRect();
+      const pillRect = p.getBoundingClientRect();
+      const targetLeft = wrap.scrollLeft
+        + pillRect.left  - wrapRect.left
+        - (wrapRect.width / 2 - pillRect.width / 2);
+      wrap.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+    }
+  });
+}
+
+// Детектор прилипания — добавляет класс .stuck на полоску пилюль (для тени)
+let _stickyPillsObs = null;
+function _initStickyPillsDetector() {
+  if (_stickyPillsObs) { _stickyPillsObs.disconnect(); _stickyPillsObs = null; }
+  const wrap = document.querySelector('#page-store .cat-filter-wrap');
+  if (!wrap) return;
+  const pagesEl = document.getElementById('pages');
+  if (!pagesEl) return;
+  // Sentinel прямо перед полоской: уходит из вьюпорта → пилюли прилипли
+  let sentinel = document.getElementById('_cat-pills-sentinel');
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.id = '_cat-pills-sentinel';
+    sentinel.style.cssText = 'height:1px;pointer-events:none;margin-bottom:-1px';
+    wrap.before(sentinel);
+  }
+  _stickyPillsObs = new IntersectionObserver(([e]) => {
+    wrap.classList.toggle('stuck', !e.isIntersecting);
+  }, { root: pagesEl, threshold: 0 });
+  _stickyPillsObs.observe(sentinel);
+}
 
 // ─── 10. Товары ───────────────────────────────────────────────
 // Загружаем товары из каталогов точек ритейлеров (не из глобальной коллекции products)
@@ -3694,6 +3846,21 @@ window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
 window.openLikesSheet = () => Sheet.open('likes');
 window.closeLikesSheet= () => Sheet.close('likes');
+window.openAchievementsSheet = () => Sheet.open('achievements');
+window.closeAchievementsSheet = () => Sheet.close('achievements');
+window.openPromoSheet = () => {
+  Sheet.open('promo');
+  setTimeout(() => document.getElementById('promo-inp')?.focus(), 350);
+};
+window.closePromoSheet = () => Sheet.close('promo');
+
+// Заглушка — логику добавим позже
+window.applyPromoCode = function () {
+  const val = (document.getElementById('promo-inp')?.value || '').trim();
+  if (!val) { toast('Введите промокод', 'warn'); return; }
+  // TODO: логика проверки промокода
+  toast('Промокод принят!', 'ok');
+};
 
 // ─── Оплата (Alif Pay / Google Pay) ────────────────────────
 window.openAlifPaySheet = async function () {
