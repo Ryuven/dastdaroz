@@ -263,7 +263,7 @@ a{color:inherit;text-decoration:none}
 /* ── CATALOG FILTER ── */
 .cat-filter-wrap{margin:0 -22px 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .cat-filter-wrap::-webkit-scrollbar{display:none}
-.cat-filter-scroll{display:flex;gap:8px;padding:0 22px 4px;width:max-content}
+.cat-filter-scroll{display:flex;gap:8px;padding:0 22px;width:max-content}
 .cat-filter-pill{padding:7px 16px;border-radius:99px;background:var(--s1);border:1.5px solid var(--b1);font-family:var(--fd);font-weight:700;font-size:.72rem;color:var(--tx3);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
 .cat-filter-pill:hover{border-color:var(--accg);color:var(--acc);background:var(--accd)}
 .cat-filter-pill.active{background:var(--accd);border-color:var(--accg);color:var(--acc)}
@@ -590,8 +590,8 @@ select.addr-inp{cursor:pointer}
   line-height:1.4;margin-top:5px;
 }
 
-.retailer-loc-card{display:flex;align-items:center;gap:13px;padding:14px 16px;background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;margin-bottom:9px;box-shadow:var(--shadow);transition:border-color var(--tf),transform var(--t)}
-.retailer-loc-card:hover{border-color:var(--accg);transform:translateY(-2px)}
+.retailer-loc-card{display:flex;align-items:center;gap:13px;padding:14px 16px;background:var(--s1);border:1.5px solid rgba(0,0,0,.13);border-radius:14px;margin-bottom:9px;box-shadow:none;transition:border-color var(--tf)}
+.retailer-loc-card:hover{border-color:var(--accg)}
 .retailer-loc-ico{width:42px;height:42px;border-radius:12px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
 .retailer-loc-body{flex:1;min-width:0}
 .retailer-loc-addr{font-size:.82rem;font-weight:600;color:var(--tx);line-height:1.4;margin-bottom:3px}
@@ -599,6 +599,8 @@ select.addr-inp{cursor:pointer}
 .retailer-loc-map-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);font-size:.64rem;font-weight:700;font-family:var(--fs);cursor:pointer;text-decoration:none;flex-shrink:0;transition:background var(--tf)}
 .retailer-loc-map-btn:hover{background:var(--accg)}
 .retailer-loc-skeleton{height:72px;border-radius:14px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;margin-bottom:9px}
+/* ── Скелетон для пилюль категорий ── */
+.cat-pill-skl{height:34px;border-radius:99px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0;display:inline-block}
 /* ── Режим работы: карточки точек ── */
 .retailer-loc-card-closed{opacity:.75;border-color:rgba(244,63,94,.25)!important}
 .retailer-loc-card-closed:hover{border-color:rgba(244,63,94,.5)!important;transform:none!important}
@@ -617,6 +619,8 @@ select.addr-inp{cursor:pointer}
 /* ── Фиксация высоты при загрузке — чтобы баннер не прыгал ── */
 #page-store #store-prods{min-height:55vh}
 #retailer-locations-list{min-height:160px}
+/* Retailer location view: скрываем пустой pill-bar чтобы отступ был симметричным */
+#page-store.ret-loc-mode .cat-filter-wrap{display:none}
 
 /* ── STORE CATALOG PAGE ── */
 .store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
@@ -656,7 +660,7 @@ select.addr-inp{cursor:pointer}
 #page-store .cat-filter-wrap{
   position:sticky;top:0;z-index:20;
   background:var(--bg);
-  padding-top:8px;padding-bottom:4px;
+  padding-top:8px;padding-bottom:8px;
   transition:box-shadow .2s;
 }
 #page-store .cat-filter-wrap.stuck{

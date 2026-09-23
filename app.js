@@ -637,7 +637,10 @@ function enterImmersiveMode() {
 }
 function exitImmersiveMode() {
   document.querySelector('.main')?.classList.remove('immersive');
-  document.getElementById('page-store')?.classList.remove('page--full-banner');
+  const ps = document.getElementById('page-store');
+  if (ps) { ps.classList.remove('page--full-banner'); ps.classList.remove('ret-loc-mode'); }
+  const pillWrap = document.querySelector('#page-store .cat-filter-wrap');
+  if (pillWrap) pillWrap.style.display = '';
 }
 
 window.goPage = function (page) {
@@ -1001,6 +1004,9 @@ window.openStore = window.openRetailer; // алиас для совместим�
 // Открыть каталог конкретной точки ритейлера
 window.openRetailerCatalog = async function (rid, locId, locAddr) {
   document.getElementById('pages').scrollTop = 0;
+  // Убираем режим списка точек — нужно показать пилюли категорий
+  const ps = document.getElementById('page-store');
+  if (ps) ps.classList.remove('ret-loc-mode');
   enterImmersiveMode();
   storeCatFilter   = 'all';
   jsonMenuData     = null;
@@ -1062,8 +1068,10 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
     }
   }
 
-  // Скелетон при загрузке
-  if (catsEl)  catsEl.innerHTML = '';
+  // Скелетон пилюль при загрузке
+  const _pillSkl = [88,112,72,100,68].map(w =>
+    `<div class="cat-pill-skl" style="width:${w}px"></div>`).join('');
+  if (catsEl)  catsEl.innerHTML = _pillSkl;
   if (prodsEl) prodsEl.innerHTML = Array(6).fill(0).map(() =>
     `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:84%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>`
   ).join('');
@@ -1138,7 +1146,6 @@ async function renderRetailerPage(retailer) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </button>
           <div class="ret-xbanner-body">
-            <div class="ret-xbanner-tag">Ритейлер · ${_selectedCityName}</div>
             <div class="ret-xbanner-name">${retailer.name}</div>
             ${retailer.description ? `<div class="ret-xbanner-desc">${retailer.description}</div>` : ''}
           </div>
@@ -1153,7 +1160,6 @@ async function renderRetailerPage(retailer) {
         ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
         <div class="store-cat-header-overlay"></div>
         <div class="store-cat-header-body">
-          <div class="store-cat-header-tag">Ритейлер · ${_selectedCityName}</div>
           <div class="store-cat-header-name">${retailer.name}</div>
           ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
         </div>
@@ -1161,6 +1167,7 @@ async function renderRetailerPage(retailer) {
   }
 
   if (catsEl)  catsEl.innerHTML  = '';
+  document.getElementById('page-store')?.classList.add('ret-loc-mode');
   if (prodsEl) prodsEl.innerHTML = `
     <div style="grid-column:1/-1">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
@@ -1202,19 +1209,11 @@ async function renderRetailerPage(retailer) {
       return `
       <div class="retailer-loc-card ${closedCls}" style="cursor:pointer"
            onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
-        <div class="retailer-loc-ico" style="${locOpen ? '' : 'background:var(--rlclosed-ico-bg,rgba(244,63,94,.12));border-color:rgba(244,63,94,.2);color:#f43f5e'}">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        </div>
         <div class="retailer-loc-body">
           <div class="retailer-loc-addr">${loc.address || '—'}</div>
           ${statusBadge}
-          ${loc.lat && loc.lng ? `<div class="retailer-loc-coords">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}</div>` : ''}
         </div>
-        ${mapsUrl ? `<a class="retailer-loc-map-btn" href="${mapsUrl}" target="_blank" rel="noopener"
-            onclick="event.stopPropagation()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-          Карта
-        </a>` : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" style="flex-shrink:0;opacity:.6"><path d="M9 18l6-6-6-6"/></svg>`}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" style="flex-shrink:0;opacity:.6"><path d="M9 18l6-6-6-6"/></svg>
       </div>`;
     }).join('');
   } catch (e) {
