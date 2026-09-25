@@ -3888,7 +3888,7 @@ window.openAlifPaySheet = async function () {
   }
 
   try {
-    const r    = await fetch('https://api.dastdaroz.shop/api/payment/init', {
+    const r    = await fetch('https://api.dastdaroz.shop/api/payment-mp/init', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ orderId: activeOid }),
