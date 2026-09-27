@@ -78,7 +78,7 @@ let jsonMenuData     = null;
 let jsonProdsMap     = {};
 let deliveryService  = 'mavsimi';
 let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
-let activeCollection = null;      // 'bookedOrders' | 'dastdarozOrders' | 'orders'
+let activeCollection = null;      // 'dastdarozOrders' | 'orders'
 let _catScrollObserver = null;    // IntersectionObserver для скролл-шпиона категорий
 
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
@@ -91,7 +91,6 @@ const DFEE = 7; // стоимость доставки (сомони)
 
 // Лейблы статусов заказа
 const SL = {
-  reserved:   'Забронирован',
   pending:    'Ожидание',
   confirmed:  'Подтверждён',
   preparing:  'Готовится',
@@ -102,7 +101,6 @@ const SL = {
 
 // Цвета статусов
 const SC = {
-  reserved:   'var(--teal)',
   pending:    'var(--amber)',
   confirmed:  'var(--blue)',
   preparing:  'var(--purple)',
@@ -238,8 +236,7 @@ function _initSheets() {
     </div>`;
 
   // ── Bookings (бронированные) ──────────────────────────────
-  Sheet.define({ id: 'bookings',       title: 'Бронированные',  zIndex: 700, onOpen: renderBookingsSheet });
-  Sheet.define({ id: 'booking-detail', title: 'Бронирование',   zIndex: 710 });
+
 
   // ── Support chat ────────────────────────────────────────────
   Sheet.define({ id: 'support', title: 'Чат с поддержкой', zIndex: 700 });
@@ -1757,15 +1754,13 @@ window.pcMinus = async function (pid, _srcBtn) {
   const btn = _srcBtn || findCartBtn(pid, 'minus');
   btnLoad(btn);
   const nq = item.quantity - 1;
-  const cr = doc(db, 'users', CU.uid, 'cart', pid);
   try {
     if (nq <= 0) {
-      await deleteDoc(cr);
       cart = cart.filter(c => c.productId !== pid);
     } else {
-      await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
       item.quantity = nq;
     }
+    await syncCart();
     renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
   } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
@@ -1878,12 +1873,34 @@ document.addEventListener('keydown', e => {
 
 // ─── 13. Корзина ──────────────────────────────────────────────
 async function loadCart() {
+  if (!CU?.uid) { cart = []; renderCart(); updateBadges(); return; }
   try {
-    const s = await getDocs(collection(db, 'users', CU.uid, 'cart'));
-    cart = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await getDoc(doc(db, 'carts', CU.uid));
+    cart = snap.exists() ? (snap.data().items || []).map(i => ({ id: i.productId, ...i })) : [];
   } catch { cart = []; }
   renderCart();
   updateBadges();
+}
+
+async function syncCart() {
+  if (!CU?.uid) return;
+  if (!cart.length) {
+    try { await deleteDoc(doc(db, 'carts', CU.uid)); } catch {}
+    return;
+  }
+  await setDoc(doc(db, 'carts', CU.uid), {
+    clientId: CU.uid,
+    items: cart.map(i => ({
+      productId:  i.productId,
+      name:       i.name,
+      price:      i.price,
+      quantity:   i.quantity,
+      imageUrl:   i.imageUrl   || '',
+      storeId:    i.storeId    || null,
+      locationId: i.locationId || null,
+    })),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────
@@ -1968,10 +1985,8 @@ window.addToCart = async function (pid, _srcBtn) {
       );
       if (!ok) { btnDone(btn); return; }
       try {
-        const b = writeBatch(db);
-        cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
-        await b.commit();
         cart = [];
+        await syncCart();
         renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
       } catch { toast('Ошибка очистки корзины', 'err'); btnDone(btn); return; }
     }
@@ -1992,36 +2007,30 @@ window.addToCart = async function (pid, _srcBtn) {
       );
       if (!ok) { btnDone(btn); return; }
       try {
-        const b = writeBatch(db);
-        cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
-        await b.commit();
         cart = [];
+        await syncCart();
         renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
       } catch { toast('Ошибка очистки корзины', 'err'); btnDone(btn); return; }
     }
   }
 
-  const cr = doc(db, 'users', CU.uid, 'cart', p.id);
   const ex = cart.find(c => c.productId === p.id);
   try {
     if (ex) {
-      await updateDoc(cr, { quantity: increment(1), updatedAt: serverTimestamp() });
       ex.quantity++;
     } else {
-      const item = {
+      cart.push({
+        id:         p.id,
         productId:  p.id,
         name:       p.name,
         price:      p.price,
-        imageUrl:   p.imageUrl || '',
+        imageUrl:   p.imageUrl   || '',
         quantity:   1,
         storeId:    p.storeId    || null,
         locationId: p.locationId || null,
-        addedAt:    serverTimestamp(),
-        updatedAt:  serverTimestamp(),
-      };
-      await setDoc(cr, item);
-      cart.push({ id: p.id, ...item });
+      });
     }
+    await syncCart();
     toast(p.name + ' добавлен в корзину', 'ok');
     renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
   } catch { toast('Ошибка', 'err'); btnDone(btn); }
@@ -2031,29 +2040,25 @@ window.updateQty = async function (pid, d) {
   const item = cart.find(c => c.productId === pid);
   if (!item) return;
   const nq = item.quantity + d;
-  const cr = doc(db, 'users', CU.uid, 'cart', pid);
   if (nq <= 0) {
-    await deleteDoc(cr);
     cart = cart.filter(c => c.productId !== pid);
   } else {
-    await updateDoc(cr, { quantity: nq, updatedAt: serverTimestamp() });
     item.quantity = nq;
   }
+  await syncCart();
   renderCart(); updateBadges();
 };
 
 window.removeCI = async function (pid) {
-  await deleteDoc(doc(db, 'users', CU.uid, 'cart', pid));
   cart = cart.filter(c => c.productId !== pid);
+  await syncCart();
   renderCart(); refreshHrfCards(); renderCatalog(); updateBadges();
 };
 
 window.clearCartUI = async function () {
   if (!cart.length || !confirm('Очистить корзину?')) return;
-  const b = writeBatch(db);
-  cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
-  await b.commit();
   cart = [];
+  await syncCart();
   renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
 };
 
@@ -2159,7 +2164,7 @@ function setAddr() { /* адрес выбирается через шит адр
 
 // ─── 14. Оформление заказа ────────────────────────────────────
 window.doCheckout = async function () {
-  if (!requireAuth('Войдите для оформления заказа')) return;
+  if (!requireAuth('Войдите для оплаты')) return;
   if (!cart.length) return;
 
   const addr = document.getElementById('cart-addr')?.value.trim();
@@ -2174,19 +2179,22 @@ window.doCheckout = async function () {
 
   const btn = document.getElementById('checkout-btn');
   btn.disabled  = true;
-  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Бронируем…';
+  btn.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;width:14px;height:14px"></div> Обработка…';
 
   try {
-    const sub           = cart.reduce((s, c) => s + c.price * c.quantity, 0);
-    const oNum          = nextOrderNum();
-    const payMethod     = 'online';
+    const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
-    const orderData = {
+    // Синкаем полные данные корзины в carts/{uid}
+    await setDoc(doc(db, 'carts', CU.uid), {
       clientId:        CU.uid,
       clientName:      UD?.displayName || '',
       clientPhone:     UD?.phone || phoneFromPseudoEmail(CU.email) || '',
-      orderNumber:     oNum,
-      items:           cart.map(c => ({
+      retailerId:      activeRetailerId || cart[0]?.storeId    || null,
+      locationId:      activeLocId      || cart[0]?.locationId || null,
+      retailerName:    stores.find(s => s.id === (activeRetailerId || cart[0]?.storeId))?.name || null,
+      locationAddress: activeLocData?.address || window._locDataMap?.[activeLocId || cart[0]?.locationId]?.address || null,
+      deliveryService,
+      items: cart.map(c => ({
         productId: c.productId,
         name:      c.name,
         price:     c.price,
@@ -2199,75 +2207,30 @@ window.doCheckout = async function () {
       lat,
       lng,
       comment:         document.getElementById('cart-comment')?.value.trim() || '',
-      paymentMethod:   payMethod,
-      deliveryService,
-      retailerId:      activeRetailerId || cart[0]?.storeId    || null,
-      locationId:      activeLocId      || cart[0]?.locationId || null,
-      retailerName:    stores.find(s => s.id === (activeRetailerId || cart[0]?.storeId))?.name || null,
-      locationAddress: activeLocData?.address || window._locDataMap?.[activeLocId || cart[0]?.locationId]?.address || null,
-      status:          'reserved',
+      paymentMethod:   'online',
       courierId:       null,
       courierName:     null,
-      createdAt:       serverTimestamp(),
+      status:          'active',
       updatedAt:       serverTimestamp(),
-    };
+    });
 
-    // Создаём заказ в коллекции бронированных заказов
-    const ref = await addDoc(collection(db, 'bookedOrders'), orderData);
+    // Инициируем оплату
+    const r    = await fetch('https://api.dastdaroz.shop/api/payment/init', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ uid: CU.uid }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.paymentUrl) throw new Error(data.error || 'Ошибка платежа');
 
-    // Очистка корзины
-    const b = writeBatch(db);
-    cart.forEach(c => b.delete(doc(db, 'users', CU.uid, 'cart', c.productId)));
-    await b.commit();
-    cart = [];
-    renderCart(); updateBadges();
-
-    // Добавляем новый заказ локально, чтобы сразу открыть модалку
-    const newOrder = {
-      id: ref.id,
-      ...orderData,
-      _col: 'bookedOrders',
-      createdAt: { toDate: () => new Date() }, // псевдо-timestamp для fmtDate
-    };
-    orders.unshift(newOrder);
-    activeOid = ref.id;
-
-    renderOrders(); renderOrdersBadge(); renderLiveBanner();
-
-    toast('Заказ оформлен! ✅', 'ok');
-    listenBooked(ref.id);
-
-    // Сразу открываем модалку бронирования
-    setTimeout(() => openOrderModal(ref.id), 350);
-
-    // Параллельно обновляем из Firestore
-    loadOrders().catch(() => {});
+    listenCart(CU.uid);
+    window.location.href = data.paymentUrl;
 
   } catch (e) {
     toast('Ошибка: ' + e.message, 'err');
     btn.disabled  = false;
-    btn.innerHTML = 'Оформить заказ';
+    btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay" style="width:18px;height:18px"/> Оплатить';
   }
-};
-
-/** Подтверждение бронирования:
- *  - удаляем из bookedOrders
- *  - создаём в dastdarozOrders или mavsimiOrders (зависит от deliveryService)
- */
-
-
-/** Отмена бронирования (статус reserved → бронь ещё не подтверждена) */
-window.cancelReservation = async function (oid) {
-  if (!confirm('Отменить бронирование?')) return;
-  try {
-    await updateDoc(doc(db, 'bookedOrders', oid), {
-      status: 'cancelled',
-      updatedAt: serverTimestamp(),
-    });
-    closeOrderModal();
-    await loadOrders();
-    toast('Бронирование отменено', 'ok');
-  } catch { toast('Ошибка отмены', 'err'); }
 };
 
 
@@ -2388,27 +2351,22 @@ async function loadOrders() {
     }
   };
 
-  const [booked, dast, ord] = await Promise.all([
-    safeQuery('bookedOrders'),
+  const [dast, ord] = await Promise.all([
     safeQuery('dastdarozOrders'),
     safeQuery('orders'),
   ]);
 
   // Дедупликация по id — если один заказ попал в несколько коллекций
   const seen = new Set();
-  orders = [...booked, ...dast, ...ord]
+  orders = [...dast, ...ord]
     .filter(o => { if (seen.has(o.id)) return false; seen.add(o.id); return true; })
-    .sort(
-    (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
-  );
+    .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 
-  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status) && o._col !== 'dastdarozOrders');
-  // dastdarozOrders имеет свой listenLive — banner берём из orders или bookedOrders
+  const live = orders.find(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
   if (live) {
     activeOid        = live.id;
     activeCollection = live._col;
-    // Live-слежение только для dastdaroz (mavsimi — через бэкенд в будущем)
-    if (!unsubLive && live.status !== 'reserved') {
+    if (!unsubLive) {
       const liveCol = live._col === 'dastdarozOrders' ? 'dastdarozOrders' : 'orders';
       listenLive(live.id, liveCol);
     }
@@ -2422,18 +2380,13 @@ async function loadOrders() {
   if (_payReturnOid) {
     const found = orders.find(o => o.id === _payReturnOid);
     if (found) {
-      activeOid = found.id;
-      if (found._col === 'bookedOrders' && !['cancelled', 'failed'].includes(found.status)) {
-        // Заказ ещё в bookedOrders — оплата обрабатывается
-        // Показываем оверлей и слушаем в реальном времени
-        showPaymentProcessing();
-        listenBooked(found.id);
-      } else if (found._col !== 'bookedOrders') {
-        // Callback уже пришёл и переместил заказ — показываем сразу
-        toast('Оплата прошла успешно! ✅', 'ok');
-        goPage('orders');
-        setTimeout(() => openOrderModal(found.id), 400);
-      }
+      toast('Оплата прошла успешно! ✅', 'ok');
+      goPage('orders');
+      setTimeout(() => openOrderModal(found.id), 400);
+    } else {
+      // Callback ещё не пришёл — ждём
+      showPaymentProcessing();
+      listenCart(CU.uid);
     }
   }
 
@@ -2469,53 +2422,7 @@ function filterOrders() {
   if (currentOTab === 'active')    return orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
   if (currentOTab === 'delivered') return orders.filter(o => o.status === 'delivered');
   if (currentOTab === 'cancelled') return orders.filter(o => o.status === 'cancelled');
-  return orders.filter(o => o.status !== 'reserved');
-}
-
-function renderBookingsSheet() {
-  const body    = Sheet.body('bookings');
-  const reserved = orders.filter(o => o.status === 'reserved');
-
-  if (!reserved.length) {
-    body.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 24px;text-align:center">
-        <div style="width:54px;height:54px;border-radius:16px;background:var(--teal-d);border:1.5px solid rgba(13,148,136,.18);display:flex;align-items:center;justify-content:center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.7">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
-          </svg>
-        </div>
-        <div style="font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx)">Нет бронирований</div>
-        <div style="font-size:.74rem;color:var(--tx3);line-height:1.55;max-width:210px">Оформляете заказ из корзины — бронь появится здесь</div>
-      </div>`;
-    return;
-  }
-
-  body.innerHTML = reserved.map(o => {
-    const num   = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
-    const items = (o.items || []).map(i => `${escHtml(i.name)} ×${i.quantity}`).join(', ');
-
-
-    return `<div class="oc st-reserved" onclick="openOrderModal('${o.id}')" style="cursor:pointer">
-      <div class="oc-head">
-        <div class="oc-num">Бронь ${num}</div>
-        <div class="oc-status" style="color:var(--teal);border-color:rgba(13,148,136,.28);background:var(--teal-d)">🔒 Забронирован</div>
-      </div>
-      <div class="oc-items">${items}</div>
-      <div class="oc-footer">
-        <div>
-          <div class="oc-total">${o.total} TJS</div>
-          <div class="oc-meta" style="color:var(--teal)">Ожидает оплаты</div>
-        </div>
-        <div class="oc-actions">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  return orders;
 }
 
 function renderOrders() {
@@ -2561,14 +2468,11 @@ function renderOrders() {
 }
 
 function renderOrdersBadge() {
-  const act  = orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status)).length;
-  const resv = orders.filter(o => o.status === 'reserved').length;
+  const act = orders.filter(o => ['pending','confirmed','preparing','delivering'].includes(o.status)).length;
   ['orders-nb', 'mob-ord-b', 'prof-orders-nb'].forEach(id => {
     const b = document.getElementById(id);
     if (b) { b.style.display = act > 0 ? '' : 'none'; b.textContent = act; }
   });
-  const bb = document.getElementById('bookings-nb');
-  if (bb) { bb.style.display = resv > 0 ? '' : 'none'; bb.textContent = resv; }
 }
 
 window.openOrderModal = function (oid) {
@@ -2598,126 +2502,6 @@ window.openOrderModal = function (oid) {
       : `<div class="om-retailer-logo om-retailer-logo-ph">${(name[0] || '?').toUpperCase()}</div>`;
     return `<div class="om-retailer">${logo}<span class="om-retailer-info">${escHtml(name)}${_omLocAddr ? ' · ' + escHtml(_omLocAddr) : ''}</span></div>`;
   })();
-
-  // ════ БРОНИРОВАНИЕ — специальный UI ════
-  if (o.status === 'reserved') {
-    const svcObj  = deliveryServices.find(s => s.id === o.deliveryService);
-    const svcName = svcObj ? svcObj.name : (o.deliveryService || '—');
-    const coords  = (o.lat && o.lng) ? `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}` : '—';
-    const bPhone  = o.clientPhone || '—';
-    const bName   = o.clientName  || '—';
-    const bFee    = o.total - sub > 0 ? o.total - sub : DFEE;
-
-    const _bd = Sheet.body('booking-detail');
-    _bd.style.cssText = 'overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 40px';
-    _bd.innerHTML = `
-      <!-- ── Герой-блок бронирования ── -->
-      <div class="booking-hero">
-        <div class="booking-hero-glow"></div>
-        <div class="booking-hero-title">Заказ бронирован!</div>
-        <div class="booking-hero-sub">Оплатите заказ удобным способом</div>
-      </div>
-
-      <!-- ── Детали заказа ── -->
-      <div class="booking-order-card">
-        <div class="booking-order-header">
-          <div class="booking-order-num">Заказ ${num}</div>
-        </div>
-        ${omRetailerHtml}
-
-        <!-- 1. Список товаров -->
-        <div class="booking-items">
-          ${(o.items || []).map(i => `
-            <div class="booking-item">
-              <div class="booking-item-name">${escHtml(i.name)}</div>
-              <div class="booking-item-right">
-                <span class="booking-item-qty">×${i.quantity}</span>
-                <span class="booking-item-price">${i.price * i.quantity} TJS</span>
-              </div>
-            </div>`).join('')}
-        </div>
-
-        <!-- 2. Разделитель -->
-        <div class="booking-divider"></div>
-
-        <!-- 3. Товары + Доставка -->
-        <div class="booking-totals">
-          <div class="booking-total-row">
-            <span>Товары</span>
-            <span>${sub} TJS</span>
-          </div>
-          <div class="booking-total-row">
-            <span>Доставка</span>
-            <span>${bFee} TJS</span>
-          </div>
-        </div>
-
-        <!-- 4. Разделитель -->
-        <div class="booking-divider"></div>
-
-        <!-- 5. Информация о доставке -->
-        <div class="booking-delivery-info">
-          <div class="booking-delivery-row">
-            <span class="booking-delivery-label">Способ доставки</span>
-            <span class="booking-delivery-val">${escHtml(svcName)}</span>
-          </div>
-          <div class="booking-delivery-row">
-            <span class="booking-delivery-label">Имя</span>
-            <span class="booking-delivery-val">${escHtml(bName)}</span>
-          </div>
-          <div class="booking-delivery-row">
-            <span class="booking-delivery-label">Номер телефона</span>
-            <span class="booking-delivery-val">${escHtml(bPhone)}</span>
-          </div>
-          <div class="booking-delivery-row">
-            <span class="booking-delivery-label">Адрес</span>
-            <span class="booking-delivery-val">${escHtml(o.address || '—')}</span>
-          </div>
-          <div class="booking-delivery-row">
-            <span class="booking-delivery-label">Координаты</span>
-            <span class="booking-delivery-val booking-delivery-coords">${escHtml(coords)}</span>
-          </div>
-        </div>
-
-        <!-- 6. Разделитель -->
-        <div class="booking-divider"></div>
-
-        <!-- 7. Итог -->
-        <div class="booking-total-row booking-total-final">
-          <span>Итог</span>
-          <span class="booking-total-final-sum">${o.total} TJS</span>
-        </div>
-
-      </div>
-
-      <!-- ── Кнопки действий ── -->
-      <div class="booking-actions">
-        <div class="booking-pay-row">
-          <button class="booking-btn-pay" onclick="openAlifPaySheet()">
-            <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
-            Alif Pay
-          </button>
-          <button class="booking-btn-pay" onclick="openGooglePaySheet()">
-            <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/googlepay.png" alt="Google Pay"/>
-            Google Pay
-          </button>
-        </div>
-        <p style="font-size:.62rem;color:var(--tx3);text-align:center;line-height:1.55;margin:4px 4px 0">
-          Нажимая на кнопку оплаты, вы автоматически соглашаетесь с
-          <span style="color:var(--acc);text-decoration:underline;cursor:pointer" onclick="openOfertaSheet()">Публичной офертой</span>
-          и
-          <span style="color:var(--acc);text-decoration:underline;cursor:pointer" onclick="openPrivacySheet()">Политикой конфиденциальности</span>
-        </p>
-        <button class="booking-btn-cancel" onclick="cancelReservation('${o.id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Отменить бронь
-        </button>
-      </div>`;
-
-    _odFromPage = document.querySelector('.page.active')?.id?.replace('page-','') || 'orders';
-    Sheet.open('booking-detail');
-    return;
-  }
 
   const stepIcons = ['⏳','✅','👨‍🍳','🛵','🎉'];
   const stepSubs  = ['Заказ принят','Подтверждение','Повар готовит','Курьер в пути','Доставлен'];
@@ -2870,21 +2654,9 @@ window.cancelO = async function (id) {
 function renderLiveBanner() {
   const wrap = document.getElementById('live-wrap');
   if (!wrap) return;
-  const live = orders.find(o => ['reserved','pending','confirmed','preparing','delivering'].includes(o.status));
+  const live = orders.find(o => ['pending','confirmed','preparing','delivering'].includes(o.status));
   if (!live) { wrap.innerHTML = ''; return; }
   const num = live.orderNumber ? '#' + live.orderNumber : '#' + live.id.slice(-6);
-
-  if (live.status === 'reserved') {
-    wrap.innerHTML = `<div class="live-banner live-banner-booking" onclick="openOrderModal('${live.id}')">
-      <div class="live-booking-ico">🔒</div>
-      <div class="live-info">
-        <div class="live-lbl" style="color:var(--teal)">Бронь активна</div>
-        <div class="live-txt">Заказ ${num} · ${live.total} TJS · нажмите для подтверждения</div>
-      </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-    </div>`;
-    return;
-  }
 
   wrap.innerHTML = `<div class="live-banner" onclick="trackO('${live.id}')">
     <div class="live-pulse"></div>
@@ -2950,36 +2722,27 @@ function hidePaymentProcessing() {
   document.getElementById('pay-proc-overlay')?.remove();
 }
 
-// ─── Слушатель bookedOrders (для реакции на оплату/отмену) ──
-function listenBooked(oid) {
+// ─── Слушатель carts/{uid} (для реакции на результат оплаты) ──
+function listenCart(uid) {
   if (unsubBooked) { unsubBooked(); unsubBooked = null; }
-  unsubBooked = onSnapshot(doc(db, 'bookedOrders', oid), async snap => {
+  unsubBooked = onSnapshot(doc(db, 'carts', uid), async snap => {
     if (!snap.exists()) {
-      // Документ удалён — callback переместил заказ (оплата прошла)
+      // Документ удалён — бэкенд подтвердил оплату и создал orders
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
       hidePaymentProcessing();
+      cart = [];
+      renderCart(); updateBadges();
       toast('Оплата прошла успешно! ✅', 'ok');
       await loadOrders();
-      renderOrders(); renderOrdersBadge();
       goPage('orders');
-      setTimeout(() => openOrderModal(oid), 400);
       return;
     }
-    const o   = { id: snap.id, ...snap.data(), _col: 'bookedOrders' };
-    const idx = orders.findIndex(x => x.id === oid);
-    if (idx >= 0) orders[idx] = o; else orders.unshift(o);
-    renderOrders(); renderOrdersBadge(); renderLiveBanner();
-
-    // Если шит бронирования открыт — обновляем его
-    if (document.getElementById('bs-booking-detail')?.classList.contains('open') && activeOid === oid) {
-      openOrderModal(oid);
-    }
-
-    // Заказ отменён (оплата не прошла или истёк таймер)
-    if (['cancelled', 'failed'].includes(o.status)) {
+    const data = snap.data();
+    // Оплата не прошла — сбрасываем статус
+    if (['failed', 'cancelled'].includes(data.paymentStatus)) {
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
       hidePaymentProcessing();
-      toast('Оплата не прошла. Заказ отменён.', 'err');
+      toast('Оплата не прошла. Попробуйте ещё раз.', 'err');
     }
   });
 }
@@ -3852,11 +3615,6 @@ function checkAddressBanner(uid) {
 // DOM-структура и open/close управляются через sheet.js (Sheet 'city')
 window.openPartnerSheet  = () => Sheet.open('partner');
 window.closePartnerSheet = () => Sheet.close('partner');
-window.openBookingsSheet = () => {
-  const r = orders.find(o => o.status === 'reserved');
-  if (r) { openOrderModal(r.id); }
-  else   { Sheet.open('bookings'); }
-};
 window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
 window.openLikesSheet = () => Sheet.open('likes');
@@ -3877,34 +3635,6 @@ window.applyPromoCode = function () {
   toast('Промокод принят!', 'ok');
 };
 
-// ─── Оплата (Alif Pay / Google Pay) ────────────────────────
-window.openAlifPaySheet = async function () {
-  if (!activeOid) return toast('Заказ не найден', 'err');
-
-  const btn = document.querySelector('.booking-btn-pay');
-  if (btn) {
-    btn.disabled  = true;
-    btn.innerHTML = '<div class="spin" style="width:16px;height:16px;border-color:rgba(0,0,0,.15);border-top-color:var(--tx);margin:0 auto"></div>';
-  }
-
-  try {
-    const r    = await fetch('https://api.dastdaroz.shop/api/payment-mp/init', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ orderId: activeOid }),
-    });
-    const data = await r.json();
-    if (!r.ok || !data.paymentUrl) throw new Error(data.error || 'Ошибка платежа');
-    listenBooked(activeOid);
-    window.location.href = data.paymentUrl;
-  } catch (err) {
-    toast('Ошибка: ' + err.message, 'err');
-    if (btn) {
-      btn.disabled  = false;
-      btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/> Alif Pay';
-    }
-  }
-};
 window.openGooglePaySheet = () => Sheet.open('googlepay');
 window.openOfertaSheet    = () => SheetPdf.open('oferta');
 window.closeOfertaSheet   = () => SheetPdf.close('oferta');

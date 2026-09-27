@@ -342,10 +342,7 @@ select.addr-inp{cursor:pointer}
 
 /* ── ORDERS ── */
 /* ── Кнопка "Бронированные" ── */
-.bookings-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--accd);border:1.5px solid var(--accg);border-radius:14px;cursor:pointer;margin-bottom:14px;transition:background .15s,transform .12s;color:var(--acc);font-family:var(--fd);font-weight:800;font-size:.82rem;letter-spacing:-.01em}
-.bookings-btn:hover{background:rgba(34,197,94,.15)}
-.bookings-btn:active{transform:scale(.98)}
-.bookings-btn-badge{background:var(--acc);color:#fff;font-size:.6rem;font-weight:800;border-radius:99px;padding:2px 8px;line-height:1.6}
+
 .oc{background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;padding:15px 16px;margin-bottom:9px;transition:all var(--tf);position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .oc:hover{border-color:var(--accg);box-shadow:var(--shadow-md)}
 .oc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap}
@@ -1065,39 +1062,6 @@ select.addr-inp{cursor:pointer}
 
 @keyframes mapPulse{0%{transform:translate(-50%,-50%) scale(1);opacity:.7}100%{transform:translate(-50%,-50%) scale(3.5);opacity:0}}
 
-/* ══ BOOKING / БРОНИРОВАНИЕ UI ══════════════════════════════ */
-
-/* ── Герой-блок ── */
-.booking-hero{
-  position:relative;
-  background:linear-gradient(145deg,#0d9488 0%,#1a9e4a 60%,#22c55e 100%);
-  border-radius:20px;
-  margin:16px 0 14px;
-  padding:18px 20px 16px;
-  display:flex;flex-direction:column;align-items:center;
-  overflow:hidden;
-  box-shadow:0 8px 32px rgba(13,148,136,.3),0 2px 8px rgba(0,0,0,.08);
-}
-.booking-hero-glow{
-  position:absolute;top:-40px;right:-40px;
-  width:180px;height:180px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);
-  pointer-events:none;
-}
-.booking-hero-title{
-  font-family:var(--fd);font-weight:900;font-size:1.1rem;
-  color:#fff;letter-spacing:-.02em;text-align:center;
-  margin-bottom:4px;
-  text-shadow:0 1px 6px rgba(0,0,0,.18);
-}
-.booking-hero-sub{
-  font-size:.72rem;color:rgba(255,255,255,.82);
-  text-align:center;line-height:1.5;margin-bottom:0;
-}
-
-
-
 /* ── Карточка деталей ── */
 .booking-order-card{
   background:var(--s1);border:1.5px solid var(--b1);
@@ -1181,29 +1145,8 @@ select.addr-inp{cursor:pointer}
 }
 .booking-btn-cancel:hover{background:rgba(220,38,38,.15);}
 
-/* ── Payment sheets: smooth open (no spring bounce) ── */
-#bs-alifpay, #bs-googlepay {
-  --spring: cubic-bezier(.32,0,.18,1);
-  transition: transform .28s cubic-bezier(.32,0,.18,1) !important;
-}
-
-/* ── Payment buttons row ── */
-.booking-pay-row{
-  display:flex;flex-direction:column;gap:8px;
-}
-.booking-btn-pay{
-  width:100%;padding:13px 16px;
-  background:var(--accd);border:1.5px solid var(--accg);
-  border-radius:14px;color:var(--acc);
-  font-family:var(--fd);font-weight:800;font-size:.86rem;
-  cursor:pointer;display:flex;align-items:center;justify-content:flex-start;gap:12px;
-  transition:background .15s,transform .15s;
-  letter-spacing:-.01em;
-}
-.booking-btn-pay:hover{background:rgba(34,197,94,.15);}
-.booking-btn-pay:active{transform:scale(.97);}
 .booking-pay-ico{
-  width:28px;height:28px;object-fit:contain;border-radius:7px;flex-shrink:0;
+  width:18px;height:18px;object-fit:contain;border-radius:4px;flex-shrink:0;
 }
 
 /* ── Payment sheet "coming soon" content ── */
@@ -1234,13 +1177,6 @@ select.addr-inp{cursor:pointer}
 .paysh-coming-sub{
   font-size:.76rem;color:var(--tx3);line-height:1.6;max-width:210px;
 }
-
-/* ── Live banner — стиль для брони ── */
-.live-banner-booking{
-  background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(13,148,136,.03));
-  border-color:rgba(13,148,136,.25) !important;
-}
-.live-booking-ico{font-size:1.2rem;flex-shrink:0;line-height:1;}
 
 /* My location button */
 
@@ -1800,9 +1736,9 @@ select.addr-inp{cursor:pointer}
               <div class="dtab-loading" style="font-size:.65rem;color:var(--tx3);padding:8px 4px">Загрузка служб доставки…</div>
             </div>
 
-            <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              Оформить заказ
+            <button class="checkout-btn" id="checkout-btn" onclick="doCheckout()" style="background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 4px 16px rgba(22,163,74,.35)">
+              <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay" style="width:18px;height:18px"/>
+              Оплатить через Alif
             </button>
           </div>
 
@@ -1813,10 +1749,6 @@ select.addr-inp{cursor:pointer}
 
     <!-- ORDERS -->
     <div class="page" id="page-orders">
-      <button class="bookings-btn" onclick="openBookingsSheet()">
-        Бронированные
-        <span id="bookings-nb" class="bookings-btn-badge" style="display:none">0</span>
-      </button>
 
       <div id="orders-list">
         <div class="oc oc-skl"><div class="oc-head"><div class="skl-block" style="height:11px;width:50%;border-radius:6px"></div><div class="skl-block" style="height:20px;width:82px;border-radius:99px"></div></div><div class="skl-block" style="height:8px;width:82%;margin-bottom:6px"></div><div class="skl-block" style="height:8px;width:58%;margin-bottom:13px"></div><div class="oc-footer"><div><div class="skl-block" style="height:13px;width:54px;margin-bottom:5px"></div><div class="skl-block" style="height:7px;width:120px"></div></div><div class="skl-block" style="height:16px;width:16px;border-radius:50%"></div></div></div>
@@ -2139,20 +2071,6 @@ window.onFcmToken = function(t) {
 </div>
 
 <!-- ══ SUPPORT CHAT SHEET ══ -->
-<!-- ═══ BOOKING SHEET ═══ -->
-<div class="o-modal-bg" id="booking-modal-bg" onclick="closeBookingModal(event)">
-  <div class="o-modal">
-    <div class="o-modal-drag"></div>
-    <div class="o-modal-head">
-      <div class="o-modal-title" id="booking-modal-title">Бронирование</div>
-      <button class="o-modal-close" onclick="closeBookingModal()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="o-modal-scroll" id="booking-modal-body"></div>
-  </div>
-</div>
-
 <!-- ADDRESS MAP MODAL -->
 <!-- ══ APP INSTALL BANNER ══ -->
 <div class="app-bar" id="app-bar">
