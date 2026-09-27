@@ -357,20 +357,36 @@ function _initSheets() {
       </div>
     </div>`;
 
-  // ── Alif Pay ───────────────────────────────────────────────
-  Sheet.define({ id: 'alifpay', title: 'Alif Pay', zIndex: 710 });
-  Sheet.body('alifpay').innerHTML = `
-    <div class="paysh-coming">
-      <div class="paysh-coming-img-wrap">
-        <img src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
-      </div>
-      <div class="paysh-coming-badge">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Скоро доступно
-      </div>
-      <div class="paysh-coming-title">Alif Pay</div>
-      <div class="paysh-coming-sub">Оплата через Alif Pay появится совсем скоро. Следите за обновлениями!</div>
-    </div>`;
+  // ── Alif Pay — оплата в sheet (iframe) ─────────────────────
+  Sheet.define({
+    id: 'alifpay',
+    title: 'Оплата',
+    zIndex: 710,
+    onClose() {
+      // Сбрасываем iframe и состояние кнопки при закрытии шита
+      const iframe = document.getElementById('pay-iframe');
+      if (iframe) iframe.src = 'about:blank';
+      const loader = document.getElementById('pay-iframe-loader');
+      if (loader) loader.style.display = 'flex';
+      const btn = document.getElementById('checkout-btn');
+      if (btn) {
+        btn.disabled  = false;
+        btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/> Оплатить через Alif';
+      }
+      if (unsubBooked) { unsubBooked(); unsubBooked = null; }
+    },
+  });
+  const _alifBody = Sheet.body('alifpay');
+  _alifBody.style.cssText = 'padding:0;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;position:relative';
+  _alifBody.innerHTML = `
+    <div id="pay-iframe-loader" style="position:absolute;inset:0;background:var(--s1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:2">
+      <div class="spin" style="width:30px;height:30px;border-width:3px;border-color:rgba(26,158,74,.2);border-top-color:var(--acc)"></div>
+      <div style="font-size:.78rem;color:var(--tx3);font-weight:500">Загрузка страницы оплаты…</div>
+    </div>
+    <iframe id="pay-iframe" src="about:blank" allowpaymentrequest
+      style="width:100%;flex:1;border:none;display:block;min-height:0"
+      onload="if(this.src!=='about:blank'){var l=document.getElementById('pay-iframe-loader');if(l)l.style.display='none';}">
+    </iframe>`;
 
   // ── Google Pay ─────────────────────────────────────────────
   Sheet.define({ id: 'googlepay', title: 'Google Pay', zIndex: 710 });
@@ -2224,12 +2240,22 @@ window.doCheckout = async function () {
     if (!r.ok || !data.paymentUrl) throw new Error(data.error || 'Ошибка платежа');
 
     listenCart(CU.uid);
-    window.location.href = data.paymentUrl;
+
+    // Открываем страницу оплаты внутри sheet (iframe) вместо редиректа
+    const _payLoader = document.getElementById('pay-iframe-loader');
+    const _payIframe = document.getElementById('pay-iframe');
+    if (_payLoader) _payLoader.style.display = 'flex';
+    if (_payIframe) _payIframe.src = data.paymentUrl;
+    Sheet.open('alifpay');
+
+    // Возвращаем кнопку в исходное состояние (sheet сам показывает прогресс)
+    btn.disabled  = false;
+    btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/> Оплатить через Alif';
 
   } catch (e) {
     toast('Ошибка: ' + e.message, 'err');
     btn.disabled  = false;
-    btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay" style="width:18px;height:18px"/> Оплатить';
+    btn.innerHTML = '<img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/> Оплатить через Alif';
   }
 };
 
@@ -2730,6 +2756,7 @@ function listenCart(uid) {
       // Документ удалён — бэкенд подтвердил оплату и создал orders
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
       hidePaymentProcessing();
+      Sheet.close('alifpay');
       cart = [];
       renderCart(); updateBadges();
       toast('Оплата прошла успешно! ✅', 'ok');
@@ -2742,6 +2769,7 @@ function listenCart(uid) {
     if (['failed', 'cancelled'].includes(data.paymentStatus)) {
       if (unsubBooked) { unsubBooked(); unsubBooked = null; }
       hidePaymentProcessing();
+      Sheet.close('alifpay');
       toast('Оплата не прошла. Попробуйте ещё раз.', 'err');
     }
   });
