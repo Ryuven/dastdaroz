@@ -48,7 +48,7 @@ import {
 
 // ─── 2. Состояние приложения ──────────────────────────────────
 // ─── Возврат с платёжной страницы Алифа ─────────────────────
-const _payReturnOid = new URLSearchParams(location.search).get('order') || null;
+let _payReturnOid = new URLSearchParams(location.search).get('order') || null;
 if (_payReturnOid) history.replaceState({}, '', location.pathname + location.hash);
 
 let CU               = null;   // текущий пользователь Firebase Auth
@@ -2227,6 +2227,7 @@ window.doCheckout = async function () {
       courierId:       null,
       courierName:     null,
       status:          'active',
+      createdAt:       serverTimestamp(),
       updatedAt:       serverTimestamp(),
     });
 
@@ -2404,13 +2405,18 @@ async function loadOrders() {
 
   // Автооткрытие заказа после возврата с платёжной страницы Алифа
   if (_payReturnOid) {
-    const found = orders.find(o => o.id === _payReturnOid);
+    _payReturnOid = null; // сбрасываем чтобы не зациклиться
+    // Ищем свежий оплаченный заказ клиента
+    const found = orders.find(o =>
+      o.clientId === CU.uid &&
+      ['pending', 'confirmed', 'preparing', 'delivering'].includes(o.status)
+    );
     if (found) {
       toast('Оплата прошла успешно! ✅', 'ok');
       goPage('orders');
       setTimeout(() => openOrderModal(found.id), 400);
     } else {
-      // Callback ещё не пришёл — ждём
+      // Callback ещё не пришёл — ждём удаления корзины
       showPaymentProcessing();
       listenCart(CU.uid);
     }
