@@ -64,7 +64,6 @@ let stores           = [];
 
 let catFilter        = 'all';
 let searchQ          = '';
-let homeSearchQ      = '';
 let activeOid        = null;
 let unsubLive        = null;
 let unsubBooked      = null;
@@ -84,6 +83,7 @@ let _catScrollObserver = null;    // IntersectionObserver для скролл-ш
 let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
 let _addrBannerUnsub  = null;
+let _hasAddress       = null; // null=ещё не известно, true=есть, false=нет
 
 
 // ─── 3. Константы ────────────────────────────────────────────
@@ -687,6 +687,10 @@ window.goPage = function (page) {
 
   if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
   if (page === 'store')   renderStorePage();
+  if (page === 'home' && _hasAddress === false) {
+    // Нет адреса — открываем шит при каждом входе на главную
+    setTimeout(() => window.openAddAddrSheet?.(), 400);
+  }
 
   closeSB();
   document.getElementById('pages').scrollTop = 0;
@@ -884,13 +888,25 @@ async function loadStores() {
         .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     } catch { stores = []; }
   }
-  renderStoresGrid();
   renderHomeRetailerFeed();
 }
 
 async function renderHomeRetailerFeed() {
   const feedEl = document.getElementById('home-retailer-feed');
-  if (!feedEl || !stores.length) { if (feedEl) feedEl.innerHTML = ''; return; }
+  if (!feedEl) return;
+
+  if (_hasAddress === false) {
+    feedEl.innerHTML = `
+      <div class="addr-required-hint">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.6"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <div class="addr-required-hint-t">Укажите адрес доставки</div>
+        <div class="addr-required-hint-s">Чтобы увидеть доступные магазины и товары рядом с вами</div>
+        <button class="addr-required-hint-btn" onclick="openAddAddrSheet()">Указать адрес</button>
+      </div>`;
+    return;
+  }
+
+  if (!stores.length) { feedEl.innerHTML = ''; return; }
 
   // Грузим все данные параллельно — без промежуточного скелетона в JS
   const results = await Promise.all(stores.map(async store => {
@@ -963,34 +979,6 @@ async function renderHomeRetailerFeed() {
           </div>
         </div>`;
     }).join('');
-}
-
-function renderStoresGrid() {
-  const el = document.getElementById('stores-grid');
-  if (!el) return;
-
-  if (!stores.length) {
-    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px 20px;color:var(--tx3);font-size:.76rem">
-      <div style="font-size:1.6rem;margin-bottom:8px;opacity:.3">🏪</div>
-      В городе <strong>${_selectedCityName}</strong> магазинов пока нет
-    </div>`;
-    return;
-  }
-
-  const esc = v => String(v || '').replace(/'/g, '&#39;');
-  el.innerHTML = stores.map(s => `
-    <div class="store-card" onclick="openRetailer('${s.id}')" title="${esc(s.name)}">
-      <div class="store-card-img-wrap">
-        ${s.imageUrl
-          ? `<img class="store-card-img" src="${s.imageUrl}" alt="${esc(s.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-          : ''}
-        <div class="store-card-placeholder" ${s.imageUrl ? 'style="display:none"' : ''}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
-          <span>${esc(s.name)}</span>
-        </div>
-      </div>
-      ${s.name ? `<div class="store-card-name">${esc(s.name)}</div>` : ''}
-    </div>`).join('');
 }
 
 window.openRetailer = async function (sid) {
@@ -1518,7 +1506,6 @@ async function loadProds() {
   renderCatalog();
   renderHomeCats();
   renderStoreProds();
-  renderStoresGrid();
 }
 
 function renderPC(p, preview = false) {
@@ -1586,6 +1573,19 @@ function refreshHrfCards() {
 function renderCatalog() {
   const el = document.getElementById('cat-prods');
   if (!el) return;
+
+  if (_hasAddress === false) {
+    el.className = 'pg';
+    el.innerHTML = `
+      <div class="addr-required-hint" style="grid-column:1/-1">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.6"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <div class="addr-required-hint-t">Укажите адрес доставки</div>
+        <div class="addr-required-hint-s">Чтобы увидеть доступные магазины и товары рядом с вами</div>
+        <button class="addr-required-hint-btn" onclick="openAddAddrSheet()">Указать адрес</button>
+      </div>`;
+    return;
+  }
+
   let list = [...prods];
   if (catFilter !== 'all') list = list.filter(p => p.categoryId === catFilter);
   if (searchQ) list = list.filter(p =>
@@ -1822,66 +1822,7 @@ window.filterCat = function (id) {
 
 
 // ─── 12. Поиск ────────────────────────────────────────────────
-window.onHomeSearch = function (v) {
-  homeSearchQ = v;
-  document.getElementById('search-clear')?.classList.toggle('show', v.length > 0);
-  renderSD(v);
-};
-
-window.clearHS = function () {
-  homeSearchQ = '';
-  const inp = document.getElementById('search-inp-home');
-  if (inp) inp.value = '';
-  document.getElementById('search-clear')?.classList.remove('show');
-  closeSD();
-};
-
-window.openSD  = function () { if (homeSearchQ) renderSD(homeSearchQ); };
-
-function renderSD(q) {
-  const dd = document.getElementById('search-dd');
-  if (!q) { dd.classList.remove('open'); return; }
-  const res = prods
-    .filter(p => p.available !== false && (
-      p.name.toLowerCase().includes(q.toLowerCase()) ||
-      (p.description || '').toLowerCase().includes(q.toLowerCase())
-    ))
-    .slice(0, 7);
-
-  if (!res.length) {
-    dd.innerHTML = `<div class="srd-empty">Ничего не найдено 🔍</div>`;
-    dd.classList.add('open');
-    return;
-  }
-  dd.innerHTML = res.map(p => {
-    const ic = catIcon(p.categoryId, catName(p.categoryId));
-    return `<div class="srd-item" onclick="pickSD('${p.id}')">
-      <div class="srd-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="">` : ic.svg}</div>
-      <div class="srd-info"><div class="srd-name">${p.name}</div><div class="srd-cat">${catName(p.categoryId)}</div></div>
-      <div class="srd-price">${p.price} TJS</div>
-    </div>`;
-  }).join('');
-  dd.classList.add('open');
-}
-
-function closeSD() { document.getElementById('search-dd')?.classList.remove('open'); }
-
-window.pickSD = function (pid) {
-  closeSD(); clearHS();
-  catFilter = 'all';
-  searchQ   = prods.find(p => p.id === pid)?.name || '';
-  renderCatalog();
-  renderCatalogCats();
-  goPage('catalog');
-  searchQ = '';
-};
-
 window.onSearch = function (v) { searchQ = v; renderCatalog(); if (v) goPage('catalog'); };
-
-document.addEventListener('click', e => {
-  const sb = document.getElementById('search-box');
-  if (sb && !sb.contains(e.target)) closeSD();
-});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeOrderModal(); closeProdModal(); }
 });
@@ -2169,6 +2110,8 @@ function _setCartFooter(active) {
   if (skl) skl.style.display = 'none';                       // скелетон всегда скрываем после загрузки
   if (cs)  cs.style.display  = active ? 'flex' : 'none';
   if (cb)  cb.style.display  = active ? ''     : 'none';
+  const qb = document.getElementById('quick-pay-btn');
+  if (qb) qb.style.display = (active && UD?.alifToken) ? '' : 'none';
 }
 
 function updateBadges() {
@@ -2785,6 +2728,7 @@ function listenCart(uid) {
       cart = [];
       renderCart(); updateBadges();
       toast('Оплата прошла успешно! ✅', 'ok');
+      setTimeout(() => _offerTokenization(), 1500);
       await loadOrders();
       goPage('orders');
       return;
@@ -3653,14 +3597,33 @@ window.deleteProfAddr = async function (id) {
 function checkAddressBanner(uid) {
   if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
   if (!uid) {
+    _hasAddress = false;
     window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: false } }));
+    _refreshFeedsOnAddr();
     return;
   }
   const q = query(collection(db, 'users', uid, 'addresses'));
   _addrBannerUnsub = onSnapshot(q,
-    snap  => window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: !snap.empty } })),
-    _err  => window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: true } }))
+    snap => {
+      _hasAddress = !snap.empty;
+      window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: _hasAddress } }));
+      _refreshFeedsOnAddr();
+    },
+    _err => {
+      _hasAddress = true;
+      window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: true } }));
+      _refreshFeedsOnAddr();
+    }
   );
+}
+
+function _refreshFeedsOnAddr() {
+  renderHomeRetailerFeed();
+  renderCatalog();
+  if (_hasAddress === false) {
+    // Открываем шит добавления адреса — даём время на рендер страницы
+    setTimeout(() => window.openAddAddrSheet?.(), 600);
+  }
 }
 
 
@@ -3763,3 +3726,96 @@ window.selectCity = function (id, name) {
 // Геттеры выбранного города (для других модулей)
 window.getSelectedCityId   = () => _selectedCityId;
 window.getSelectedCityName = () => _selectedCityName;
+
+// ─── Токенизация — сохранение способа оплаты ─────────────────
+function _offerTokenization() {
+  if (!CU || UD?.alifToken) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'tok-offer-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.45);display:flex;align-items:flex-end';
+  overlay.innerHTML = `
+    <div style="background:var(--s1);width:100%;border-radius:20px 20px 0 0;padding:28px 20px calc(env(safe-area-inset-bottom,0px) + 24px)">
+      <div style="font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);margin-bottom:6px">Сохранить способ оплаты?</div>
+      <div style="font-size:.78rem;color:var(--tx3);margin-bottom:20px;line-height:1.5">В следующий раз оплатите одним нажатием — без повторного ввода данных</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('tok-offer-overlay').remove()"
+          style="flex:1;padding:14px;border:1.5px solid var(--b1);border-radius:14px;background:transparent;color:var(--tx2);font-family:var(--fd);font-weight:700;font-size:.85rem;cursor:pointer">
+          Нет, спасибо
+        </button>
+        <button onclick="_startTokenization()"
+          style="flex:2;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;box-shadow:0 4px 14px var(--acc-shadow)">
+          Да, сохранить
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+window._startTokenization = async function (gate = 'tokenization_korti_milli') {
+  document.getElementById('tok-offer-overlay')?.remove();
+  try {
+    const r    = await fetch('https://api.dastdaroz.shop/api/payment-mp/tokenize', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ uid: CU.uid, gate }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.url) throw new Error(data.error || 'Ошибка');
+    window.location.href = data.url;
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+};
+
+window.doQuickPay = async function () {
+  if (!requireAuth('Войдите для оплаты')) return;
+  if (!cart.length) return;
+  if (!UD?.alifToken?.token) { toast('Нет сохранённого способа оплаты', 'err'); return; }
+
+  const addr = document.getElementById('cart-addr')?.value.trim();
+  if (!addr) { toast('Укажите адрес доставки', 'err'); return; }
+
+  const btn = document.getElementById('quick-pay-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin" style="width:14px;height:14px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></div> Обработка…'; }
+
+  try {
+    const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
+    const rId  = activeRetailerId || cart[0]?.storeId    || null;
+    const lId  = activeLocId      || cart[0]?.locationId || null;
+
+    await setDoc(doc(db, 'carts', CU.uid), {
+      clientId:    CU.uid,
+      clientName:  UD?.displayName || '',
+      clientPhone: UD?.phone || phoneFromPseudoEmail(CU.email) || '',
+      retailerId:  rId,
+      locationId:  lId,
+      deliveryService,
+      items: cart.map(c => ({ productId: c.productId, name: c.name, price: c.price, quantity: c.quantity })),
+      subtotal:    sub,
+      deliveryFee: DFEE,
+      total:       sub + DFEE,
+      address:     addr,
+      lat:  parseFloat(document.getElementById('cart-lat')?.value)  || null,
+      lng:  parseFloat(document.getElementById('cart-lng')?.value)  || null,
+      comment:      document.getElementById('cart-comment')?.value.trim() || '',
+      paymentMethod:'online',
+      status:       'active',
+      createdAt:    serverTimestamp(),
+      updatedAt:    serverTimestamp(),
+    });
+
+    const r    = await fetch('https://api.dastdaroz.shop/api/payment-mp/pay-token', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ uid: CU.uid }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+
+    showPaymentProcessing();
+    listenCart(CU.uid);
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err');
+    if (btn) { btn.disabled = false; btn.innerHTML = '⚡ Быстрая оплата'; }
+  }
+};

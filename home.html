@@ -169,21 +169,6 @@ a{color:inherit;text-decoration:none}
 .sh-link{font-size:.68rem;color:var(--tx3);border:none;background:none;cursor:pointer;font-family:var(--fs);transition:color var(--tf);padding:0;font-weight:500}
 .sh-link:hover{color:var(--acc)}
 
-/* ── SEARCH BOX on home ── */
-.home-search-wrap{margin-bottom:10px;display:flex;align-items:stretch;gap:8px;position:relative}
-.search-box{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--b1);border-radius:12px;padding:12px 16px;transition:border-color .18s,background .15s;flex:1;position:relative;box-shadow:var(--shadow)}
-.search-box:focus-within{border-style:solid;border-color:var(--acc)}
-.search-box svg{color:var(--tx3);flex-shrink:0;transition:color .15s}
-.search-box:focus-within svg.si{color:var(--acc)}
-.search-box input{background:none;border:none;outline:none;color:var(--tx);font-family:var(--fs);font-size:.84rem;width:100%;font-weight:500}
-.search-box input::placeholder{color:var(--tx3);opacity:.8}
-.search-clear{background:none;border:none;cursor:pointer;color:var(--acc);width:24px;height:24px;display:none;align-items:center;justify-content:center;flex-shrink:0;transition:color .13s;padding:0;opacity:.7}
-.search-clear:hover{opacity:1}
-.search-clear.show{display:flex}
-.search-dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--s1);border:1.5px solid var(--b0);border-radius:14px;box-shadow:var(--shadow-md);z-index:300;overflow:hidden;display:none;animation:pgIn .18s var(--ease) both}
-.search-dropdown.open{display:block}
-.home-fav-btn{width:44px;flex-shrink:0;background:#fff;border:1.5px solid var(--b1);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,border-color .15s;color:var(--tx3);box-shadow:var(--shadow)}
-.home-fav-btn:hover{background:var(--s2);border-color:var(--accg);color:var(--acc)}
 .addr-banner{
   display:flex;align-items:center;gap:10px;
   background:var(--accd);border:1.5px solid var(--accg);
@@ -197,21 +182,15 @@ a{color:inherit;text-decoration:none}
 .addr-banner-text{flex:1;min-width:0;font-size:.78rem;font-weight:600;color:var(--tx);line-height:1.35}
 .addr-banner-set{background:var(--acc);color:#fff;border:none;border-radius:8px;font-family:var(--fd);font-weight:800;font-size:.72rem;padding:7px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
 .addr-banner-set:active{opacity:.82}
-.addr-banner-later{background:none;border:none;color:var(--tx3);font-size:.7rem;cursor:pointer;padding:6px 4px;white-space:nowrap;flex-shrink:0;transition:color .15s}
-.addr-banner-later:active{color:var(--tx)}
-.srd-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background .12s;border-bottom:1px solid var(--b0)}
-.srd-item:last-child{border-bottom:none}
-.srd-item:hover{background:var(--s2)}
-.srd-img{width:40px;height:40px;border-radius:9px;background:var(--s2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.srd-img img{width:100%;height:100%;object-fit:cover}
-.srd-info{flex:1;min-width:0}
-.srd-name{font-weight:600;font-size:.8rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.srd-cat{font-size:.6rem;color:var(--tx3);margin-top:1px}
-.srd-price{font-family:var(--fd);font-weight:900;font-size:.88rem;color:var(--acc);flex-shrink:0}
-.srd-empty{padding:22px;text-align:center;color:var(--tx3);font-size:.76rem}
+.addr-required-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 20px;text-align:center;width:100%}
+.addr-required-hint-t{font-family:var(--fd);font-weight:800;font-size:.95rem;color:var(--tx)}
+.addr-required-hint-s{font-size:.78rem;color:var(--tx3);line-height:1.45;max-width:240px}
+.addr-required-hint-btn{margin-top:4px;background:var(--acc);color:#fff;border:none;border-radius:10px;font-family:var(--fd);font-weight:800;font-size:.8rem;padding:10px 24px;cursor:pointer;transition:opacity .15s}
+.addr-required-hint-btn:active{opacity:.82}
 
 /* ── CATEGORY PANELS ── */
 .home-cats-wrap{margin-bottom:10px}
+.home-cats-wrap:has(.cat-panels:empty){margin-bottom:0}
 .cat-panels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
 .cat-panel{background:var(--s1);border:1.5px solid var(--b0);border-radius:16px;padding:16px 12px 14px;cursor:pointer;transition:all .18s var(--ease);text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .cat-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--cat-c,var(--acc)),transparent 70%);opacity:0;transition:opacity .2s}
@@ -222,11 +201,9 @@ a{color:inherit;text-decoration:none}
 .cat-panel-name{font-size:.74rem;font-weight:800;color:var(--tx);font-family:var(--fd);position:relative;z-index:1;line-height:1.2}
 .cat-panel-count{font-size:.56rem;color:var(--tx3);margin-top:3px;position:relative;z-index:1}
 .cat-panels:empty{margin-bottom:0}
-.all-cats-btn{width:100%;padding:10px;border:1.5px dashed var(--accg);border-radius:12px;background:var(--accd);color:var(--acc);font-size:.72rem;font-weight:700;font-family:var(--fd);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px}
-.all-cats-btn:hover{background:var(--accg);border-style:solid}
 
 /* ── LIVE BANNER ── */
-.live-banner{background:linear-gradient(135deg,var(--accd),rgba(34,197,94,.02));border:1.5px solid var(--accg);border-radius:14px;padding:13px 18px;margin-bottom:16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:all var(--tf);box-shadow:var(--shadow)}
+.live-banner{background:linear-gradient(135deg,var(--accd),rgba(34,197,94,.02));border:1.5px solid var(--accg);border-radius:14px;padding:13px 18px;margin-bottom:10px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:all var(--tf);box-shadow:var(--shadow)}
 .live-banner:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:var(--shadow-md)}
 .live-pulse{width:9px;height:9px;border-radius:50%;background:var(--acc);flex-shrink:0;animation:lp 1.8s ease-in-out infinite}
 @keyframes lp{0%,100%{box-shadow:0 0 0 0 rgba(26,158,74,.6)}50%{box-shadow:0 0 0 6px rgba(26,158,74,0)}}
@@ -446,9 +423,6 @@ select.addr-inp{cursor:pointer}
 .tdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--acc)}
 .toast.ok .tdot{background:var(--acc)}.toast.err .tdot{background:var(--red)}.toast.info .tdot{background:var(--blue)}
 
-/* ── STORES ── */
-.stores-section{margin-bottom:0}
-
 /* ── PROMO BANNER ── */
 .promo-section{margin-bottom:10px}
 .promo-card{
@@ -470,49 +444,6 @@ select.addr-inp{cursor:pointer}
 }
 @media(min-width:861px){.promo-card{border-radius:18px}}
 
-/* Горизонтальный скролл — выходит за паддинг страницы */
-.stores-scroll{
-  overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  margin:0 -22px;
-  padding:4px 22px 10px;
-}
-.stores-scroll::-webkit-scrollbar{display:none}
-
-/* 2 ряда, авто-колонки, течёт горизонтально */
-.stores-grid{
-  display:grid;
-  grid-template-rows:repeat(2,auto);
-  grid-auto-flow:column;
-  grid-auto-columns:190px;
-  gap:10px;
-  width:max-content;
-}
-
-.store-card{
-  position:relative;border-radius:14px;overflow:hidden;cursor:pointer;
-  width:190px;aspect-ratio:512/256;
-  border:1.5px solid var(--b0);box-shadow:var(--shadow);
-  transition:transform .22s var(--spring),box-shadow .22s,border-color .18s;
-  background:var(--s2);flex-shrink:0;
-}
-.store-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 28px rgba(0,0,0,.13);border-color:var(--accg)}
-.store-card:active{transform:scale(.97)}
-.store-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s var(--ease)}
-.store-card:hover .store-card-img{transform:scale(1.05)}
-.store-card-img-wrap{position:absolute;inset:0;overflow:hidden}
-.store-card-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--tx3)}
-.store-card-placeholder svg{opacity:.2}
-.store-card-placeholder span{font-size:.6rem;opacity:.4}
-.store-card-skeleton{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
-/* ─── Store: недоступный магазин ─────────────────────────────── */
-.store-card-restricted{cursor:not-allowed!important}
-.store-card-restricted:hover{transform:none!important;box-shadow:var(--shadow)!important;border-color:var(--b0)!important}
-.store-card-restricted .store-card-img{filter:grayscale(55%)}
-.store-card-restricted .store-card-placeholder{opacity:.5}
-.store-unavail-overlay{position:absolute;inset:0;background:rgba(0,0,0,.58);border-radius:inherit;display:flex;align-items:center;justify-content:center;z-index:3;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-.store-unavail-overlay span{color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(0,0,0,.32);padding:5px 13px;border-radius:99px;border:1px solid rgba(255,255,255,.22);white-space:nowrap}
 @keyframes skl{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 
@@ -611,8 +542,6 @@ select.addr-inp{cursor:pointer}
 .loc-closed-banner-sub{font-size:.68rem;color:var(--tx2,#aaa);margin-top:2px;font-weight:500}
 /* ── Кнопка В корзину — закрыто ── */
 .add-btn-closed{background:var(--s2)!important;color:var(--tx3,#888)!important;border:1.5px solid var(--b0)!important;cursor:not-allowed!important}
-/* store-card name label */
-.store-card-name{font-size:.66rem;font-weight:700;color:var(--tx);text-align:center;padding:4px 6px 6px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ── Фиксация высоты при загрузке — чтобы баннер не прыгал ── */
 #page-store #store-prods{min-height:55vh}
 #retailer-locations-list{min-height:160px}
@@ -752,7 +681,6 @@ select.addr-inp{cursor:pointer}
   .pg2{grid-template-columns:1fr}
   .cat-panels{grid-template-columns:repeat(2,1fr)}
   .pg{grid-template-columns:repeat(2,1fr)}
-  .stores-scroll{margin:0 -14px;padding:4px 14px 10px}
   .store-cat-header{aspect-ratio:512/200}
   /* На мобиле гостевой топбар чуть компактнее */
   .guest-topbar-line1{font-size:.76rem}
@@ -1534,17 +1462,6 @@ select.addr-inp{cursor:pointer}
     <!-- HOME -->
     <div class="page active" id="page-home">
       <div id="live-wrap"></div>
-      <div class="home-search-wrap">
-        <div class="search-box" id="search-box">
-          <svg class="si" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input type="text" id="search-inp-home" placeholder="Поиск…" oninput="onHomeSearch(this.value)" onfocus="openSD()" autocomplete="off"/>
-          <button class="search-clear" id="search-clear" onclick="clearHS()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          <div class="search-dropdown" id="search-dd"></div>
-        </div>
-        <button class="home-fav-btn" onclick="openLikesSheet()" title="Избранное">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-        </button>
-      </div>
       <!-- ADDRESS BANNER -->
       <div class="addr-banner" id="addr-banner" style="display:none">
         <div class="addr-banner-ico">
@@ -1552,22 +1469,6 @@ select.addr-inp{cursor:pointer}
         </div>
         <div class="addr-banner-text">Укажите адрес доставки</div>
         <button class="addr-banner-set" onclick="openAddAddrSheet()">Указать</button>
-        <button class="addr-banner-later" onclick="hideAddrBanner()">Потом</button>
-      </div>
-
-      <!-- STORES SECTION -->
-      <div class="stores-section" id="stores-section">
-        <div class="sh">
-          <div><div class="sh-tag">Магазины</div><div class="sh-title">Список <em>магазинов</em></div></div>
-        </div>
-        <div class="stores-scroll">
-          <div class="stores-grid" id="stores-grid">
-            <div class="store-card store-card-skeleton"></div>
-            <div class="store-card store-card-skeleton"></div>
-            <div class="store-card store-card-skeleton"></div>
-            <div class="store-card store-card-skeleton"></div>
-          </div>
-        </div>
       </div>
 
       <!-- PROMO SECTION — управляется из админ-панели (config/homePromo) -->
@@ -1584,10 +1485,6 @@ select.addr-inp{cursor:pointer}
 
       <div class="home-cats-wrap">
         <div class="cat-panels" id="home-cats"></div>
-        <button class="all-cats-btn" onclick="goPage('catalog')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Все категории
-        </button>
       </div>
       <div id="home-retailer-feed">
         <!-- skeleton placeholders while loading -->
@@ -1732,6 +1629,10 @@ select.addr-inp{cursor:pointer}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
               Оформить заказ
             </label>
+            <button id="quick-pay-btn" onclick="doQuickPay()"
+              style="display:none;width:100%;height:50px;margin-top:0;margin-bottom:8px;border:none;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-family:var(--fd);font-weight:900;font-size:.82rem;cursor:pointer;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(217,119,6,.28);letter-spacing:.01em">
+              ⚡ Быстрая оплата
+            </button>
             <button class="checkout-btn" id="checkout-btn" style="margin-top:0" onclick="doCheckout()">
               <img class="booking-pay-ico" src="https://dastdaroz.shop/storage/others/alifpay.png" alt="Alif Pay"/>
               Оплатить через Alif
