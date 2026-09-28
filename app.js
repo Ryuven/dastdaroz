@@ -1904,8 +1904,10 @@ async function syncCart() {
     try { await deleteDoc(doc(db, 'carts', CU.uid)); } catch {}
     return;
   }
-  await setDoc(doc(db, 'carts', CU.uid), {
-    clientId: CU.uid,
+  const rId = activeRetailerId || cart[0]?.storeId    || null;
+  const lId = activeLocId      || cart[0]?.locationId || null;
+  const cartData = {
+    clientId:  CU.uid,
     items: cart.map(i => ({
       productId:  i.productId,
       name:       i.name,
@@ -1916,7 +1918,11 @@ async function syncCart() {
       locationId: i.locationId || null,
     })),
     updatedAt: serverTimestamp(),
-  }, { merge: true });
+  };
+  // Пишем retailerId/locationId только если знаем их
+  if (rId) cartData.retailerId = rId;
+  if (lId) cartData.locationId = lId;
+  await setDoc(doc(db, 'carts', CU.uid), cartData, { merge: true });
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────
@@ -1987,7 +1993,7 @@ window.addToCart = async function (pid, _srcBtn) {
   }
 
   // ── Проверка: нельзя смешивать товары разных ритейлеров ──────
-  const pStoreId = p.storeId || null;
+  const pStoreId = p.storeId || activeRetailerId || null;
   if (pStoreId && cart.length > 0) {
     const existingStoreId = cart[0].storeId ||
       (prods.find(x => x.id === cart[0].productId) || jsonProdsMap[cart[0].productId])?.storeId || null;
@@ -2009,7 +2015,7 @@ window.addToCart = async function (pid, _srcBtn) {
   }
 
   // ── Проверка: нельзя смешивать товары из разных точек одного ритейлера ──
-  const pLocId = p.locationId || null;
+  const pLocId = p.locationId || activeLocId || null;
   if (pLocId && cart.length > 0) {
     const existingLocId = cart[0].locationId ||
       (prods.find(x => x.id === cart[0].productId) || jsonProdsMap[cart[0].productId])?.locationId || null;
@@ -2042,8 +2048,8 @@ window.addToCart = async function (pid, _srcBtn) {
         price:      p.price,
         imageUrl:   p.imageUrl   || '',
         quantity:   1,
-        storeId:    p.storeId    || null,
-        locationId: p.locationId || null,
+        storeId:    p.storeId    || activeRetailerId || null,
+        locationId: p.locationId || activeLocId      || null,
       });
     }
     await syncCart();
@@ -2200,15 +2206,28 @@ window.doCheckout = async function () {
   try {
     const sub = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
+    // Читаем существующий документ корзины для fallback значений
+    const existingSnap = await getDoc(doc(db, 'carts', CU.uid));
+    const existing     = existingSnap.exists() ? existingSnap.data() : {};
+
+    // Цепочка fallback: активный ритейлер → item.storeId → то что уже было в Firestore
+    const rId   = activeRetailerId || cart[0]?.storeId    || existing.retailerId   || null;
+    const lId   = activeLocId      || cart[0]?.locationId || existing.locationId   || null;
+    const rName = stores.find(s => s.id === rId)?.name
+                  || existing.retailerName    || null;
+    const lAddr = activeLocData?.address
+                  || window._locDataMap?.[lId]?.address
+                  || existing.locationAddress || null;
+
     // Синкаем полные данные корзины в carts/{uid}
     await setDoc(doc(db, 'carts', CU.uid), {
       clientId:        CU.uid,
       clientName:      UD?.displayName || '',
       clientPhone:     UD?.phone || phoneFromPseudoEmail(CU.email) || '',
-      retailerId:      activeRetailerId || cart[0]?.storeId    || null,
-      locationId:      activeLocId      || cart[0]?.locationId || null,
-      retailerName:    stores.find(s => s.id === (activeRetailerId || cart[0]?.storeId))?.name || null,
-      locationAddress: activeLocData?.address || window._locDataMap?.[activeLocId || cart[0]?.locationId]?.address || null,
+      retailerId:      rId,
+      locationId:      lId,
+      retailerName:    rName,
+      locationAddress: lAddr,
       deliveryService,
       items: cart.map(c => ({
         productId: c.productId,
