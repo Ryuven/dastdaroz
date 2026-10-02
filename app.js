@@ -85,6 +85,9 @@ let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душан�
 let _addrBannerUnsub  = null;
 let _hasAddress       = null; // null=ещё не известно, true=есть, false=нет
 
+let _userLat = null;   // широта из последнего сохранённого адреса пользователя
+let _userLng = null;   // долгота из последнего сохранённого адреса пользователя
+
 
 // ─── 3. Константы ────────────────────────────────────────────
 const DFEE = 7; // стоимость доставки (сомони)
@@ -520,6 +523,9 @@ onAuthStateChanged(auth, async u => {
   GUEST = false;
   CU    = u;
   await loadUD();
+  // Загружаем координаты последнего адреса ДО loadStores/loadProds —
+  // они нужны для выбора ближайшей точки ритейлера.
+  await _loadUserCoords();
   await Promise.all([loadCart(), loadProds(), loadCats(), loadOrders(), loadStores(), loadDeliveryServices()]);
   renderSB();
   renderProfile();
@@ -911,25 +917,28 @@ async function renderHomeRetailerFeed() {
   // Грузим все данные параллельно — без промежуточного скелетона в JS
   const results = await Promise.all(stores.map(async store => {
     try {
-      // Первая точка в текущем городе
-      let locId = null;
+      // _userLat / _userLng уже загружены в onAuthStateChanged через _loadUserCoords()
+      // Загружаем ВСЕ точки города, чтобы выбрать ближайшую
       const locSnap = await getDocs(
         query(collection(db, 'retailers', store.id, 'locations'),
-              where('cityId', '==', _selectedCityId), limit(1))
+              where('cityId', '==', _selectedCityId))
       );
-      if (!locSnap.empty) {
-        locId = locSnap.docs[0].id;
-      } else {
-        const locFb = await getDocs(
-          query(collection(db, 'retailers', store.id, 'locations'), limit(1))
-        );
-        if (!locFb.empty) locId = locFb.docs[0].id;
-      }
-      if (!locId) return null;
+      let allLocs = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Сохраняем данные точки для проверки режима работы
-      const locData = locSnap.empty ? null : { id: locId, ...locSnap.docs[0].data() };
-      if (locData) window._locDataMap = { ...(window._locDataMap || {}), [locId]: locData };
+      // Fallback: если в выбранном городе нет точек — берём любые (до 5)
+      if (!allLocs.length) {
+        const locFb = await getDocs(
+          query(collection(db, 'retailers', store.id, 'locations'), limit(5))
+        );
+        allLocs = locFb.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+      if (!allLocs.length) return null;
+
+      // Ближайшая точка к пользователю (или первая, если GPS недоступен)
+      const nearestLoc = pickNearestLoc(allLocs);
+      const locId   = nearestLoc.id;
+      const locData = nearestLoc;
+      window._locDataMap = { ...(window._locDataMap || {}), [locId]: locData };
 
       // Тянем до 15 доступных товаров, потом рандомно выбираем 2
       const prodSnap = await getDocs(
@@ -944,7 +953,7 @@ async function renderHomeRetailerFeed() {
         const j = Math.floor(Math.random() * (i + 1));
         [allProds[i], allProds[j]] = [allProds[j], allProds[i]];
       }
-      const hrfProds = allProds.slice(0, 2);
+      const hrfProds = allProds.slice(0, 6);
       hrfProds.forEach(p => { jsonProdsMap[p.id] = p; });
 
       return { store, hrfProds, locData };
@@ -962,7 +971,8 @@ async function renderHomeRetailerFeed() {
     .join('');
 }
 
-window.openRetailer = async function (sid) {
+window.openRetailer = async function (sid, opts) {
+  const forceList = !!(opts && opts.list); // {list:true} — принудительно показать список точек
   activeStore    = stores.find(s => s.id === sid);
   storeCatFilter = 'all';
   jsonMenuData   = null;
@@ -979,12 +989,25 @@ window.openRetailer = async function (sid) {
     backBtn.onclick = () => goPage('home');
     backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Главная страница`;
   }
+  // Минимум кликов: сразу открываем ближайшую точку (по координатам адреса клиента).
+  // Список точек показываем только если: нет координат при нескольких точках,
+  // не нашли точек, либо клиент сам нажал «Сменить точку».
+  if (!forceList) {
+    renderRetailerHeader(activeStore); // сразу правильный баннер — без мигания старого
+    const catsEl0  = document.getElementById('store-cats');
+    const prodsEl0 = document.getElementById('store-prods');
+    if (catsEl0)  catsEl0.innerHTML  = '';
+    if (prodsEl0) prodsEl0.innerHTML = '';
+    const auto = await _pickAutoLoc(sid);
+    if (activeStore?.id !== sid) return; // пользователь уже ушёл
+    if (auto) return openRetailerCatalog(sid, auto.id, auto.address || '', true);
+  }
   renderRetailerPage(activeStore);
 };
 window.openStore = window.openRetailer; // алиас для совместимости
 
 // Открыть каталог конкретной точки ритейлера
-window.openRetailerCatalog = async function (rid, locId, locAddr) {
+window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) {
   document.getElementById('pages').scrollTop = 0;
   // Убираем режим списка точек — нужно показать пилюли категорий
   const ps = document.getElementById('page-store');
@@ -1007,9 +1030,14 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   const backBtn = document.querySelector('.store-cat-back');
   if (backBtn) {
     backBtn.style.display = '';
-    backBtn.onclick = () => openRetailer(rid);
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> К точкам магазина`;
+    backBtn.onclick = auto ? () => goPage('home') : () => openRetailer(rid, { list: true });
+    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> ${auto ? 'Главная страница' : 'К точкам магазина'}`;
   }
+
+  // При автооткрытии даём ссылку «Сменить точку» рядом с адресом
+  const _changeHtml = auto
+    ? ` <span style="text-decoration:underline;cursor:pointer;margin-left:6px;pointer-events:auto" onclick="openRetailer('${rid}',{list:true})">· Сменить</span>`
+    : '';
 
   // Заголовок: доп-баннер (если есть) или дефолтный hero
   if (hdrEl && activeStore) {
@@ -1020,12 +1048,12 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
         <div class="ret-xbanner-wrap">
           <div class="ret-xbanner">
             <img src="${activeStore.extraBannerUrl}" alt="${activeStore.name}">
-            <button class="ret-xbanner-back" onclick="openRetailer('${rid}')">
+            <button class="ret-xbanner-back" onclick="${auto ? "goPage('home')" : `openRetailer('${rid}',{list:true})`}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             </button>
             <div class="ret-xbanner-body">
               <div class="ret-xbanner-tag">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}${_changeHtml}
               </div>
               <div class="ret-xbanner-name">${activeStore.name}</div>
               ${activeStore.description ? `<div class="ret-xbanner-desc">${activeStore.description}</div>` : ''}
@@ -1041,7 +1069,7 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
           <div class="store-cat-header-overlay"></div>
           <div class="store-cat-header-body">
             <div class="store-cat-header-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}${_changeHtml}
             </div>
             <div class="store-cat-header-name">${activeStore.name}</div>
             ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
@@ -1109,12 +1137,11 @@ window.openRetailerCatalog = async function (rid, locId, locAddr) {
   }
 };
 
-async function renderRetailerPage(retailer) {
-  const hdrEl   = document.getElementById('store-header');
-  const catsEl  = document.getElementById('store-cats');
-  const prodsEl = document.getElementById('store-prods');
+/** Шапка ритейлера (доп-баннер 16:9 или дефолтный hero) без адреса точки.
+ *  Вызывается сразу при открытии ритейла, чтобы не мелькал старый хедер. */
+function renderRetailerHeader(retailer) {
+  const hdrEl = document.getElementById('store-header');
   if (!hdrEl) return;
-
   // ── Хедер: доп-баннер (16:9) или дефолтный hero ──────────
   const extBack = document.querySelector('.store-cat-back');
   if (retailer.extraBannerUrl) {
@@ -1147,6 +1174,15 @@ async function renderRetailerPage(retailer) {
         </div>
       </div>`;
   }
+}
+
+async function renderRetailerPage(retailer) {
+  const hdrEl   = document.getElementById('store-header');
+  const catsEl  = document.getElementById('store-cats');
+  const prodsEl = document.getElementById('store-prods');
+  if (!hdrEl) return;
+
+  renderRetailerHeader(retailer);
 
   if (catsEl)  catsEl.innerHTML  = '';
   document.getElementById('page-store')?.classList.add('ret-loc-mode');
@@ -1179,7 +1215,17 @@ async function renderRetailerPage(retailer) {
       return;
     }
 
-    listEl.innerHTML = locations.map(loc => {
+    // Сортируем точки по расстоянию от пользователя (ближайшая — первой)
+    const userHasCoords = _userLat !== null && _userLng !== null;
+    if (userHasCoords) {
+      locations.sort((a, b) => {
+        const dA = (a.lat != null && a.lng != null) ? calcDistance(_userLat, _userLng, a.lat, a.lng) : Infinity;
+        const dB = (b.lat != null && b.lng != null) ? calcDistance(_userLat, _userLng, b.lat, b.lng) : Infinity;
+        return dA - dB;
+      });
+    }
+
+    listEl.innerHTML = locations.map((loc, idx) => {
       const mapsUrl    = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
       const safeAddr   = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const locOpen    = isLocationOpen(loc);
@@ -1188,11 +1234,22 @@ async function renderRetailerPage(retailer) {
       const statusBadge = locOpen
         ? (loc.noSchedule ? '' : (loc.workingHours ? `<div class="retailer-loc-hours">${loc.workingHours.from}–${loc.workingHours.to}</div>` : ''))
         : `<div class="retailer-loc-closed-tag">🔴 Закрыто${locTxt ? ' · ' + locTxt : ''}</div>`;
+
+      // Бейдж «Ближайшая» — только для первой точки, когда GPS известен и точка имеет координаты
+      const isNearest = userHasCoords && idx === 0 && loc.lat != null && loc.lng != null;
+      const nearestBadge = isNearest
+        ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:99px;background:var(--accd);border:1px solid var(--accg);font-size:.56rem;font-weight:700;color:var(--acc)">
+             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+             Ближайшая к вам
+           </div>`
+        : '';
+
       return `
       <div class="retailer-loc-card ${closedCls}" style="cursor:pointer"
            onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
         <div class="retailer-loc-body">
           <div class="retailer-loc-addr">${loc.address || '—'}</div>
+          ${nearestBadge}
           ${statusBadge}
         </div>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2" style="flex-shrink:0;opacity:.6"><path d="M9 18l6-6-6-6"/></svg>
@@ -1446,31 +1503,38 @@ async function loadProds() {
       })
       .map(d => ({ id: d.id, ...d.data() }));
 
-    // По каждому ритейлеру — загружаем его точки, а потом их каталоги
+    // По каждому ритейлеру — берём ТОЛЬКО ближайшую точку и грузим её каталог
     const allProds = [];
     await Promise.all(retailers.map(async (retailer) => {
       try {
         const locSnap = await getDocs(
           query(collection(db, 'retailers', retailer.id, 'locations'), where('cityId', '==', cityId))
         );
-        await Promise.all(locSnap.docs.map(async (locDoc) => {
-          try {
-            const catSnap = await getDocs(
-              query(
-                collection(db, 'retailers', retailer.id, 'locations', locDoc.id, 'catalog'),
-                where('available', '==', true)
-              )
-            );
-            catSnap.docs.forEach(d => allProds.push({
-              id: d.id,
-              ...d.data(),
-              storeId:      retailer.id,
-              locationId:   locDoc.id,
-              retailerName: retailer.name,
-              available:    true,
-            }));
-          } catch {}
-        }));
+        const allLocs = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Ближайшая точка к пользователю (GPS уже запрошен в onAuthStateChanged)
+        const nearestLoc = pickNearestLoc(allLocs);
+        if (!nearestLoc) return;
+
+        // Сохраняем данные точки (режим работы, часы и т.д.)
+        window._locDataMap = { ...(window._locDataMap || {}), [nearestLoc.id]: nearestLoc };
+
+        try {
+          const catSnap = await getDocs(
+            query(
+              collection(db, 'retailers', retailer.id, 'locations', nearestLoc.id, 'catalog'),
+              where('available', '==', true)
+            )
+          );
+          catSnap.docs.forEach(d => allProds.push({
+            id: d.id,
+            ...d.data(),
+            storeId:      retailer.id,
+            locationId:   nearestLoc.id,
+            retailerName: retailer.name,
+            available:    true,
+          }));
+        } catch {}
       } catch {}
     }));
 
@@ -1508,6 +1572,81 @@ function pickHrfProds(list, n = 2) {
   return [...list].sort((a, b) => rank(a) - rank(b)).slice(0, n);
 }
 
+// ─── Координаты пользователя из сохранённых адресов ──────────
+
+/** Загружает координаты последнего добавленного адреса пользователя
+ *  из подколлекции users/{uid}/addresses.
+ *  Результат кладётся в _userLat / _userLng.
+ *  Для гостей — сбрасывает в null (нет адресов). */
+async function _loadUserCoords() {
+  _userLat = null;
+  _userLng = null;
+  if (!CU || GUEST) return;
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'users', CU.uid, 'addresses'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      )
+    );
+    if (!snap.empty) {
+      const addr = snap.docs[0].data();
+      if (addr.lat != null && addr.lng != null) {
+        _userLat = addr.lat;
+        _userLng = addr.lng;
+      }
+    }
+  } catch (e) {
+    console.warn('[coords] Не удалось загрузить адрес:', e?.message);
+  }
+}
+
+/** Расстояние Хаверсина между двумя точками, км. */
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R    = 6371;
+  const toRad = x => x * Math.PI / 180;
+  const dLat  = toRad(lat2 - lat1);
+  const dLng  = toRad(lng2 - lng1);
+  const a     = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Из массива точек ({lat, lng, ...}) возвращает ближайшую к пользователю.
+ *  Если координаты пользователя неизвестны — возвращает первую точку. */
+function pickNearestLoc(locations) {
+  if (!locations.length) return null;
+  if (_userLat === null || _userLng === null) return locations[0];
+  let best = locations[0], bestDist = Infinity;
+  locations.forEach(loc => {
+    if (loc.lat != null && loc.lng != null) {
+      const d = calcDistance(_userLat, _userLng, loc.lat, loc.lng);
+      if (d < bestDist) { bestDist = d; best = loc; }
+    }
+  });
+  return best;
+}
+
+/** Выбор точки для автооткрытия ритейлера.
+ *  1 точка в городе → она; несколько + есть координаты клиента → ближайшая;
+ *  иначе null (покажем список). */
+async function _pickAutoLoc(rid) {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'retailers', rid, 'locations'), where('cityId', '==', _selectedCityId))
+    );
+    const locs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!locs.length) return null;
+    if (locs.length === 1) return locs[0];
+    if (_userLat === null || _userLng === null) return null;
+    return pickNearestLoc(locs);
+  } catch (e) {
+    console.warn('[autoLoc]', e?.message);
+    return null;
+  }
+}
+
 function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName = '' } = {}) {
   const sid  = store?.id || null;
   const name = store?.name || fallbackName || 'Магазин';
@@ -1516,7 +1655,7 @@ function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName 
     : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
   const prodsHtml = hrfProds.length
     ? hrfProds.map(p => renderPC(p, true)).join('')
-    : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
+    : `<div style="text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
   return `
     <div class="hrf-block"${withId && sid ? ` id="hrf-${sid}"` : ''}>
       <div class="hrf-header"${sid ? ` onclick="openStore('${sid}')"` : ''}>
@@ -1524,9 +1663,11 @@ function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName 
         <div class="hrf-name">${escHtml(name)}</div>
         ${sid ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
       </div>
-      <div class="pg-wrap">
-        <div class="pg">${prodsHtml}</div>
-        ${buildClosedOverlay(locData)}
+      <div class="hrf-prods-wrap">
+        <div class="pg-wrap">
+          <div class="pg pg-h">${prodsHtml}</div>
+          ${buildClosedOverlay(locData)}
+        </div>
       </div>
     </div>`;
 }
@@ -1545,15 +1686,15 @@ function renderPC(p, preview = false) {
     : (window._locDataMap?.[p.locationId] || null);
   const locClosed = _pLocData ? !isLocationOpen(_pLocData) : false;
 
-  // preview-режим: вся карточка и кнопка ведут в меню ритейлера
-  const cardClick = preview
-    ? `openRetailer('${p.storeId}')`
-    : `openProdModal('${p.id}')`;
+  // preview-режим: карточка открывает модалку, кнопка добавляет в корзину
+  const cardClick = `openProdModal('${p.id}')`;
 
   const controls = preview
     ? locClosed
       ? `<button class="add-btn-full add-btn-closed" disabled>Закрыто</button>`
-      : `<button class="add-btn-full" onclick="event.stopPropagation();openRetailer('${p.storeId}')">В корзину</button>`
+      : qty > 0
+        ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
+        : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`
     : unavail
       ? `<button class="add-btn-full" disabled>Нет в наличии</button>`
       : locClosed
@@ -1645,7 +1786,7 @@ function renderCatalog() {
     const firstLocId = gp[0]?.locationId;
     const grpLocData = firstLocId ? (window._locDataMap?.[firstLocId] || null) : null;
     const blockStore = sid !== '__none__' ? (store || { id: sid, name: gp[0]?.retailerName }) : null;
-    return buildHrfBlock(blockStore, pickHrfProds(gp, 2), grpLocData, { fallbackName: gp[0]?.retailerName });
+    return buildHrfBlock(blockStore, pickHrfProds(gp, 6), grpLocData, { fallbackName: gp[0]?.retailerName });
   }).join('');
 }
 
@@ -2747,107 +2888,7 @@ function listenCart(uid) {
   });
 }
 
-// ─── 16. Статус заказа + Leaflet карта ───────────────────────
-let _trackMap          = null;
-let _trackMarkerDest   = null;
-let _trackMarkerCour   = null;
-let _trackRouteLine    = null;
-let _trackCourierUnsub = null;
-let _trackCourierId    = null;
-let _trackFitted       = false;
-let _trackLastOid      = null;
-
-const ICO_DEST    = '<div class="smap-marker-dest"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><circle cx="12" cy="12" r="3"/></svg></div>';
-const ICO_COURIER = '<div class="smap-marker-courier"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="1"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg></div>';
-
-function mkTrackIcon(html, size) {
-  return L.divIcon({ html, className: 'smap-marker-wrap', iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
-}
-
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const R    = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a    = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function renderStatusMap(o) {
-  const card = document.getElementById('status-map-card');
-  const info = document.getElementById('status-map-info');
-  if (!card) return;
-
-  const TERMINAL = ['delivered', 'cancelled'];
-  const showMap  = o && o.lat != null && o.lng != null && !!o.courierId && !TERMINAL.includes(o.status);
-
-  if (!showMap) {
-    card.style.display = 'none';
-    if (info) info.style.display = 'none';
-    stopCourierTracking();
-    return;
-  }
-
-  if (_trackLastOid !== o.id) { _trackLastOid = o.id; _trackFitted = false; }
-  card.style.display = 'block';
-
-  if (!_trackMap) {
-    _trackMap = L.map('status-map', { center: [o.lat, o.lng], zoom: 15, zoomControl: true, attributionControl: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_trackMap);
-  }
-  setTimeout(() => _trackMap && _trackMap.invalidateSize(), 60);
-
-  if (!_trackMarkerDest) {
-    _trackMarkerDest = L.marker([o.lat, o.lng], { icon: mkTrackIcon(ICO_DEST, 28), zIndexOffset: 400 }).addTo(_trackMap);
-  } else {
-    _trackMarkerDest.setLatLng([o.lat, o.lng]);
-  }
-
-  if (_trackCourierId !== o.courierId) {
-    stopCourierTracking();
-    _trackCourierId    = o.courierId;
-    _trackCourierUnsub = onSnapshot(doc(db, 'couriers', o.courierId), snap => {
-      if (!snap.exists()) return;
-      const loc = snap.data()?.location;
-      if (loc?.lat != null && loc?.lng != null) updateCourierOnMap(o, loc.lat, loc.lng);
-    });
-  }
-
-  if (info) info.style.display = 'flex';
-}
-
-function updateCourierOnMap(o, lat, lng) {
-  if (!_trackMap) return;
-  if (!_trackMarkerCour) {
-    _trackMarkerCour = L.marker([lat, lng], { icon: mkTrackIcon(ICO_COURIER, 30), zIndexOffset: 800 }).addTo(_trackMap);
-  } else {
-    _trackMarkerCour.setLatLng([lat, lng]);
-  }
-  const pts = [[lat, lng], [o.lat, o.lng]];
-  if (!_trackRouteLine) {
-    _trackRouteLine = L.polyline(pts, { color: '#1a9e4a', weight: 3.5, opacity: .75, dashArray: '8 10' }).addTo(_trackMap);
-  } else {
-    _trackRouteLine.setLatLngs(pts);
-  }
-  if (!_trackFitted) {
-    try { _trackMap.fitBounds(_trackRouteLine.getBounds(), { padding: [34, 34] }); } catch {}
-    _trackFitted = true;
-  }
-  const dist    = haversineKm(lat, lng, o.lat, o.lng);
-  const distTxt = dist < 1 ? Math.round(dist * 1000) + ' м' : dist.toFixed(1) + ' км';
-  const nameEl  = document.getElementById('status-map-info-name');
-  const distEl  = document.getElementById('status-map-info-dist');
-  if (nameEl) nameEl.textContent = o.courierName || 'Курьер';
-  if (distEl) distEl.textContent = distTxt;
-}
-
-function stopCourierTracking() {
-  if (_trackCourierUnsub) { _trackCourierUnsub(); _trackCourierUnsub = null; }
-  _trackCourierId = null;
-  if (_trackMarkerCour) { _trackMarkerCour.remove(); _trackMarkerCour = null; }
-  if (_trackRouteLine)  { _trackRouteLine.remove();  _trackRouteLine  = null; }
-}
-
+// ─── 16. Статус заказа ───────────────────────────────────────
 function renderStatusPage() {
   const el = document.getElementById('status-content');
   if (!el) return;
@@ -2856,8 +2897,6 @@ function renderStatusPage() {
   if (activeOid) o = orders.find(x => x.id === activeOid);
   if (!o) o = orders.find(x => ['pending','confirmed','preparing','delivering'].includes(x.status));
   if (!o && orders.length) o = orders[0];
-
-  try { renderStatusMap(o); } catch (e) { console.warn('[renderStatusMap]', e); }
 
   if (!o) {
     el.innerHTML = '<div class="empty"><span class="empty-ico">📍</span><div class="empty-t">Нет активных заказов</div><div class="empty-s">После оформления появится здесь</div></div>';
@@ -3441,13 +3480,13 @@ function _initAddrPickerMap() {
 
   // Если карта уже есть — просто обновляем размер
   if (_addrPickerMap) {
-    _addrPickerMap.invalidateSize();
+    _addrPickerMap.resize();
     return;
   }
 
-  // Leaflet не загрузился (CDN недоступен)
-  if (typeof L === 'undefined') {
-    console.error('[addaddr] Leaflet (L) не загружен — CDN недоступен');
+  // MapLibre не загрузился (CDN недоступен)
+  if (typeof maplibregl === 'undefined') {
+    console.error('[addaddr] maplibregl не загружен — CDN недоступен');
     mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--tx3);font-size:.8rem;font-weight:600;gap:6px">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
       'Карта недоступна — нет соединения</div>';
@@ -3455,52 +3494,54 @@ function _initAddrPickerMap() {
   }
 
   try {
-    _addrPickerMap = L.map('addaddr-map', {
-      center:             [_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG],
+    // MapLibre принимает координаты в порядке [lng, lat]
+    _addrPickerMap = new maplibregl.Map({
+      container:          'addaddr-map',
+      style:              'https://tiles.openfreemap.org/styles/liberty',
+      center:             [_ADDR_DEFAULT_LNG, _ADDR_DEFAULT_LAT],
       zoom:               14,
-      zoomControl:        false,
-      attributionControl: false
+      attributionControl: false,
     });
 
     // Кнопки зума — снизу справа, чтобы не перекрывать hint
-    L.control.zoom({ position: 'bottomright' }).addTo(_addrPickerMap);
+    _addrPickerMap.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      'bottom-right'
+    );
 
-    // CartoDB Voyager — бесплатно, без API-ключа, стабильно по всему миру
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' })
-      .addTo(_addrPickerMap);
-
-    // Пин-иконка
-    const pinHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="display:block">
-      <path d="M15 0C6.716 0 0 6.716 0 15c0 10.32 15 27 15 27S30 25.32 30 15C30 6.716 23.284 0 15 0z" fill="var(--acc,#7c3aed)"/>
+    // Пин-иконка (SVG-элемент для кастомного маркера)
+    const pinEl = document.createElement('div');
+    pinEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="display:block;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))">
+      <path d="M15 0C6.716 0 0 6.716 0 15c0 10.32 15 27 15 27S30 25.32 30 15C30 6.716 23.284 0 15 0z" fill="var(--acc,#1a9e4a)"/>
       <circle cx="15" cy="15" r="6.5" fill="#fff"/>
     </svg>`;
-    const pinIcon = L.divIcon({ className: '', html: pinHtml, iconSize: [30, 42], iconAnchor: [15, 42] });
 
     _addrPickerLat = _ADDR_DEFAULT_LAT;
     _addrPickerLng = _ADDR_DEFAULT_LNG;
 
-    _addrPickerMarker = L.marker([_ADDR_DEFAULT_LAT, _ADDR_DEFAULT_LNG], { draggable: true, icon: pinIcon })
+    _addrPickerMarker = new maplibregl.Marker({ element: pinEl, anchor: 'bottom', draggable: true })
+      .setLngLat([_ADDR_DEFAULT_LNG, _ADDR_DEFAULT_LAT])
       .addTo(_addrPickerMap);
 
-    _addrPickerMarker.on('dragend', e => {
-      const p = e.target.getLatLng();
-      _addrPickerLat = p.lat;
-      _addrPickerLng = p.lng;
+    _addrPickerMarker.on('dragend', () => {
+      const lngLat   = _addrPickerMarker.getLngLat();
+      _addrPickerLat = lngLat.lat;
+      _addrPickerLng = lngLat.lng;
       _renderAddrPickerCoords();
     });
 
     _addrPickerMap.on('click', e => {
-      _addrPickerMarker.setLatLng(e.latlng);
-      _addrPickerLat = e.latlng.lat;
-      _addrPickerLng = e.latlng.lng;
+      _addrPickerLat = e.lngLat.lat;
+      _addrPickerLng = e.lngLat.lng;
+      _addrPickerMarker.setLngLat([_addrPickerLng, _addrPickerLat]);
       _renderAddrPickerCoords();
     });
 
     _renderAddrPickerCoords();
 
-    // Несколько попыток invalidateSize на случай если анимация ещё идёт
-    setTimeout(() => _addrPickerMap?.invalidateSize(), 100);
-    setTimeout(() => _addrPickerMap?.invalidateSize(), 400);
+    // Несколько попыток resize на случай если анимация шита ещё идёт
+    setTimeout(() => _addrPickerMap?.resize(), 100);
+    setTimeout(() => _addrPickerMap?.resize(), 400);
 
   } catch (e) {
     console.error('[addaddr] Ошибка инициализации карты:', e);
@@ -3539,14 +3580,14 @@ window.goToAddrTextStep = function () {
 window.goToAddrMapStep = function () {
   document.getElementById('addaddr-step1').style.display = '';
   document.getElementById('addaddr-step2').style.display = 'none';
-  setTimeout(() => _addrPickerMap?.invalidateSize(), 120);
+  setTimeout(() => _addrPickerMap?.resize(), 120);
 };
 
 function _destroyAddrPickerMap() {
-  if (_addrPickerMap) { _addrPickerMap.remove(); _addrPickerMap = null; }
-  _addrPickerMarker = null;
-  _addrPickerLat    = null;
-  _addrPickerLng    = null;
+  if (_addrPickerMarker) { _addrPickerMarker.remove(); _addrPickerMarker = null; }
+  if (_addrPickerMap)    { _addrPickerMap.remove();    _addrPickerMap    = null; }
+  _addrPickerLat = null;
+  _addrPickerLng = null;
 }
 
 window.openAddAddrSheet = function () {
@@ -3620,9 +3661,11 @@ function checkAddressBanner(uid) {
   );
 }
 
-function _refreshFeedsOnAddr() {
-  renderHomeRetailerFeed();
-  renderCatalog();
+async function _refreshFeedsOnAddr() {
+  // Перечитываем координаты последнего адреса — они могли измениться
+  await _loadUserCoords();
+  // После обновления координат перезагружаем товары, чтобы точка была актуальной
+  await Promise.all([loadProds(), loadStores()]);
   if (_hasAddress === false) {
     // Открываем шит добавления адреса — даём время на рендер страницы
     setTimeout(() => window.openAddAddrSheet?.(), 600);
