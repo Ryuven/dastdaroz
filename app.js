@@ -957,28 +957,9 @@ async function renderHomeRetailerFeed() {
   // Один раз рендерим всё — заменяем HTML-скелетон реальным контентом
   feedEl.innerHTML = results
     .filter(Boolean)
-    .map(({ store, hrfProds, locData }) => {
-      const logoHtml = store.logoSquareUrl
-        ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(store.name)}" loading="lazy">`
-        : `<div class="hrf-logo-placeholder">${(store.name[0] || '?').toUpperCase()}</div>`;
-
-      const prodsHtml = hrfProds.length
-        ? hrfProds.map(p => renderPC(p, true)).join('')
-        : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
-
-      return `
-        <div class="hrf-block" id="hrf-${store.id}">
-          <div class="hrf-header" onclick="openStore('${store.id}')">
-            ${logoHtml}
-            <div class="hrf-name">${escHtml(store.name)}</div>
-            <div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>
-          </div>
-          <div class="pg-wrap">
-            <div class="pg">${prodsHtml}</div>
-            ${buildClosedOverlay(locData)}
-          </div>
-        </div>`;
-    }).join('');
+    .sort((a, b) => retailerRank(a.store.id) - retailerRank(b.store.id))
+    .map(({ store, hrfProds, locData }) => buildHrfBlock(store, hrfProds, locData, { withId: true }))
+    .join('');
 }
 
 window.openRetailer = async function (sid) {
@@ -1508,6 +1489,48 @@ async function loadProds() {
   renderStoreProds();
 }
 
+// ─── Единый блок «ритейлер + 2 товара» (главная и каталог) ───
+const _hrfRank = new Map();
+
+// Случайный порядок ритейлеров: один на сессию (новый при каждой перезагрузке),
+// общий для главной и каталога.
+const _retailerRank = new Map();
+function retailerRank(id) {
+  const k = id || '__none__';
+  if (!_retailerRank.has(k)) _retailerRank.set(k, Math.random());
+  return _retailerRank.get(k);
+}
+function pickHrfProds(list, n = 2) {
+  const rank = p => {
+    if (!_hrfRank.has(p.id)) _hrfRank.set(p.id, Math.random());
+    return _hrfRank.get(p.id);
+  };
+  return [...list].sort((a, b) => rank(a) - rank(b)).slice(0, n);
+}
+
+function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName = '' } = {}) {
+  const sid  = store?.id || null;
+  const name = store?.name || fallbackName || 'Магазин';
+  const logoHtml = store?.logoSquareUrl
+    ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(name)}" loading="lazy">`
+    : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
+  const prodsHtml = hrfProds.length
+    ? hrfProds.map(p => renderPC(p, true)).join('')
+    : `<div style="grid-column:1/-1;text-align:center;padding:20px 0;color:var(--tx3);font-size:.74rem">Товары появятся скоро</div>`;
+  return `
+    <div class="hrf-block"${withId && sid ? ` id="hrf-${sid}"` : ''}>
+      <div class="hrf-header"${sid ? ` onclick="openStore('${sid}')"` : ''}>
+        ${logoHtml}
+        <div class="hrf-name">${escHtml(name)}</div>
+        ${sid ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
+      </div>
+      <div class="pg-wrap">
+        <div class="pg">${prodsHtml}</div>
+        ${buildClosedOverlay(locData)}
+      </div>
+    </div>`;
+}
+
 function renderPC(p, preview = false) {
   const qty     = getCartQty(p.id);
   const unavail = !p.available;
@@ -1539,7 +1562,7 @@ function renderPC(p, preview = false) {
           ? `<div class="pc-qty"><button class="pc-qty-btn" onclick="event.stopPropagation();pcMinus('${p.id}',this)">−</button><div class="pc-qty-val">${qty}</div><button class="pc-qty-btn" onclick="event.stopPropagation();pcPlus('${p.id}',this)">+</button></div>`
           : `<button class="add-btn-full" onclick="event.stopPropagation();addToCart('${p.id}',this)">В корзину</button>`;
 
-  const retailerTag = p.retailerName
+  const retailerTag = (!preview && p.retailerName)
     ? `<div class="pc-retailer">${escHtml(p.retailerName)}</div>`
     : '';
 
@@ -1614,35 +1637,15 @@ function renderCatalog() {
     return;
   }
 
-  // Рендерим блоки в стиле главной (hrf-block + hrf-header + .pg)
+  // Те же блоки, что и на главной (общий buildHrfBlock)
   el.className = '';
-  el.innerHTML = [...groups.entries()].map(([sid, { store, prods: gp }]) => {
-    const name = store?.name || gp[0]?.retailerName || 'Магазин';
-    const logoHtml = store?.logoSquareUrl
-      ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(name)}" loading="lazy">`
-      : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
-    const clickAttr = sid !== '__none__' ? `onclick="openRetailer('${sid}')"` : '';
+  el.innerHTML = [...groups.entries()]
+    .sort((a, b) => retailerRank(a[0]) - retailerRank(b[0]))
+    .map(([sid, { store, prods: gp }]) => {
     const firstLocId = gp[0]?.locationId;
     const grpLocData = firstLocId ? (window._locDataMap?.[firstLocId] || null) : null;
-    const grpClosed  = grpLocData ? !isLocationOpen(grpLocData) : false;
-    const s = [...gp];
-    for (let i = s.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [s[i], s[j]] = [s[j], s[i]];
-    }
-    const grpProdsHtml = s.slice(0, 2).map(p => renderPC(p, true)).join('');
-    return `
-      <div class="hrf-block">
-        <div class="hrf-header" ${clickAttr}>
-          ${logoHtml}
-          <div class="hrf-name">${escHtml(name)}</div>
-          ${sid !== '__none__' ? `<div class="hrf-all">Все <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></div>` : ''}
-        </div>
-        <div class="pg-wrap">
-          <div class="pg">${grpProdsHtml}</div>
-          ${buildClosedOverlay(grpLocData)}
-        </div>
-      </div>`;
+    const blockStore = sid !== '__none__' ? (store || { id: sid, name: gp[0]?.retailerName }) : null;
+    return buildHrfBlock(blockStore, pickHrfProds(gp, 2), grpLocData, { fallbackName: gp[0]?.retailerName });
   }).join('');
 }
 
