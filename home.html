@@ -251,6 +251,29 @@ a{color:inherit;text-decoration:none}
 .pc-img{aspect-ratio:1/1;width:100%;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
 .pc-img img{width:100%;height:100%;object-fit:cover}
 .pc-badge{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.48rem;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.06em}
+/* ── Избранное: сердечко на карточке + строки в шторке ── */
+.pc-fav{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.14);transition:transform .15s,color .15s;-webkit-tap-highlight-color:transparent}
+.pc-fav svg{fill:none;stroke:currentColor;transition:fill .15s,stroke .15s}
+.pc-fav:active{transform:scale(.88)}
+.pc-fav.on{color:var(--red)}
+.pc-fav.on svg{fill:var(--red);stroke:var(--red)}
+.pc-fav.pop svg{animation:favpop .28s ease}
+@keyframes favpop{0%{transform:scale(.7)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.fav-list{display:flex;flex-direction:column;gap:12px;padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.fav-row{position:relative;display:flex;align-items:stretch;gap:14px;background:var(--s1);border:1.5px solid var(--b0);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+.fav-img{width:84px;height:84px;border-radius:13px;background:var(--s2);overflow:hidden;flex-shrink:0;align-self:flex-start;display:flex;align-items:center;justify-content:center}
+.fav-img img{width:100%;height:100%;object-fit:cover;display:block}
+.fav-main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.fav-info{display:flex;flex-direction:column;gap:2px;padding-right:34px;min-width:0}
+.fav-name{font-weight:700;font-size:.84rem;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fav-price{font-family:var(--fd);font-weight:900;font-size:.95rem;color:var(--tx)}
+.fav-price span{font-size:.6rem;color:var(--tx3);font-family:var(--fs);font-weight:400}
+.fav-del{top:10px;right:10px;box-shadow:none;background:var(--redd)}
+.fav-add{width:100%;padding:10px 12px;background:var(--acc);border:none;border-radius:11px;color:#fff;font-family:var(--fd);font-weight:800;font-size:.74rem;cursor:pointer;position:relative;transition:opacity .15s,transform .12s;-webkit-tap-highlight-color:transparent}
+.fav-add:active{transform:scale(.97)}
+.fav-add.fav-add-off{background:var(--s2);color:var(--tx3,#888);border:1.5px solid var(--b0);cursor:not-allowed;padding:8.5px 12px}
+.fav-add.btn-loading{pointer-events:none;color:transparent!important}
+.fav-add.btn-loading::after{content:'';position:absolute;width:15px;height:15px;top:50%;left:50%;margin-top:-7.5px;margin-left:-7.5px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:btn-spin .6s linear infinite}
 .pc-body{padding:11px 13px 13px;flex:1;display:flex;flex-direction:column;gap:3px}
 .pc-retailer{font-size:.48rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
 .pc-price{font-family:var(--fd);font-weight:900;font-size:.9rem;color:var(--tx);margin-bottom:1px}
@@ -265,6 +288,15 @@ a{color:inherit;text-decoration:none}
 .add-btn-full.btn-loading,.pc-qty-btn.btn-loading,.pm-addrow-add.btn-loading,.pm-addrow-side.btn-loading{pointer-events:none;position:relative;color:transparent!important}
 .add-btn-full.btn-loading::after,.pc-qty-btn.btn-loading::after,.pm-addrow-add.btn-loading::after,.pm-addrow-side.btn-loading::after{content:'';position:absolute;width:14px;height:14px;top:50%;left:50%;margin-top:-7px;margin-left:-7px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:btn-spin .6s linear infinite}
 @keyframes btn-spin{to{transform:rotate(360deg)}}
+/* ── Универсальный спиннер на кнопке (busy/unbusy в app.js) ── */
+.is-busy:not(.pc-fav){position:relative}
+.is-busy{pointer-events:none;color:transparent!important;--sp-c:#fff;--sp-bg:rgba(255,255,255,.4)}
+.is-busy:disabled{opacity:1!important}
+.is-busy>*{visibility:hidden}
+.is-busy::after{content:'';position:absolute;width:var(--sp-size,16px);height:var(--sp-size,16px);top:50%;left:50%;margin:calc(var(--sp-size,16px) / -2) 0 0 calc(var(--sp-size,16px) / -2);border:2px solid var(--sp-bg);border-top-color:var(--sp-c);border-radius:50%;animation:btn-spin .6s linear infinite}
+.is-busy.sp-dark{--sp-c:var(--acc);--sp-bg:rgba(26,158,74,.2)}
+.is-busy.sp-red{--sp-c:var(--red);--sp-bg:rgba(220,38,38,.2)}
+.ci-stepper-btn.is-busy,.sb-logout.is-busy,.paddr-item-del.is-busy,.pc-fav.is-busy{--sp-size:14px}
 .pc-qty{display:flex;align-items:center;width:100%;background:var(--s2);border:1.5px solid var(--accg);border-radius:10px;overflow:hidden}
 .pc-qty-btn{flex:0 0 36px;height:32px;background:none;border:none;cursor:pointer;color:var(--tx3);font-size:1.05rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:color var(--tf),background var(--tf)}
 .pc-qty-btn:hover{color:var(--acc);background:var(--accd)}
@@ -482,58 +514,11 @@ select.addr-inp{cursor:pointer}
 .prof-skl-row:last-child{border-bottom:none}
 
 /* ── RETAILER LOCATIONS ── */
-/* ── Retailer extra banner (16:9, back btn + text inside) ── */
-.ret-xbanner-wrap{margin-bottom:20px}
-.ret-xbanner{
-  position:relative;width:100%;border-radius:18px;overflow:hidden;
-  aspect-ratio:16/9;border:1.5px solid var(--b0);box-shadow:var(--shadow-md);
-}
-.ret-xbanner img{
-  width:100%;height:100%;object-fit:cover;display:block;
-  transition:transform .4s var(--ease);
-}
-.ret-xbanner:hover img{transform:scale(1.03)}
-/* Кнопка назад — квадратная blur-иконка */
-.ret-xbanner-back{
-  position:absolute;top:12px;left:12px;z-index:4;
-  width:36px;height:36px;border-radius:10px;
-  background:rgba(0,0,0,.32);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.18);
-  color:#fff;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;padding:0;
-  transition:background .14s,transform .12s;
-}
-.ret-xbanner-back:hover{background:rgba(0,0,0,.52)}
-.ret-xbanner-back:active{transform:scale(.88)}
-/* Градиентная тень + текст внизу */
-.ret-xbanner-body{
-  position:absolute;bottom:0;left:0;right:0;z-index:3;
-  background:linear-gradient(to top,rgba(0,0,0,.78) 0%,rgba(0,0,0,.32) 55%,transparent 100%);
-  padding:36px 16px 15px;
-}
-.ret-xbanner-tag{
-  font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;
-  color:rgba(255,255,255,.65);font-weight:700;margin-bottom:4px;
-}
-.ret-xbanner-name{
-  font-family:var(--fd);font-weight:900;font-size:1.4rem;
-  color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.35);
-  letter-spacing:-.02em;line-height:1;
-}
-.ret-xbanner-desc{
-  font-size:.66rem;color:rgba(255,255,255,.72);
-  line-height:1.4;margin-top:5px;
-}
 
 .retailer-loc-card{display:flex;align-items:center;gap:13px;padding:14px 16px;background:var(--s1);border:1.5px solid rgba(0,0,0,.13);border-radius:14px;margin-bottom:9px;box-shadow:none;transition:border-color var(--tf)}
 .retailer-loc-card:hover{border-color:var(--accg)}
-.retailer-loc-ico{width:42px;height:42px;border-radius:12px;background:var(--accd);border:1.5px solid var(--accg);display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0}
 .retailer-loc-body{flex:1;min-width:0}
 .retailer-loc-addr{font-size:.82rem;font-weight:600;color:var(--tx);line-height:1.4;margin-bottom:3px}
-.retailer-loc-coords{font-size:.58rem;color:var(--acc);font-weight:500}
-.retailer-loc-map-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--accd);border:1.5px solid var(--accg);border-radius:9px;color:var(--acc);font-size:.64rem;font-weight:700;font-family:var(--fs);cursor:pointer;text-decoration:none;flex-shrink:0;transition:background var(--tf)}
-.retailer-loc-map-btn:hover{background:var(--accg)}
 .retailer-loc-skeleton{height:72px;border-radius:14px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;margin-bottom:9px}
 /* ── Скелетон для пилюль категорий ── */
 .cat-pill-skl{height:34px;border-radius:99px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite;flex-shrink:0;display:inline-block}
@@ -556,16 +541,86 @@ select.addr-inp{cursor:pointer}
 /* Retailer location view: скрываем пустой pill-bar чтобы отступ был симметричным */
 #page-store.ret-loc-mode .cat-filter-wrap{display:none}
 
+/* ── RETAILER HEADER: короткая обложка + логотип 1:1 + чипы ── */
+.rh{margin-bottom:6px}
+.rh-cover{position:relative;width:100%;aspect-ratio:21/9;max-height:190px;overflow:hidden;background:linear-gradient(135deg,var(--accd),var(--s3))}
+.rh-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.rh-back{
+  position:absolute;top:12px;left:12px;z-index:3;
+  width:42px;height:42px;border-radius:13px;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:none;box-shadow:none;
+  color:var(--tx);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;transition:background .14s,transform .12s;
+}
+.rh-back:hover{background:rgba(255,255,255,.94)}
+.rh-back:active{transform:scale(.92)}
+.rh-card{
+  position:relative;margin-top:-18px;z-index:2;
+  background:var(--bg);border-radius:20px 20px 0 0;
+  padding:46px 22px 4px;
+}
+.rh-logo{
+  position:absolute;top:-28px;left:22px;
+  width:68px;height:68px;border-radius:20px;overflow:hidden;
+  background:var(--s1);border:3px solid var(--bg);
+  box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-weight:900;font-size:1.5rem;color:var(--acc);
+}
+.rh-logo img{width:100%;height:100%;object-fit:cover;display:block}
+.rh-name{font-family:var(--fd);font-weight:900;font-size:1.25rem;color:var(--tx);letter-spacing:-.02em;line-height:1.15}
+.rh-desc{font-size:.72rem;color:var(--tx3);line-height:1.45;margin-top:4px}
+/* Инфо-ряд: плоский текст с точками-разделителями (не пилюли, чтобы не путать с категориями) */
+.rh-chips{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:6px;min-height:26px}
+.rh-chip{
+  display:inline-flex;align-items:center;gap:5px;max-width:100%;
+  padding:4px 0;margin:0;border:none;background:none;border-radius:0;height:auto;
+  font-family:var(--fs);font-size:.74rem;font-weight:600;color:var(--tx3);
+  white-space:nowrap;
+}
+.rh-chip-txt{overflow:hidden;text-overflow:ellipsis;min-width:0}
+button.rh-chip{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rh-chip-addr{color:var(--acc)}
+/* Пунктирное подчёркивание — подсказка, что точку можно сменить */
+.rh-chip-addr .rh-chip-txt{
+  border-bottom:1.5px dashed rgba(26,158,74,.6);
+  border-bottom-color:color-mix(in srgb,var(--acc) 60%,transparent);
+  padding-bottom:2px;
+}
+button.rh-chip-addr:active{opacity:.6}
+.rh-chip svg{flex-shrink:0}
+.rh-dot{color:var(--tx3);opacity:.55;font-weight:700}
+.rh-chip-open i{width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block}
+.rh-chip-closed{color:#f43f5e}
+.rh-chip-skl{display:inline-block;width:150px;height:14px;border-radius:6px;background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+/* иммерсивный режим: обложка от края до края, safe-area для кнопки назад */
+#page-store.page--full-banner .rh{margin:0 0 6px}
+#page-store.page--full-banner .rh-back{
+  top:max(12px, calc(env(safe-area-inset-top,0px) + 8px));
+  left:max(12px, calc(env(safe-area-inset-left,0px) + 8px));
+}
+@media(max-width:860px){
+  .rh-card{padding-left:14px;padding-right:14px}
+  .rh-logo{left:14px}
+}
+
+/* ── Окно подтверждения (вместо системного confirm) ── */
+.cfm-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;opacity:0;transition:opacity .18s}
+.cfm-bg.show{opacity:1}
+.cfm{width:100%;max-width:340px;background:var(--s1);border-radius:20px;padding:22px 20px 16px;box-shadow:var(--shadow-md);transform:translateY(8px) scale(.97);transition:transform .2s var(--ease)}
+.cfm-bg.show .cfm{transform:none}
+.cfm-t{font-family:var(--fd);font-weight:900;font-size:1rem;color:var(--tx);letter-spacing:-.01em;line-height:1.25}
+.cfm-s{font-size:.76rem;color:var(--tx2);line-height:1.55;margin-top:8px;white-space:pre-line}
+.cfm-row{display:flex;gap:8px;margin-top:18px}
+.cfm-btn{flex:1;height:46px;border:none;border-radius:13px;font-family:var(--fs);font-weight:700;font-size:.8rem;cursor:pointer;transition:transform .12s,opacity .15s}
+.cfm-btn:active{transform:scale(.96)}
+.cfm-cancel{background:var(--s2);color:var(--tx2)}
+.cfm-ok{background:var(--acc);color:#fff}
+.cfm-ok.cfm-danger{background:var(--red)}
+
 /* ── STORE CATALOG PAGE ── */
-.store-cat-header{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:512/180;margin-bottom:20px;border:1.5px solid var(--b0);box-shadow:var(--shadow-md)}
-.store-cat-header-img{width:100%;height:100%;object-fit:cover;display:block}
-.store-cat-header-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.6) 0%,rgba(0,0,0,.2) 60%,transparent 100%)}
-.store-cat-header-body{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:20px 24px}
-.store-cat-header-tag{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:5px;font-weight:600}
-.store-cat-header-name{font-family:var(--fd);font-weight:900;font-size:1.6rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3);letter-spacing:-.02em;line-height:1}
-.store-cat-header-desc{font-size:.72rem;color:rgba(255,255,255,.8);margin-top:6px;max-width:260px;line-height:1.5}
-.store-cat-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;font-size:.72rem;color:var(--tx3);border:none;background:none;cursor:pointer;padding:6px 10px 6px 6px;border-radius:8px;font-family:var(--fs);font-weight:600;transition:all .13s}
-.store-cat-back:hover{background:var(--s2);color:var(--tx)}
 .store-cat-empty{text-align:center;padding:52px 20px}
 .store-cat-empty-ico{font-size:3rem;opacity:.15;margin-bottom:12px;display:block}
 .store-cat-empty-t{font-size:.88rem;font-weight:700;color:var(--tx3);margin-bottom:5px}
@@ -610,29 +665,10 @@ select.addr-inp{cursor:pointer}
   padding-left:0!important;
   padding-right:0!important;
 }
-/* Баннер ret-xbanner: убираем отступы, скругления, рамку */
-#page-store.page--full-banner .ret-xbanner-wrap{margin:0 0 14px!important}
-#page-store.page--full-banner .ret-xbanner{
-  border-radius:0!important;
-  border:none!important;
-  box-shadow:none!important;
-}
-/* Стандартный hero-header (без extraBannerUrl) — тоже на весь экран */
-#page-store.page--full-banner .store-cat-header{
-  border-radius:0!important;
-  border:none!important;
-  box-shadow:none!important;
-  margin:0 0 14px!important;
-}
 /* Скроллбар прячем в иммерсивном режиме — не должен перекрывать баннер */
 .main.immersive .pages::-webkit-scrollbar{display:none}
 .main.immersive .pages{scrollbar-width:none}
 
-/* Кнопка назад внутри баннера: учитываем safe-area (iPhone notch) */
-#page-store.page--full-banner .ret-xbanner-back{
-  top:max(12px, calc(env(safe-area-inset-top,0px) + 8px));
-  left:max(12px, calc(env(safe-area-inset-left,0px) + 8px));
-}
 /* Возвращаем боковые отступы контенту ниже баннера */
 #page-store.page--full-banner .cat-filter-wrap{
   padding-left:22px;padding-right:22px;
@@ -640,18 +676,12 @@ select.addr-inp{cursor:pointer}
 #page-store.page--full-banner #store-prods{
   padding-left:22px;padding-right:22px;box-sizing:border-box;
 }
-#page-store.page--full-banner .store-cat-back{
-  margin-left:22px;
-}
 @media(max-width:860px){
   #page-store.page--full-banner .cat-filter-wrap{
     padding-left:14px;padding-right:14px;
   }
   #page-store.page--full-banner #store-prods{
     padding-left:14px;padding-right:14px;
-  }
-  #page-store.page--full-banner .store-cat-back{
-    margin-left:14px;
   }
 }
 
@@ -689,7 +719,6 @@ select.addr-inp{cursor:pointer}
   .pg2{grid-template-columns:1fr}
   .cat-panels{grid-template-columns:repeat(2,1fr)}
   .pg{grid-template-columns:repeat(2,1fr)}
-  .store-cat-header{aspect-ratio:512/200}
   /* На мобиле гостевой топбар чуть компактнее */
   .guest-topbar-line1{font-size:.76rem}
   .guest-topbar-line2{font-size:.62rem}
@@ -870,13 +899,15 @@ select.addr-inp{cursor:pointer}
 .p-modal-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 
 /* Hero */
-.pm-hero{position:relative;width:100%;background:var(--s1);flex-shrink:0;padding:0 14px 14px;border-bottom:1px solid var(--b0)}
-.pm-hero-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:16px;transition:transform .4s ease}
-.pm-hero-ph{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;opacity:.12;border-radius:16px;background:var(--s2)}
+.pm-hero{position:relative;width:100%;background:var(--s1);flex-shrink:0;padding:0}
+.pm-hero-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:0}
+.pm-hero-ph{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;opacity:.12;border-radius:0;background:var(--s2)}
 .pm-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.3);backdrop-filter:blur(12px);border:1.5px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .15s}
 .pm-close:hover{background:rgba(0,0,0,.5)}
-.pm-badge-unavail{position:absolute;top:14px;left:28px;background:rgba(239,68,68,.9);backdrop-filter:blur(8px);color:#fff;font-size:.5rem;font-weight:800;padding:5px 12px;border-radius:99px;letter-spacing:.1em;text-transform:uppercase}
-.pm-badge-store{position:absolute;bottom:28px;left:28px;background:rgba(0,0,0,.45);backdrop-filter:blur(10px);color:#fff;font-size:.52rem;font-weight:600;padding:4px 10px;border-radius:8px;display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,.12)}
+.pm-badge-unavail{position:absolute;top:14px;left:14px;background:rgba(239,68,68,.9);backdrop-filter:blur(8px);color:#fff;font-size:.5rem;font-weight:800;padding:5px 12px;border-radius:99px;letter-spacing:.1em;text-transform:uppercase}
+.pm-hero-img{-webkit-user-drag:none;user-select:none}
+.pm-seller{font-size:.6rem;color:var(--tx3);line-height:1.5;margin:6px 0 2px}
+.pm-seller b{font-weight:600;color:var(--tx2)}
 
 /* Body */
 .pm-body{padding:22px 20px 40px;display:flex;flex-direction:column;gap:0}
@@ -1382,7 +1413,7 @@ select.addr-inp{cursor:pointer}
     <div class="sb-user" onclick="goPage('profile')">
       <div class="sb-av" id="sb-av">?</div>
       <div style="flex:1;min-width:0"><div class="sb-uname" id="sb-uname">Загрузка…</div><div class="sb-urole">Покупатель</div></div>
-      <button class="sb-logout" onclick="event.stopPropagation();doLogout()" title="Баромадан"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+      <button class="sb-logout" onclick="event.stopPropagation();doLogout(this)" title="Баромадан"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
     </div>
   </div>
 </aside>
@@ -1499,7 +1530,7 @@ select.addr-inp{cursor:pointer}
 
     <!-- CART -->
     <div class="page" id="page-cart">
-      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Корзина</div></div><button class="sh-link" id="cart-clear-btn" style="color:var(--red);display:none" onclick="clearCartUI()">Очистить</button></div>
+      <div class="sh"><div><div class="sh-tag">Оформление</div><div class="sh-title">Корзина</div></div><button class="sh-link" id="cart-clear-btn" style="color:var(--red);display:none" onclick="clearCartUI(this)">Очистить</button></div>
       <div class="cart-layout">
         <div id="cart-list">
           <div class="ci ci-skl"><div class="ci-img skl-block" style="border-radius:9px;width:44px;height:44px;flex-shrink:0"></div><div class="ci-info"><div class="skl-block" style="height:10px;width:72%;margin-bottom:6px"></div><div class="skl-block" style="height:7px;width:40%"></div></div><div style="display:flex;align-items:center;gap:5px"><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div><div class="skl-block" style="width:16px;height:10px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div><div class="skl-block" style="height:12px;width:44px"></div><div class="skl-block" style="width:22px;height:22px;border-radius:6px"></div></div>
@@ -1631,10 +1662,6 @@ select.addr-inp{cursor:pointer}
 
     <!-- STORE CATALOG -->
     <div class="page" id="page-store">
-      <button class="store-cat-back" onclick="goPage('home')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Главная страница
-      </button>
       <div id="store-header"></div>
       <div class="cat-filter-wrap"><div class="cat-filter-scroll" id="store-cats"><button class="cat-filter-pill active" onclick="filterStoreCat('all')">Все</button></div></div>
       <div class="pg" id="store-prods">
@@ -1836,7 +1863,7 @@ select.addr-inp{cursor:pointer}
 
         <!-- ── Аккаунт ────────────────────────────────────── -->
         <div class="prof-section-lbl">Аккаунт</div>
-        <button class="prof-logout" onclick="doLogout()">
+        <button class="prof-logout" onclick="doLogout(this)">
           <div class="prof-logout-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
           </div>

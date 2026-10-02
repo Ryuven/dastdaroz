@@ -75,6 +75,8 @@ let activeLocData    = null;  // Данные текущей точки (working
 let storeCatFilter   = 'all';
 let jsonMenuData     = null;
 let jsonProdsMap     = {};
+const _locsCache     = new Map();  // кэш точек ритейлера: 'retailerId:cityId' → {t, p}
+const LOCS_TTL       = 3 * 60 * 1000;
 let deliveryService  = 'mavsimi';
 let deliveryServices = [];        // загружается из Firestore коллекции deliveryServices
 let activeCollection = null;      // 'dastdarozOrders' | 'orders'
@@ -84,6 +86,14 @@ let _selectedCityId   = localStorage.getItem('selectedCityId')   || 'dushanbe';
 let _selectedCityName = localStorage.getItem('selectedCityName') || 'Душанбе';
 let _addrBannerUnsub  = null;
 let _hasAddress       = null; // null=ещё не известно, true=есть, false=нет
+
+// Избранное: users/{uid}/favorites/{retailerId}_{locationId}_{productId}
+let favs      = new Map();   // favKey → данные документа
+let _favUnsub = null;        // отписка от onSnapshot избранного
+const _favLive  = new Map(); // favKey → { t, p, loc } | { t, p:null } — товар/точка, подгруженные напрямую из Firestore
+const _favPending = new Set(); // ключи, по которым запись в Firestore ещё идёт (защита от спама тапами)
+let _favPopKey  = null;      // ключ, для которого нужно проиграть анимацию сердечка (только при клике)
+const FAV_TTL   = 2 * 60 * 1000;
 
 let _userLat = null;   // широта из последнего сохранённого адреса пользователя
 let _userLng = null;   // долгота из последнего сохранённого адреса пользователя
@@ -184,11 +194,46 @@ function phoneFromPseudoEmail(email) {
 
 
 // ─── Toast уведомления ────────────────────────────────────────
+/** Своё окно подтверждения вместо системного confirm(). Возвращает Promise<boolean>. */
+window.askConfirm = function ({ title = 'Подтвердите', text = '', ok = 'Да', cancel = 'Отмена', danger = false } = {}) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'cfm-bg';
+    bg.innerHTML = `<div class="cfm" role="dialog" aria-modal="true">
+      <div class="cfm-t"></div><div class="cfm-s"></div>
+      <div class="cfm-row">
+        <button type="button" class="cfm-btn cfm-cancel"></button>
+        <button type="button" class="cfm-btn cfm-ok${danger ? ' cfm-danger' : ''}"></button>
+      </div></div>`;
+    bg.querySelector('.cfm-t').textContent      = title;
+    bg.querySelector('.cfm-s').textContent      = text;
+    bg.querySelector('.cfm-cancel').textContent = cancel;
+    bg.querySelector('.cfm-ok').textContent     = ok;
+    if (!text) bg.querySelector('.cfm-s').remove();
+    let done = false;
+    const onKey = e => { if (e.key === 'Escape') close(false); };
+    const close = v => {
+      if (done) return; done = true;
+      document.removeEventListener('keydown', onKey);
+      bg.classList.remove('show');
+      setTimeout(() => bg.remove(), 180);
+      resolve(v);
+    };
+    bg.addEventListener('click', e => { if (e.target === bg) close(false); });
+    bg.querySelector('.cfm-cancel').onclick = () => close(false);
+    bg.querySelector('.cfm-ok').onclick     = () => close(true);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(bg);
+    requestAnimationFrame(() => bg.classList.add('show'));
+  });
+};
+
 window.toast = function (msg, type = '') {
   const w  = document.getElementById('toast-wrap');
   const el = document.createElement('div');
   el.className = 'toast ' + type;
-  el.innerHTML = `<div class="tdot"></div><span>${msg}</span>`;
+  el.innerHTML = '<div class="tdot"></div><span></span>';
+  el.querySelector('span').textContent = msg;
   w.appendChild(el);
   setTimeout(() => el.remove(), 3400);
 };
@@ -229,14 +274,8 @@ function _initSheets() {
 
   // ── Liked products ─────────────────────────────────────────
   Sheet.define({ id: 'likes', title: 'Понравившиеся товары', zIndex: 700 });
-  Sheet.body('likes').innerHTML = `
-    <div class="likesh-empty">
-      <div class="likesh-empty-ico">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      </div>
-      <div class="likesh-empty-title">Скоро добавим эту функцию</div>
-      <div class="likesh-empty-sub">Здесь будут отображаться товары, которые вам понравились</div>
-    </div>`;
+  Sheet.body('likes').innerHTML = `<div id="likesh-list"></div>`;
+  renderFavSheet();
 
   // ── Bookings (бронированные) ──────────────────────────────
 
@@ -258,7 +297,7 @@ function _initSheets() {
         <textarea class="supsh-input" id="supsh-input" rows="1" placeholder="Написать сообщение…"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSupportMsg();}"></textarea>
-        <button class="supsh-send" onclick="sendSupportMsg()">
+        <button class="supsh-send" onclick="sendSupportMsg(this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>`;
@@ -409,7 +448,8 @@ function _initSheets() {
   // ── Карточка товара ────────────────────────────────────────
   Sheet.define({ id: 'product', title: 'Товар', zIndex: 700 });
   const _prodShBody = Sheet.body('product');
-  _prodShBody.style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  _prodShBody.style.cssText = 'padding:0;position:relative;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;';
+  _pmInitSwipe(_prodShBody);
   // ── Редактирование профиля ────────────────────────────────
   Sheet.define({ id: 'profile-edit', title: 'Редактировать профиль', zIndex: 700 });
   Sheet.body('profile-edit').style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
@@ -512,6 +552,7 @@ onAuthStateChanged(auth, async u => {
     CU    = null;
     UD    = null;
     if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
+    listenFavs();   // для гостя — просто очищает избранное
     await Promise.all([loadProds(), loadCats(), loadStores(), loadDeliveryServices()]);
     renderSB();
     renderGuestBanner();
@@ -523,6 +564,7 @@ onAuthStateChanged(auth, async u => {
   GUEST = false;
   CU    = u;
   await loadUD();
+  listenFavs();
   // Загружаем координаты последнего адреса ДО loadStores/loadProds —
   // они нужны для выбора ближайшей точки ритейлера.
   await _loadUserCoords();
@@ -611,9 +653,15 @@ async function loadUD() {
   }
 }
 
-window.doLogout = async function () {
+window.doLogout = async function (btn) {
+  busy(btn, 'sp-red');
   if (unsubLive) unsubLive();
-  await signOut(auth);
+  try {
+    await signOut(auth);
+  } catch {
+    toast('Ошибка выхода', 'err');
+    unbusy(btn);
+  }
 };
 
 window.goLogin = function () { location.href = 'login.html'; };
@@ -692,7 +740,6 @@ window.goPage = function (page) {
   }
 
   if (page === 'orders')  { showOrdersSkeleton(); loadOrders(); }
-  if (page === 'store')   renderStorePage();
   if (page === 'home' && _hasAddress === false) {
     // Нет адреса — открываем шит при каждом входе на главную
     setTimeout(() => window.openAddAddrSheet?.(), 400);
@@ -919,11 +966,7 @@ async function renderHomeRetailerFeed() {
     try {
       // _userLat / _userLng уже загружены в onAuthStateChanged через _loadUserCoords()
       // Загружаем ВСЕ точки города, чтобы выбрать ближайшую
-      const locSnap = await getDocs(
-        query(collection(db, 'retailers', store.id, 'locations'),
-              where('cityId', '==', _selectedCityId))
-      );
-      let allLocs = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      let allLocs = await getRetailerLocs(store.id, _selectedCityId);
 
       // Fallback: если в выбранном городе нет точек — берём любые (до 5)
       if (!allLocs.length) {
@@ -983,17 +1026,11 @@ window.openRetailer = async function (sid, opts) {
   if (!activeStore) return;
   goPage('store');
   enterImmersiveMode();
-  // Сбросить кнопку назад на «Главная»
-  const backBtn = document.querySelector('.store-cat-back');
-  if (backBtn) {
-    backBtn.onclick = () => goPage('home');
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Главная страница`;
-  }
   // Минимум кликов: сразу открываем ближайшую точку (по координатам адреса клиента).
   // Список точек показываем только если: нет координат при нескольких точках,
   // не нашли точек, либо клиент сам нажал «Сменить точку».
   if (!forceList) {
-    renderRetailerHeader(activeStore); // сразу правильный баннер — без мигания старого
+    renderRetailerHeader(activeStore, { chips: true, loading: true }); // сразу правильная шапка — без мигания старой
     const catsEl0  = document.getElementById('store-cats');
     const prodsEl0 = document.getElementById('store-prods');
     if (catsEl0)  catsEl0.innerHTML  = '';
@@ -1026,56 +1063,15 @@ window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) 
   const catsEl  = document.getElementById('store-cats');
   const hdrEl   = document.getElementById('store-header');
 
-  // Кнопка назад → возврат к списку точек
-  const backBtn = document.querySelector('.store-cat-back');
-  if (backBtn) {
-    backBtn.style.display = '';
-    backBtn.onclick = auto ? () => goPage('home') : () => openRetailer(rid, { list: true });
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> ${auto ? 'Главная страница' : 'К точкам магазина'}`;
-  }
-
-  // При автооткрытии даём ссылку «Сменить точку» рядом с адресом
-  const _changeHtml = auto
-    ? ` <span style="text-decoration:underline;cursor:pointer;margin-left:6px;pointer-events:auto" onclick="openRetailer('${rid}',{list:true})">· Сменить</span>`
-    : '';
-
-  // Заголовок: доп-баннер (если есть) или дефолтный hero
+  // Шапку не пересоздаём, если она уже нарисована для этого ритейлера
+  // (при автооткрытии) — меняются только чипы и кнопка «назад».
   if (hdrEl && activeStore) {
-    if (activeStore.extraBannerUrl) {
-      // Прячем внешнюю кнопку — она внутри баннера
-      if (backBtn) backBtn.style.display = 'none';
-      hdrEl.innerHTML = `
-        <div class="ret-xbanner-wrap">
-          <div class="ret-xbanner">
-            <img src="${activeStore.extraBannerUrl}" alt="${activeStore.name}">
-            <button class="ret-xbanner-back" onclick="${auto ? "goPage('home')" : `openRetailer('${rid}',{list:true})`}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-            </button>
-            <div class="ret-xbanner-body">
-              <div class="ret-xbanner-tag">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}${_changeHtml}
-              </div>
-              <div class="ret-xbanner-name">${activeStore.name}</div>
-              ${activeStore.description ? `<div class="ret-xbanner-desc">${activeStore.description}</div>` : ''}
-            </div>
-          </div>
-        </div>`;
-    } else {
-      // Дефолтный hero с внешней кнопкой назад
-      const imgUrl = activeStore.imageUrl || '';
-      hdrEl.innerHTML = `
-        <div class="store-cat-header">
-          ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
-          <div class="store-cat-header-overlay"></div>
-          <div class="store-cat-header-body">
-            <div class="store-cat-header-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${locAddr || 'Точка'}${_changeHtml}
-            </div>
-            <div class="store-cat-header-name">${activeStore.name}</div>
-            ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
-          </div>
-        </div>`;
+    if (!(hdrEl.dataset.rh === rid && hdrEl.querySelector('#rh-chips'))) {
+      renderRetailerHeader(activeStore, { chips: true });
     }
+    // Автооткрытие → назад на главную; выбрано вручную из списка → назад к точкам
+    setRetailerBack(auto ? () => goPage('home') : () => openRetailer(rid, { list: true }));
+    renderRetailerChips(rid, locAddr);
   }
 
   // Скелетон пилюль при загрузке
@@ -1092,6 +1088,7 @@ window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) 
       const locSnap = await getDoc(doc(db, 'retailers', rid, 'locations', locId));
       if (locSnap.exists()) activeLocData = locSnap.data();
     } catch (_) {}
+    renderRetailerChips(rid, locAddr);
 
     // Баннер «точка закрыта» — сохраняем, renderStoreProds вставит его сам
     if (activeLocData && !isLocationOpen(activeLocData)) {
@@ -1137,43 +1134,70 @@ window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) 
   }
 };
 
-/** Шапка ритейлера (доп-баннер 16:9 или дефолтный hero) без адреса точки.
- *  Вызывается сразу при открытии ритейла, чтобы не мелькал старый хедер. */
-function renderRetailerHeader(retailer) {
+/** Шапка ритейлера: короткая обложка + квадратный логотип + название + чипы.
+ *  opts.chips   — показывать строку чипов (адрес точки, статус, расстояние)
+ *  opts.loading — пока точка выбирается, показываем скелетон чипа
+ *  Кнопка «назад» — внутри обложки. */
+function renderRetailerHeader(retailer, opts = {}) {
   const hdrEl = document.getElementById('store-header');
-  if (!hdrEl) return;
-  // ── Хедер: доп-баннер (16:9) или дефолтный hero ──────────
-  const extBack = document.querySelector('.store-cat-back');
-  if (retailer.extraBannerUrl) {
-    // Прячем внешнюю кнопку — она внутри баннера
-    if (extBack) extBack.style.display = 'none';
-    hdrEl.innerHTML = `
-      <div class="ret-xbanner-wrap">
-        <div class="ret-xbanner">
-          <img src="${retailer.extraBannerUrl}" alt="${retailer.name}">
-          <button class="ret-xbanner-back" onclick="goPage('home')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          </button>
-          <div class="ret-xbanner-body">
-            <div class="ret-xbanner-name">${retailer.name}</div>
-            ${retailer.description ? `<div class="ret-xbanner-desc">${retailer.description}</div>` : ''}
-          </div>
-        </div>
-      </div>`;
-  } else {
-    // Показываем внешнюю кнопку для дефолтного hero
-    if (extBack) extBack.style.display = '';
-    const imgUrl = retailer.imageUrl || '';
-    hdrEl.innerHTML = `
-      <div class="store-cat-header">
-        ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${retailer.name}">` : ''}
-        <div class="store-cat-header-overlay"></div>
-        <div class="store-cat-header-body">
-          <div class="store-cat-header-name">${retailer.name}</div>
-          ${retailer.description ? `<div class="store-cat-header-desc">${retailer.description}</div>` : ''}
-        </div>
-      </div>`;
+  if (!hdrEl || !retailer) return;
+
+  const cover = retailer.extraBannerUrl || retailer.imageUrl || '';
+  const name  = escHtml(retailer.name || '');
+  const logo  = retailer.logoSquareUrl
+    ? `<img src="${escHtml(retailer.logoSquareUrl)}" alt="${name}">`
+    : `<span>${escHtml(((retailer.name || '?')[0] || '?').toUpperCase())}</span>`;
+  const chipsHtml = opts.chips
+    ? `<div class="rh-chips" id="rh-chips">${opts.loading ? '<span class="rh-chip-skl"></span>' : ''}</div>`
+    : '';
+
+  hdrEl.dataset.rh = retailer.id;
+  hdrEl.innerHTML = `
+    <div class="rh">
+      <div class="rh-cover">
+        ${cover ? `<img src="${escHtml(cover)}" alt="${name}">` : ''}
+        <button type="button" class="rh-back" aria-label="Назад">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+      </div>
+      <div class="rh-card">
+        <div class="rh-logo">${logo}</div>
+        <div class="rh-name">${name}</div>
+        ${retailer.description ? `<div class="rh-desc">${escHtml(retailer.description)}</div>` : ''}
+        ${chipsHtml}
+      </div>
+    </div>`;
+  setRetailerBack(() => goPage('home'));
+}
+
+/** Назначает действие кнопке «назад» в обложке. */
+function setRetailerBack(fn) {
+  const btn = document.querySelector('#store-header .rh-back');
+  if (btn) btn.onclick = fn;
+}
+
+/** Чипы под названием: адрес точки (тап = сменить), статус, расстояние. */
+function renderRetailerChips(rid, locAddr) {
+  const el = document.getElementById('rh-chips');
+  if (!el) return;
+  const d    = activeLocData;
+  const addr = locAddr || d?.address || '';
+  const chips = [];
+
+  chips.push(`<button type="button" class="rh-chip rh-chip-addr" onclick="openRetailer('${rid}',{list:true})"><span class="rh-chip-txt">${escHtml(addr || 'Выбрать точку')}</span></button>`);
+
+  if (d) {
+    if (!isLocationOpen(d)) {
+      chips.push(`<span class="rh-chip rh-chip-closed">Закрыто</span>`);
+    } else if (!d.noSchedule && d.workingHours?.to) {
+      chips.push(`<span class="rh-chip rh-chip-open"><i></i>До ${escHtml(d.workingHours.to)}</span>`);
+    }
+    if (_userLat !== null && _userLng !== null && d.lat != null && d.lng != null) {
+      const km = calcDistance(_userLat, _userLng, d.lat, d.lng);
+      chips.push(`<span class="rh-chip">${km < 1 ? Math.max(50, Math.round(km * 1000 / 10) * 10) + ' м' : km.toFixed(1).replace('.', ',') + ' км'}</span>`);
+    }
   }
+  el.innerHTML = chips.join('<span class="rh-dot">·</span>');
 }
 
 async function renderRetailerPage(retailer) {
@@ -1182,7 +1206,7 @@ async function renderRetailerPage(retailer) {
   const prodsEl = document.getElementById('store-prods');
   if (!hdrEl) return;
 
-  renderRetailerHeader(retailer);
+  renderRetailerHeader(retailer, { chips: false });
 
   if (catsEl)  catsEl.innerHTML  = '';
   document.getElementById('page-store')?.classList.add('ret-loc-mode');
@@ -1190,7 +1214,7 @@ async function renderRetailerPage(retailer) {
     <div style="grid-column:1/-1">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span style="font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--tx)">Точки в городе ${_selectedCityName}</span>
+        <span style="font-family:var(--fd);font-weight:900;font-size:.82rem;color:var(--tx)">Точки в городе ${escHtml(_selectedCityName)}</span>
       </div>
       <div id="retailer-locations-list">
         <div class="retailer-loc-skeleton"></div>
@@ -1199,17 +1223,14 @@ async function renderRetailerPage(retailer) {
     </div>`;
 
   try {
-    const snap = await getDocs(
-      query(collection(db, 'retailers', retailer.id, 'locations'), where('cityId', '==', _selectedCityId))
-    );
-    const locations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const locations = await getRetailerLocs(retailer.id, _selectedCityId);
     const listEl    = document.getElementById('retailer-locations-list');
     if (!listEl) return;
 
     if (!locations.length) {
       listEl.innerHTML = `<div class="store-cat-empty">
         <span class="store-cat-empty-ico">📍</span>
-        <div class="store-cat-empty-t">Точек в ${_selectedCityName} нет</div>
+        <div class="store-cat-empty-t">Точек в ${escHtml(_selectedCityName)} нет</div>
         <div class="store-cat-empty-s">Попробуйте выбрать другой город</div>
       </div>`;
       return;
@@ -1226,8 +1247,6 @@ async function renderRetailerPage(retailer) {
     }
 
     listEl.innerHTML = locations.map((loc, idx) => {
-      const mapsUrl    = (loc.lat && loc.lng) ? `https://maps.google.com/?q=${loc.lat},${loc.lng}` : '';
-      const safeAddr   = (loc.address || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const locOpen    = isLocationOpen(loc);
       const locTxt     = locationStatusText(loc);
       const closedCls  = locOpen ? '' : 'retailer-loc-card-closed';
@@ -1246,9 +1265,10 @@ async function renderRetailerPage(retailer) {
 
       return `
       <div class="retailer-loc-card ${closedCls}" style="cursor:pointer"
-           onclick="openRetailerCatalog('${retailer.id}','${loc.id}','${safeAddr}')">
+           data-addr="${escHtml(loc.address || '')}"
+           onclick="openRetailerCatalog('${retailer.id}','${loc.id}',this.dataset.addr)">
         <div class="retailer-loc-body">
-          <div class="retailer-loc-addr">${loc.address || '—'}</div>
+          <div class="retailer-loc-addr">${escHtml(loc.address || '—')}</div>
           ${nearestBadge}
           ${statusBadge}
         </div>
@@ -1260,27 +1280,6 @@ async function renderRetailerPage(retailer) {
     const listEl = document.getElementById('retailer-locations-list');
     if (listEl) listEl.innerHTML = `<div class="store-cat-empty"><div class="store-cat-empty-t">Ошибка загрузки</div></div>`;
   }
-}
-
-async function loadJsonMenu(url) {
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const raw = await resp.json();
-    jsonMenuData = Array.isArray(raw)
-      ? { categories: [], products: raw }
-      : { categories: raw.categories || [], products: raw.products || raw.items || [] };
-  } catch (e) {
-    console.error('JSON menu:', e);
-    jsonMenuData = { categories: [], products: [], error: e.message };
-  }
-
-  jsonProdsMap = {};
-  (jsonMenuData.products || []).forEach(p => {
-    if (p.id) jsonProdsMap[p.id] = { ...p, storeId: activeStore?.id };
-  });
-  renderStoreCatPills();
-  renderStoreProds();
 }
 
 window.filterStoreCat = function (id) {
@@ -1309,26 +1308,6 @@ function _scrollToCatSection(catId) {
   pagesEl.scrollBy({ top: sectionRect.top - pagesRect.top - pillH - 6, behavior: 'smooth' });
 }
 
-function renderStorePage() {
-  if (!activeStore) return;
-  const hdr = document.getElementById('store-header');
-  if (hdr) {
-    const imgUrl = activeStore.imageUrl || '';
-    hdr.innerHTML = `
-    <div class="store-cat-header">
-      ${imgUrl ? `<img class="store-cat-header-img" src="${imgUrl}" alt="${activeStore.name}">` : ''}
-      <div class="store-cat-header-overlay"></div>
-      <div class="store-cat-header-body">
-        <div class="store-cat-header-tag">Магазин</div>
-        <div class="store-cat-header-name">${activeStore.name}</div>
-        ${activeStore.description ? `<div class="store-cat-header-desc">${activeStore.description}</div>` : ''}
-      </div>
-    </div>`;
-  }
-  renderStoreCatPills();
-  renderStoreProds();
-}
-
 function getStoreCats() {
   if (!activeStore) return [];
   const storeProdIds = new Set(prods.filter(p => p.storeId === activeStore.id).map(p => p.categoryId));
@@ -1348,7 +1327,7 @@ function renderStoreCatPills() {
   } else {
     const all = `<button class="cat-filter-pill${storeCatFilter === 'all' ? ' active' : ''}" onclick="filterStoreCat('all')">Все</button>`;
     el.innerHTML = all + getStoreCats().map(c =>
-      `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${c.name}</button>`
+      `<button class="cat-filter-pill${storeCatFilter === c.id ? ' active' : ''}" onclick="filterStoreCat('${c.id}')">${escHtml(c.name)}</button>`
     ).join('');
   }
 }
@@ -1507,10 +1486,7 @@ async function loadProds() {
     const allProds = [];
     await Promise.all(retailers.map(async (retailer) => {
       try {
-        const locSnap = await getDocs(
-          query(collection(db, 'retailers', retailer.id, 'locations'), where('cityId', '==', cityId))
-        );
-        const allLocs = locSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const allLocs = await getRetailerLocs(retailer.id, cityId);
 
         // Ближайшая точка к пользователю (GPS уже запрошен в onAuthStateChanged)
         const nearestLoc = pickNearestLoc(allLocs);
@@ -1631,12 +1607,22 @@ function pickNearestLoc(locations) {
 /** Выбор точки для автооткрытия ритейлера.
  *  1 точка в городе → она; несколько + есть координаты клиента → ближайшая;
  *  иначе null (покажем список). */
+/** Точки ритейлера в городе — с кэшем на 3 минуты (экономит запросы в Firestore). */
+async function getRetailerLocs(rid, cityId) {
+  const key = rid + ':' + cityId;
+  const hit = _locsCache.get(key);
+  if (hit && Date.now() - hit.t < LOCS_TTL) return [...(await hit.p)];
+  const p = getDocs(
+    query(collection(db, 'retailers', rid, 'locations'), where('cityId', '==', cityId))
+  ).then(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })))
+   .catch(e => { _locsCache.delete(key); throw e; });
+  _locsCache.set(key, { t: Date.now(), p });
+  return [...(await p)];
+}
+
 async function _pickAutoLoc(rid) {
   try {
-    const snap = await getDocs(
-      query(collection(db, 'retailers', rid, 'locations'), where('cityId', '==', _selectedCityId))
-    );
-    const locs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const locs = await getRetailerLocs(rid, _selectedCityId);
     if (!locs.length) return null;
     if (locs.length === 1) return locs[0];
     if (_userLat === null || _userLng === null) return null;
@@ -1651,7 +1637,7 @@ function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName 
   const sid  = store?.id || null;
   const name = store?.name || fallbackName || 'Магазин';
   const logoHtml = store?.logoSquareUrl
-    ? `<img class="hrf-logo" src="${store.logoSquareUrl}" alt="${escHtml(name)}" loading="lazy">`
+    ? `<img class="hrf-logo" src="${escHtml(store.logoSquareUrl)}" alt="${escHtml(name)}" loading="lazy">`
     : `<div class="hrf-logo-placeholder">${(name[0] || '?').toUpperCase()}</div>`;
   const prodsHtml = hrfProds.length
     ? hrfProds.map(p => renderPC(p, true)).join('')
@@ -1677,7 +1663,7 @@ function renderPC(p, preview = false) {
   const unavail = !p.available;
   const ic      = catIcon(p.categoryId, catName(p.categoryId));
   const imgHtml = p.imageUrl
-    ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy">`
+    ? `<img src="${escHtml(p.imageUrl)}" alt="${escHtml(p.name)}" loading="lazy">`
     : `<div style="width:64px;height:64px;opacity:.2">${ic.svg.replace('width="26" height="26"', 'width="64" height="64"')}</div>`;
 
   // Проверяем режим работы точки для этого товара
@@ -1687,7 +1673,7 @@ function renderPC(p, preview = false) {
   const locClosed = _pLocData ? !isLocationOpen(_pLocData) : false;
 
   // preview-режим: карточка открывает модалку, кнопка добавляет в корзину
-  const cardClick = `openProdModal('${p.id}')`;
+  const cardClick = `openProdModal('${p.id}',this)`;
 
   const controls = preview
     ? locClosed
@@ -1707,23 +1693,236 @@ function renderPC(p, preview = false) {
     ? `<div class="pc-retailer">${escHtml(p.retailerName)}</div>`
     : '';
 
+  const fk = favKey(p);
+  const heart = `<button class="pc-fav${favs.has(fk) ? ' on' : ''}" data-fav="${escHtml(fk)}" aria-label="В избранное"
+      onclick="event.stopPropagation();toggleFav('${p.id}','${escHtml(fk)}')">
+      <svg width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    </button>`;
+
   return `<div class="pc" onclick="${cardClick}">
-    <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}</div>
+    <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}${heart}</div>
     <div class="pc-body">
       ${retailerTag}
       <div class="pc-price">${p.price}<span> TJS</span></div>
-      <div class="pc-name">${p.name}</div>
-      <div class="pc-desc">${p.description || ''}</div>
+      <div class="pc-name">${escHtml(p.name)}</div>
+      <div class="pc-desc">${escHtml(p.description || '')}</div>
       <div class="pc-footer">${controls}</div>
     </div>
   </div>`;
 }
 
+
+// ─── Избранное ────────────────────────────────────────────────
+// Документ: users/{uid}/favorites/{retailerId}_{locationId}_{productId}
+// Ключ составной: один и тот же товар в разных точках/ритейлерах — разные записи.
+
+function favKey(p) {
+  const rid = p.storeId    || activeRetailerId || '';
+  const lid = p.locationId || activeLocId      || '';
+  return `${rid}_${lid}_${p.id}`;
+}
+
+/** Подписка на избранное текущего пользователя (для гостя — очистка). */
+function listenFavs() {
+  if (_favUnsub) { _favUnsub(); _favUnsub = null; }
+  favs = new Map();
+  _refreshFavUI();
+  if (!CU || GUEST) return;
+  _favUnsub = onSnapshot(
+    collection(db, 'users', CU.uid, 'favorites'),
+    snap => {
+      favs = new Map(snap.docs.map(d => [d.id, d.data()]));
+      for (const k of [..._favLive.keys()]) if (!favs.has(k)) _favLive.delete(k);
+      _refreshFavUI();
+      _resolveFavs();
+    },
+    e => console.warn('[favs]', e?.message)
+  );
+}
+
+/** Обновляет сердечки на всех карточках и список в шторке — без перерисовки каталога. */
+function _refreshFavUI() {
+  document.querySelectorAll('.pc-fav[data-fav]').forEach(b => {
+    const k   = b.dataset.fav;
+    const now = favs.has(k);
+    const was = b.classList.contains('on');
+    b.classList.toggle('on', now);
+    // анимация — только для сердечка, на которое только что нажали
+    if (now && !was && k === _favPopKey) {
+      b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    }
+  });
+  _favPopKey = null;
+  renderFavSheet();
+}
+
+window.toggleFav = async function (pid, key) {
+  if (!requireAuth('Войдите, чтобы сохранять в избранное')) return;
+  // Товар именно той точки, на карточке которой нажали (id может повторяться у разных ритейлеров)
+  const p = (key && prods.find(x => favKey(x) === key)) || _pmGet(pid);
+  if (!p || !CU) return;
+
+  key = favKey(p);
+  if (_favPending.has(key)) return;   // предыдущий тап по этому товару ещё не обработан
+  _favPending.add(key);
+  // страховка: офлайн промис не завершается до появления сети — не блокируем сердечко навсегда
+  const _unlock = setTimeout(() => _favPending.delete(key), 1500);
+
+  const rid = p.storeId    || activeRetailerId || null;
+  const lid = p.locationId || activeLocId      || null;
+  const ref = doc(db, 'users', CU.uid, 'favorites', key);
+  try {
+    if (favs.has(key)) {
+      await deleteDoc(ref);
+    } else {
+      if (!rid || !lid) { toast('Не удалось определить точку товара', 'err'); return; }
+      _favPopKey = key;
+      await setDoc(ref, {
+        productId:    p.id,
+        retailerId:   rid,
+        locationId:   lid,
+        name:         p.name,
+        price:        p.price,
+        imageUrl:     p.imageUrl     || '',
+        retailerName: p.retailerName || '',
+        createdAt:    serverTimestamp(),
+      });
+    }
+    // UI обновит onSnapshot (срабатывает сразу, ещё до ответа сервера)
+  } catch (e) {
+    _favPopKey = null;
+    console.warn('[favs] toggle:', e?.message);
+    toast('Не удалось обновить избранное', 'err');
+  } finally {
+    clearTimeout(_unlock);
+    _favPending.delete(key);
+  }
+};
+
+/** Подгружает товар и данные точки НАПРЯМУЮ из каталога точки
+ *  (retailers/{rid}/locations/{lid}/catalog/{pid}) — не зависит от того,
+ *  какая точка сейчас выбрана как «ближайшая» в общей ленте. */
+async function _resolveFavs(force = false) {
+  const todo = [...favs.entries()].filter(([k]) => {
+    const c = _favLive.get(k);
+    return force || !c || (!c.loading && Date.now() - c.t > FAV_TTL);
+  });
+  if (!todo.length) return;
+
+  todo.forEach(([k]) => _favLive.set(k, { t: Date.now(), loading: true, p: _favLive.get(k)?.p || null, loc: _favLive.get(k)?.loc || null }));
+  renderFavSheet();
+
+  await Promise.all(todo.map(async ([k, f]) => {
+    let p = null, loc = null;
+    try {
+      if (f.retailerId && f.locationId && f.productId) {
+        const [pSnap, lSnap] = await Promise.all([
+          getDoc(doc(db, 'retailers', f.retailerId, 'locations', f.locationId, 'catalog', f.productId)),
+          getDoc(doc(db, 'retailers', f.retailerId, 'locations', f.locationId)),
+        ]);
+        if (pSnap.exists() && pSnap.data().available !== false) {
+          p = {
+            id: pSnap.id, ...pSnap.data(),
+            storeId:      f.retailerId,
+            locationId:   f.locationId,
+            retailerName: f.retailerName || '',
+            available:    true,
+          };
+        }
+        if (lSnap.exists()) {
+          loc = { id: lSnap.id, ...lSnap.data() };
+          window._locDataMap = { ...(window._locDataMap || {}), [loc.id]: loc };
+        }
+      }
+    } catch (e) {
+      console.warn('[favs] resolve:', e?.message);
+    }
+    _favLive.set(k, { t: Date.now(), p, loc });
+  }));
+  renderFavSheet();
+}
+
+function renderFavSheet() {
+  const el = document.getElementById('likesh-list');
+  if (!el) return;
+
+  const list = [...favs.entries()]
+    .map(([key, f]) => ({ key, ...f }))
+    .sort((a, b) => (b.createdAt?.toMillis?.() ?? Infinity) - (a.createdAt?.toMillis?.() ?? Infinity));
+
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="likesh-empty">
+        <div class="likesh-empty-ico">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <div class="likesh-empty-title">Пока пусто</div>
+        <div class="likesh-empty-sub">Нажмите на сердечко на карточке товара, чтобы сохранить его здесь</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="fav-list">${list.map(f => {
+    // Актуальный товар из каталога (та же точка) — для свежей цены и проверки доступности
+    const cache   = _favLive.get(f.key);
+    const loading = !cache || (cache.loading && !cache.p);
+    const live    = cache?.p || null;
+    const price   = live ? live.price : f.price;
+    const img   = f.imageUrl ? `<img src="${escHtml(f.imageUrl)}" alt="" loading="lazy">` : '';
+
+    // Режим работы точки: закрыто → кнопка неактивна («Закрыто»)
+    const loc    = cache?.loc || window._locDataMap?.[f.locationId] || null;
+    const closed = loc ? !isLocationOpen(loc) : false;
+
+    const action = loading
+      ? `<button class="fav-add btn-loading" disabled>…</button>`
+      : !live
+      ? `<button class="fav-add fav-add-off" disabled>Недоступно</button>`
+      : closed
+        ? `<button class="fav-add fav-add-off" disabled>Закрыто</button>`
+        : `<button class="fav-add" onclick="favAdd('${escHtml(f.productId)}','${escHtml(f.key)}',this)">В корзину</button>`;
+
+    return `<div class="fav-row">
+      <div class="fav-img">${img}</div>
+      <div class="fav-main">
+        <div class="fav-info">
+          ${f.retailerName ? `<div class="pc-retailer">${escHtml(f.retailerName)}</div>` : ''}
+          <div class="fav-name">${escHtml(f.name)}</div>
+          <div class="fav-price">${price}<span> TJS</span></div>
+        </div>
+        ${action}
+      </div>
+      <button class="pc-fav on fav-del" aria-label="Убрать из избранного" onclick="removeFav('${escHtml(f.key)}',this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+window.removeFav = async function (key, btn) {
+  if (!CU) return;
+  busy(btn, 'sp-red');
+  try { await deleteDoc(doc(db, 'users', CU.uid, 'favorites', key)); }
+  catch { unbusy(btn); toast('Ошибка', 'err'); }
+};
+
+window.favAdd = async function (pid, key, btn) {
+  const p = _favLive.get(key)?.p;
+  if (!p) { toast('Товар недоступен', 'warn'); return; }
+  btnLoad(btn);
+  try {
+    await addToCart(p.id, btn, p);
+  } finally {
+    btnDone(btn);
+    renderFavSheet();
+  }
+};
+
 // Обновляет карточки в home-retailer-feed без повторного запроса в Firestore.
 // Используется вместо renderHomeProds (элемента #home-prods в DOM нет).
 function refreshHrfCards() {
   document.querySelectorAll('#home-retailer-feed .pc:not(.pc-skeleton)').forEach(pcEl => {
-    const m = pcEl.getAttribute('onclick')?.match(/openProdModal\('([^']+)'\)/);
+    const m = pcEl.getAttribute('onclick')?.match(/openProdModal\('([^']+)'/);
     if (!m) return;
     const pid = m[1];
     const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
@@ -1791,30 +1990,152 @@ function renderCatalog() {
 }
 
 // Модалка товара
-window.openProdModal = function (pid) {
-  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
+window.openProdModal = function (pid, el) {
+  const p = _pmGet(pid);
   if (!p) return;
+  // Соседние товары — те, что рядом в том же списке (блок ритейлера на главной,
+  // каталог точки, общий каталог). Между ними листаем свайпом влево/вправо.
+  _pmList = _pmCollect(el, pid);
+  _pmIdx  = Math.max(0, _pmList.indexOf(pid));
   renderProdModal(p);
   Sheet.open('product');
 };
 
-function renderProdModal(p) {
+// ─── Листание товаров в карточке (свайп влево/вправо) ─────────
+let _pmList = [];   // id товаров, между которыми листаем
+let _pmIdx  = 0;    // позиция текущего товара в _pmList
+
+function _pmGet(pid) {
+  return prods.find(x => x.id === pid) || jsonProdsMap[pid];
+}
+
+/** Собирает id товаров из того же списка, где нажали карточку (в порядке на экране). */
+function _pmCollect(el, pid) {
+  const root = el && el.closest ? (el.closest('.hrf-block, #store-prods, #cat-prods') || el.parentElement) : null;
+  if (!root) return [pid];
+  const ids = [];
+  root.querySelectorAll('.pc[onclick*="openProdModal"]').forEach(c => {
+    const m = (c.getAttribute('onclick') || '').match(/openProdModal\('([^']+)'/);
+    if (m && !ids.includes(m[1]) && _pmGet(m[1])) ids.push(m[1]);
+  });
+  return ids.includes(pid) ? ids : [pid];
+}
+
+/** Переключает на соседний товар. dir: +1 следующий, -1 предыдущий. */
+function _pmGo(dir) {
+  const ni = _pmIdx + dir;
+  if (ni < 0 || ni >= _pmList.length) return false;
+  const p = _pmGet(_pmList[ni]);
+  if (!p) return false;
+  _pmIdx = ni;
+  renderProdModal(p);
+  return true;
+}
+
+function _pmInitSwipe(body) {
+  let sx = 0, sy = 0, st = 0, dx = 0, lock = null, active = false, busy = false, cur = null, ghost = null, ghostDir = 0, swiped = false;
+  const EASE = 'cubic-bezier(.22,.8,.3,1)';
+  const edge = d => (d > 0 && _pmIdx === 0) || (d < 0 && _pmIdx === _pmList.length - 1);
+  const dropGhost = () => { if (ghost) { ghost.remove(); ghost = null; ghostDir = 0; } };
+
+  // Соседняя карточка «выглядывает» сбоку и едет вместе с пальцем
+  function ensureGhost(dir) {
+    if (ghost && ghostDir === dir) return;
+    dropGhost();
+    const n = _pmGet(_pmList[_pmIdx + dir]);
+    if (!n) return;
+    ghost = document.createElement('div');
+    ghost.className = 'pm-slide pm-ghost';
+    ghost.innerHTML = _pmSlideInner(n).replace(/loading="lazy"/g, 'loading="eager"');
+    ghost.style.cssText = `position:absolute;left:0;top:${body.scrollTop}px;width:100%;pointer-events:none;transition:none;`;
+    body.appendChild(ghost);
+    ghostDir = dir;
+  }
+  const place = (x) => {
+    const W = body.clientWidth;
+    cur.style.transform = `translate3d(${x}px,0,0)`;
+    if (ghost) ghost.style.transform = `translate3d(${x + (ghostDir > 0 ? W : -W)}px,0,0)`;
+  };
+
+  body.addEventListener('pointerdown', e => {
+    if (_pmList.length < 2 || e.button > 0 || busy) return;
+    active = true; lock = null; dx = 0;
+    sx = e.clientX; sy = e.clientY; st = e.timeStamp;
+    cur = body.querySelector('.pm-slide:not(.pm-ghost)');
+  });
+
+  body.addEventListener('pointermove', e => {
+    if (!active || !cur) return;
+    const mx = e.clientX - sx, my = e.clientY - sy;
+    if (lock === null) {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      lock = Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y';
+      if (lock === 'x') { try { body.setPointerCapture(e.pointerId); } catch (_) {} body.style.userSelect = 'none'; }
+    }
+    if (lock !== 'x') return;
+    dx = mx;
+    cur.style.transition = 'none';
+    if (edge(dx)) { dropGhost(); place(dx * 0.25); return; }   // край списка — лёгкое сопротивление
+    ensureGhost(dx < 0 ? 1 : -1);
+    if (ghost) ghost.style.transition = 'none';
+    place(dx);
+  });
+
+  const end = e => {
+    if (!active) return;
+    active = false;
+    body.style.userSelect = '';
+    if (lock !== 'x' || !cur) return;
+    swiped = true; setTimeout(() => { swiped = false; }, 350); // гасим случайный click после свайпа
+    const W    = body.clientWidth;
+    const vx   = Math.abs(dx) / Math.max(1, e.timeStamp - st);
+    const pass = e.type === 'pointerup' && !edge(dx) && ghost && (Math.abs(dx) > Math.max(60, W * 0.22) || (vx > 0.45 && Math.abs(dx) > 30));
+    const tr   = `transform .28s ${EASE}`;
+    cur.style.transition = tr;
+    if (ghost) ghost.style.transition = tr;
+    if (!pass) {                          // вернуть на место
+      place(0);
+      setTimeout(dropGhost, 290);
+      return;
+    }
+    const dir = dx < 0 ? 1 : -1;          // свайп влево → следующий
+    place(dir > 0 ? -W : W);              // текущая уезжает, соседняя встаёт на её место
+    busy = true;
+    setTimeout(() => { dropGhost(); _pmGo(dir); busy = false; }, 285);
+  };
+  body.addEventListener('pointerup', end);
+  body.addEventListener('pointercancel', end);
+
+  // после свайпа не даём сработать клику по кнопке под пальцем
+  body.addEventListener('click', e => { if (swiped) { e.stopPropagation(); e.preventDefault(); } }, true);
+
+  // Десктоп: стрелки ← → (только когда карточка реально видна)
+  document.addEventListener('keydown', e => {
+    if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || _pmList.length < 2) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const r = body.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.bottom > 0)) return;
+    _pmGo(e.key === 'ArrowRight' ? 1 : -1);
+  });
+}
+
+/** HTML содержимого карточки одного товара (без обёртки .pm-slide). */
+function _pmSlideInner(p) {
   const qty     = getCartQty(p.id);
   const unavail = p.available === false;
   const ic      = catIcon(p.categoryId, catName(p.categoryId));
   const cname   = catName(p.categoryId);
   const store   = stores.find(s => s.id === p.storeId);
+  const _loc    = (activeLocData && p.locationId === activeLocId) ? activeLocData : (window._locDataMap?.[p.locationId] || null);
+  const sellerName = store?.name || p.retailerName || '';
+  const sellerAddr = _loc?.address || '';
+  const sellerHtml  = (sellerName || sellerAddr)
+    ? `<div class="pm-seller">${sellerName ? `<b>${escHtml(sellerName)}</b>` : ''}${sellerName && sellerAddr ? ' · ' : ''}${escHtml(sellerAddr)}</div>`
+    : '';
 
   const heroHtml = p.imageUrl
-    ? `<img class="pm-hero-img" src="${p.imageUrl}" alt="${p.name}" loading="lazy">`
+    ? `<img class="pm-hero-img" src="${escHtml(p.imageUrl)}" alt="${escHtml(p.name)}" loading="lazy" draggable="false">`
     : `<div class="pm-hero-ph">${ic.svg.replace('width="26" height="26"', 'width="100" height="100"')}</div>`;
-
-  const storeBadge = store
-    ? `<div class="pm-badge-store">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
-        ${store.name}
-       </div>`
-    : '';
 
   const chips = [];
   if (p.weight)  chips.push({ label: p.weight + ' г' });
@@ -1823,13 +2144,18 @@ function renderProdModal(p) {
   if (p.country) chips.push({ label: p.country });
 
   const chipsHtml = chips.length
-    ? `<div class="pm-chips">${chips.map(c => `<span class="pm-chip">${c.label}</span>`).join('')}</div>`
+    ? `<div class="pm-chips">${chips.map(c => `<span class="pm-chip">${escHtml(c.label)}</span>`).join('')}</div>`
     : '';
 
+  const locClosed = _loc ? !isLocationOpen(_loc) : false;
   const buyHtml = unavail
     ? `<div class="pm-addrow">
          <button class="pm-addrow-add" disabled>Нет в наличии</button>
        </div>`
+    : locClosed
+      ? `<div class="pm-addrow">
+           <button class="pm-addrow-add" disabled>Точка закрыта</button>
+         </div>`
     : qty > 0
       ? `<div class="pm-addrow">
            <button class="pm-addrow-side" onclick="pmMinus('${p.id}',this)">−</button>
@@ -1843,36 +2169,45 @@ function renderProdModal(p) {
            <button class="pm-addrow-add" onclick="pmAdd('${p.id}',this)">Добавить в корзину</button>
          </div>`;
 
-  const _psBody = Sheet.body('product');
-  _psBody.innerHTML = `
+  return `
     <div class="pm-hero">
       ${heroHtml}
       ${unavail ? '<div class="pm-badge-unavail">Нет в наличии</div>' : ''}
-      ${storeBadge}
     </div>
     <div class="pm-body">
-      <div class="pm-name">${p.name}</div>
+      <div class="pm-name">${escHtml(p.name)}</div>
       <div class="pm-price-row"><span class="pm-price">${p.price}</span><span class="pm-price-unit">TJS</span></div>
-      ${p.description ? `<div class="pm-desc">${p.description}</div>` : ''}
+      ${p.description ? `<div class="pm-desc">${escHtml(p.description)}</div>` : ''}
       ${chipsHtml}
       ${buyHtml}
+      ${sellerHtml}
       <div class="pm-disclaimer">Изображение товара может отличаться от фактического внешнего вида</div>
     </div>`;
+}
+
+function renderProdModal(p) {
+  const _psBody = Sheet.body('product');
+  _psBody.innerHTML = `<div class="pm-slide">${_pmSlideInner(p)}</div>`;
   _psBody.scrollTop = 0;
+  // прогреваем картинки соседей — чтобы при свайпе появлялись сразу
+  [_pmIdx - 1, _pmIdx + 1].forEach(i => {
+    const n = _pmGet(_pmList[i]);
+    if (n?.imageUrl) { const im = new Image(); im.src = n.imageUrl; }
+  });
 }
 
 window.pmAdd   = async function (pid, _srcBtn) {
   const btn = _srcBtn || document.querySelector('.pm-addrow-add');
   btnLoad(btn);
   await addToCart(pid);
-  const p = prods.find(x => x.id === pid);
+  const p = _pmGet(pid);
   if (p) renderProdModal(p);
 };
 window.pmPlus  = async function (pid, _srcBtn) {
   const btn = _srcBtn || document.querySelectorAll('.pm-addrow-side')[1];
   btnLoad(btn);
   await addToCart(pid);
-  const p   = prods.find(x => x.id === pid);
+  const p   = _pmGet(pid);
   const qty = getCartQty(pid);
   const qEl = document.getElementById(`pm-qty-${pid}`);
   if (qEl) {
@@ -1886,7 +2221,7 @@ window.pmMinus = async function (pid, _srcBtn) {
   const btn = _srcBtn || document.querySelectorAll('.pm-addrow-side')[0];
   btnLoad(btn);
   await pcMinus(pid);
-  const p   = prods.find(x => x.id === pid);
+  const p   = _pmGet(pid);
   const qty = getCartQty(pid);
   if (!qty) { if (p) renderProdModal(p); return; }
   const qEl = document.getElementById(`pm-qty-${pid}`);
@@ -1942,7 +2277,7 @@ function renderHomeCats() {
     const ic = catIcon(c.id, c.name);
     return `<button class="cat-chip" style="--cat-bg:${ic.bg}" onclick="filterCat('${c.id}');goPage('catalog')">
       <div class="cat-chip-ico">${ic.svg}</div>
-      <div class="cat-chip-name">${c.name}</div>
+      <div class="cat-chip-name">${escHtml(c.name)}</div>
     </button>`;
   }).join('');
   renderCatalogCats();
@@ -1953,7 +2288,7 @@ function renderCatalogCats() {
   if (!el) return;
   const allBtn = `<button class="cat-filter-pill${catFilter === 'all' ? ' active' : ''}" onclick="filterCat('all')">Все</button>`;
   const catBtns = cats.map(c =>
-    `<button class="cat-filter-pill${catFilter === c.id ? ' active' : ''}" onclick="filterCat('${c.id}')">${c.name}</button>`
+    `<button class="cat-filter-pill${catFilter === c.id ? ' active' : ''}" onclick="filterCat('${c.id}')">${escHtml(c.name)}</button>`
   ).join('');
   el.innerHTML = allBtn + catBtns;
 }
@@ -2011,6 +2346,20 @@ async function syncCart() {
 }
 
 // ─── Spinner helpers ──────────────────────────────────────────
+/** Универсальный спиннер на кнопке: контент скрывается, по центру крутится колечко.
+ *  cls: 'sp-dark' (зелёное колечко, для светлых кнопок) | 'sp-red' (для красных/опасных). */
+function busy(btn, cls) {
+  if (!btn) return;
+  btn.classList.add('is-busy');
+  if (cls) btn.classList.add(cls);
+  btn.disabled = true;
+}
+function unbusy(btn) {
+  if (!btn) return;
+  btn.classList.remove('is-busy', 'sp-dark', 'sp-red');
+  btn.disabled = false;
+}
+
 function btnLoad(btn) { if (btn) { btn.classList.add('btn-loading'); btn.disabled = true; } }
 function btnDone(btn) { if (btn) { btn.classList.remove('btn-loading'); btn.disabled = false; } }
 function findCartBtn(pid, type) {
@@ -2025,13 +2374,25 @@ function findCartBtn(pid, type) {
 }
 
 // ── Режим работы: проверка открытости точки ─────────────────
+// Время считаем по Душанбе (UTC+5), а не по часам телефона клиента.
+const APP_TZ = 'Asia/Dushanbe';
+let _tzFmt = null;
+function _nowMinutes() {
+  try {
+    _tzFmt = _tzFmt || new Intl.DateTimeFormat('en-GB', { timeZone: APP_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const parts = _tzFmt.formatToParts(new Date());
+    return (+parts.find(x => x.type === 'hour').value) * 60 + (+parts.find(x => x.type === 'minute').value);
+  } catch (_) {
+    const d = new Date();                       // запасной вариант
+    return ((d.getUTCHours() + 5) % 24) * 60 + d.getUTCMinutes();
+  }
+}
 function isLocationOpen(loc) {
   if (!loc) return true;  // нет данных = открыто
   if (loc.isManuallyClosed) return false;
   if (loc.noSchedule) return true;
   if (loc.workingHours && loc.workingHours.from && loc.workingHours.to) {
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
+    const cur = _nowMinutes();
     const [fh, fm] = loc.workingHours.from.split(':').map(Number);
     const [th, tm] = loc.workingHours.to.split(':').map(Number);
     const f = fh * 60 + fm, t = th * 60 + tm;
@@ -2060,16 +2421,18 @@ function locationStatusText(loc) {
 }
 
 
-window.addToCart = async function (pid, _srcBtn) {
+window.addToCart = async function (pid, _srcBtn, _prod) {
   if (!requireAuth('Войдите, чтобы добавить в корзину')) return;
-  const p = prods.find(x => x.id === pid) || jsonProdsMap[pid];
+  const p = _prod || prods.find(x => x.id === pid) || jsonProdsMap[pid];
   if (!p || !CU) return;
 
   const btn = _srcBtn || findCartBtn(pid, 'add');
   btnLoad(btn);
 
   // ── Проверка режима работы точки ─────────────────────────────
-  const locDataForCheck = activeLocData && p.locationId === activeLocId ? activeLocData : null;
+  const locDataForCheck = (activeLocData && p.locationId === activeLocId)
+    ? activeLocData
+    : (window._locDataMap?.[p.locationId] || null);
   if (locDataForCheck && !isLocationOpen(locDataForCheck)) {
     const statusTxt = locationStatusText(locDataForCheck);
     toast('Точка закрыта' + (statusTxt ? ' · ' + statusTxt : ''), 'warn');
@@ -2086,10 +2449,12 @@ window.addToCart = async function (pid, _srcBtn) {
     if (existingStoreId && existingStoreId !== pStoreId) {
       const fromStore = stores.find(s => s.id === existingStoreId);
       const toStore   = stores.find(s => s.id === pStoreId);
-      const ok = confirm(
-        `В корзине уже есть товары из «${fromStore?.name || 'другого магазина'}».\n` +
-        `Очистить корзину и добавить товары из «${toStore?.name || 'этого магазина'}»?`
-      );
+      const ok = await askConfirm({
+        title: 'Другой магазин',
+        text:  `В корзине уже есть товары из «${fromStore?.name || 'другого магазина'}».\n` +
+               `Очистить корзину и добавить товары из «${toStore?.name || 'этого магазина'}»?`,
+        ok: 'Очистить и добавить'
+      });
       if (!ok) { btnDone(btn); return; }
       try {
         cart = [];
@@ -2108,10 +2473,12 @@ window.addToCart = async function (pid, _srcBtn) {
     if (existingLocId && existingLocId !== pLocId) {
       const fromAddr = window._locDataMap?.[existingLocId]?.address || 'другой точки';
       const toAddr   = window._locDataMap?.[pLocId]?.address       || 'этой точки';
-      const ok = confirm(
-        `В корзине уже есть товары из точки «${fromAddr}».\n` +
-        `Очистить корзину и добавить товары из «${toAddr}»?`
-      );
+      const ok = await askConfirm({
+        title: 'Другая точка',
+        text:  `В корзине уже есть товары из точки «${fromAddr}».\n` +
+               `Очистить корзину и добавить товары из «${toAddr}»?`,
+        ok: 'Очистить и добавить'
+      });
       if (!ok) { btnDone(btn); return; }
       try {
         cart = [];
@@ -2143,30 +2510,56 @@ window.addToCart = async function (pid, _srcBtn) {
   } catch { toast('Ошибка', 'err'); btnDone(btn); }
 };
 
-window.updateQty = async function (pid, d) {
+window.updateQty = async function (pid, d, btn) {
   const item = cart.find(c => c.productId === pid);
   if (!item) return;
+  busy(btn, 'sp-dark');
+  const prevCart = cart.map(c => ({ ...c }));
   const nq = item.quantity + d;
   if (nq <= 0) {
     cart = cart.filter(c => c.productId !== pid);
   } else {
     item.quantity = nq;
   }
-  await syncCart();
-  renderCart(); updateBadges();
+  try {
+    await syncCart();
+    renderCart(); updateBadges();
+  } catch {
+    cart = prevCart;
+    unbusy(btn);
+    toast('Ошибка', 'err');
+  }
 };
 
-window.removeCI = async function (pid) {
+window.removeCI = async function (pid, btn) {
+  busy(btn, 'sp-red');
+  const prevCart = cart.map(c => ({ ...c }));
   cart = cart.filter(c => c.productId !== pid);
-  await syncCart();
-  renderCart(); refreshHrfCards(); renderCatalog(); updateBadges();
+  try {
+    await syncCart();
+    renderCart(); refreshHrfCards(); renderCatalog(); updateBadges();
+  } catch {
+    cart = prevCart;
+    unbusy(btn);
+    toast('Ошибка', 'err');
+  }
 };
 
-window.clearCartUI = async function () {
-  if (!cart.length || !confirm('Очистить корзину?')) return;
+window.clearCartUI = async function (btn) {
+  if (!cart.length) return;
+  if (!(await askConfirm({ title: 'Очистить корзину?', text: 'Все товары будут удалены.', ok: 'Очистить', danger: true }))) return;
+  busy(btn, 'sp-red');
+  const prevCart = cart.map(c => ({ ...c }));
   cart = [];
-  await syncCart();
-  renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
+  try {
+    await syncCart();
+    renderCart(); refreshHrfCards(); renderCatalog(); renderStoreProds(); updateBadges();
+  } catch {
+    cart = prevCart;
+    toast('Ошибка', 'err');
+  } finally {
+    unbusy(btn);
+  }
 };
 
 function renderCart() {
@@ -2194,19 +2587,19 @@ function renderCart() {
     el.innerHTML = cart.map(i => {
       const ic = catIcon(i.productId, '').svg;
       const leftBtn = i.quantity === 1
-        ? `<button class="ci-stepper-btn" onclick="event.stopPropagation();removeCI('${i.productId}')">
+        ? `<button class="ci-stepper-btn" onclick="event.stopPropagation();removeCI('${i.productId}',this)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.9"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
            </button>`
-        : `<button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',-1)">
+        : `<button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',-1,this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
            </button>`;
       return `<div class="ci">
-        <div class="ci-img">${i.imageUrl ? `<img src="${i.imageUrl}" alt="">` : ic}</div>
-        <div class="ci-info"><div class="ci-name">${i.name}</div><div class="ci-price">${i.price * i.quantity} TJS</div></div>
+        <div class="ci-img">${i.imageUrl ? `<img src="${escHtml(i.imageUrl)}" alt="">` : ic}</div>
+        <div class="ci-info"><div class="ci-name">${escHtml(i.name)}</div><div class="ci-price">${i.price * i.quantity} TJS</div></div>
         <div class="ci-stepper">
           ${leftBtn}
           <span class="ci-stepper-val">${i.quantity}</span>
-          <button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',1)">
+          <button class="ci-stepper-btn" onclick="event.stopPropagation();updateQty('${i.productId}',1,this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
@@ -2575,7 +2968,7 @@ function renderOrders() {
     const c        = SC[o.status] || '#888';
     const l        = SL[o.status] || o.status;
     const num      = o.orderNumber ? '#' + o.orderNumber : '#' + o.id.slice(-6);
-    const items    = (o.items || []).map(i => `${i.name} ×${i.quantity}`).join(', ');
+    const items    = (o.items || []).map(i => `${escHtml(i.name)} ×${i.quantity}`).join(', ');
     const isActive = ['pending','confirmed','preparing','delivering'].includes(o.status);
     const st = stores.find(s => s.id === o.retailerId);
     const retailerHtml = o.retailerName ? (() => {
@@ -2657,7 +3050,7 @@ window.openOrderModal = function (oid) {
   const qrUrl    = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent('GAL-' + o.id)}&color=1a9e4a&bgcolor=ffffff&margin=8&format=png`;
   const itemsHtml = (o.items || []).map(i =>
     `<div class="receipt-row">
-      <span class="receipt-row-name">${i.name}</span>
+      <span class="receipt-row-name">${escHtml(i.name)}</span>
       <span class="receipt-row-qty">×${i.quantity}</span>
       <span class="receipt-row-price">${i.price * i.quantity} TJS</span>
     </div>`
@@ -2732,7 +3125,7 @@ window.openOrderModal = function (oid) {
         </div>
         <div class="booking-delivery-row">
           <span class="booking-delivery-label">Курьер</span>
-          <span class="booking-delivery-val">${o.courierName || 'Назначается…'}</span>
+          <span class="booking-delivery-val">${escHtml(o.courierName || 'Назначается…')}</span>
         </div>
         <div class="booking-delivery-row">
           <span class="booking-delivery-label">Время</span>
@@ -2753,7 +3146,7 @@ window.openOrderModal = function (oid) {
     </div>
 
     ${['pending','confirmed'].includes(o.status) ? `
-    <button class="booking-btn-cancel" style="margin-top:8px" onclick="cancelO('${o.id}');closeOrderModal()">
+    <button class="booking-btn-cancel" style="margin-top:8px" onclick="cancelO('${o.id}',this).then(ok=>{if(ok)closeOrderModal()})">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       Отменить заказ
     </button>` : ''}`;
@@ -2778,15 +3171,22 @@ window.closeBookingModal = function () { Sheet.close('booking-detail'); };
 window.viewOrderStatus = function (oid) { activeOid = oid; openOrderStatusSheet(); };
 window.trackO          = function (oid) { activeOid = oid; openOrderStatusSheet(); };
 
-window.cancelO = async function (id) {
-  if (!confirm('Отменить заказ?')) return;
+window.cancelO = async function (id, btn) {
+  if (!(await askConfirm({ title: 'Отменить заказ?', text: 'Это действие нельзя отменить.', ok: 'Отменить заказ', cancel: 'Назад', danger: true }))) return false;
+  busy(btn, 'sp-red');
   try {
     const o   = orders.find(x => x.id === id);
     const col = o?._col || (o?.retailerId ? 'orders' : 'dastdarozOrders');
     await updateDoc(doc(db, col, id), { status: 'cancelled', updatedAt: serverTimestamp() });
     toast('Заказ отменён', 'ok');
     await loadOrders();
-  } catch { toast('Ошибка', 'err'); }
+    return true;
+  } catch {
+    toast('Ошибка', 'err');
+    return false;
+  } finally {
+    unbusy(btn);
+  }
 };
 
 function renderLiveBanner() {
@@ -2920,7 +3320,7 @@ function renderStatusPage() {
     <div class="track">${steps}</div>
     <div class="divider"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.76rem">
-      <div><div class="sh-tag" style="margin-bottom:3px">Адрес</div><div style="color:var(--tx)">${o.address || '—'}</div></div>
+      <div><div class="sh-tag" style="margin-bottom:3px">Адрес</div><div style="color:var(--tx)">${escHtml(o.address || '—')}</div></div>
       <div><div class="sh-tag" style="margin-bottom:3px">Оплата</div><div style="color:var(--tx)">${pay}</div></div>
       ${o.retailerName ? `<div><div class="sh-tag" style="margin-bottom:3px">Ресторан / Магазин</div><div style="color:var(--tx)">${escHtml(o.retailerName)}</div></div>` : `<div><div class="sh-tag" style="margin-bottom:3px">Курьер</div><div style="color:var(--tx)">${o.courierName || 'Назначается…'}</div></div>`}
       <div><div class="sh-tag" style="margin-bottom:3px">Время</div><div style="color:var(--tx)">${fmtDate(o.createdAt)}</div></div>
@@ -2948,7 +3348,7 @@ function renderStatusPage() {
       <span style="font-family:var(--fd);font-weight:900;font-size:1.15rem;color:var(--acc)">${o.total} TJS</span>
     </div>
     ${['pending','confirmed'].includes(o.status) ? `
-    <div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}')">Отменить заказ</button></div>` : ''}
+    <div style="margin-top:14px"><button class="btn-sm danger" onclick="cancelO('${o.id}',this)">Отменить заказ</button></div>` : ''}
   </div>`;
 }
 
@@ -3021,7 +3421,7 @@ window.sendChatMsg = async function () {
   inp.value = '';
   inp.style.height = 'auto';
   const btn = document.getElementById('chat-send-btn');
-  if (btn) btn.disabled = true;
+  busy(btn);
   try {
     await addDoc(collection(db, 'orders', chatOid, 'messages'), {
       text, senderId: CU.uid, senderRole: 'client',
@@ -3032,7 +3432,7 @@ window.sendChatMsg = async function () {
       lastMessageAt: serverTimestamp(), lastMessageSenderRole: 'client',
     });
   } catch { toast('Ошибка отправки', 'err'); }
-  if (btn) btn.disabled = false;
+  unbusy(btn);
   inp.focus();
 };
 
@@ -3166,7 +3566,7 @@ window.selectSupportOrder = function (orderId, orderNum) {
   if (_supOrderPickerOpen) toggleSupportOrderPicker();
 };
 
-window.sendSupportMsg = async function () {
+window.sendSupportMsg = async function (btn) {
   if (!CU) return;
   const inp = document.getElementById('supsh-input');
   if (!inp) return;
@@ -3174,6 +3574,8 @@ window.sendSupportMsg = async function () {
   if (!text) return;
   inp.value = '';
   inp.style.height = 'auto';
+  btn = (btn && btn.classList) ? btn : document.querySelector('.supsh-send');   // Enter вызывает без кнопки
+  busy(btn);
 
   _supChatId = CU.uid;
   const chatData = {
@@ -3197,6 +3599,7 @@ window.sendSupportMsg = async function () {
       senderName: CU.displayName || 'Пользователь', createdAt: serverTimestamp(),
     });
   } catch { toast('Ошибка отправки', 'err'); }
+  finally { unbusy(btn); }
 };
 
 function listenSupportBadge() {
@@ -3258,8 +3661,9 @@ function renderGuestProfile() {
   if (nm) nm.textContent = 'Гость';
 }
 
-window.saveProfile = async function () {
+window.saveProfile = async function (btn) {
   const name = (document.getElementById('prof-sh-name') || document.getElementById('pf-name'))?.value.trim();
+  busy(btn);
   try {
     const saveData = {
       displayName: name,
@@ -3271,6 +3675,7 @@ window.saveProfile = async function () {
     Sheet.close('profile-edit');
     toast('Профиль сохранён', 'ok');
   } catch { toast('Ошибка', 'err'); }
+  finally { unbusy(btn); }
 };
 
 // ─── Cloudinary: загрузка аватара (нативный выбор файла) ────────
@@ -3389,7 +3794,7 @@ window.openProfileEditSheet = function () {
         <div style="font-size:.62rem;color:var(--tx3);margin-top:5px;line-height:1.5">Номер телефона — идентификатор вашего аккаунта, изменить невозможно</div>
       </div>
 
-      <button class="prof-sh-save" onclick="saveProfile()">Сохранить изменения</button>
+      <button class="prof-sh-save" onclick="saveProfile(this)">Сохранить изменения</button>
     </div>`;
 
   Sheet.open('profile-edit');
@@ -3437,7 +3842,7 @@ function _renderProfAddrs() {
             : `<div class="paddr-item-coords paddr-item-coords--missing">⚠ Без координат</div>`
           }
         </div>
-        <button class="paddr-item-del" onclick="deleteProfAddr('${a.id}')" title="Удалить">
+        <button class="paddr-item-del" onclick="deleteProfAddr('${a.id}',this)" title="Удалить">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
       </div>`).join('');
@@ -3611,7 +4016,7 @@ window.saveProfileAddr = async function () {
     toast('Укажите точку на карте', 'warn'); return;
   }
   const btn = document.getElementById('addaddr-save-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  busy(btn);
   try {
     await addDoc(collection(db, 'users', CU.uid, 'addresses'), {
       text,
@@ -3626,16 +4031,20 @@ window.saveProfileAddr = async function () {
     console.error('saveProfileAddr:', e);
     toast('Ошибка сохранения', 'err');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; }
+    unbusy(btn);
   }
 };
 
-window.deleteProfAddr = async function (id) {
+window.deleteProfAddr = async function (id, btn) {
   if (!CU) return;
+  busy(btn, 'sp-red');
   try {
     await deleteDoc(doc(db, 'users', CU.uid, 'addresses', id));
     await _loadProfAddrs();
-  } catch { toast('Ошибка удаления', 'err'); }
+  } catch {
+    unbusy(btn);
+    toast('Ошибка удаления', 'err');
+  }
 };
 
 function checkAddressBanner(uid) {
@@ -3679,7 +4088,10 @@ window.openPartnerSheet  = () => Sheet.open('partner');
 window.closePartnerSheet = () => Sheet.close('partner');
 window.openCitySheet  = () => Sheet.open('city');
 window.closeCitySheet = () => Sheet.close('city');
-window.openLikesSheet = () => Sheet.open('likes');
+window.openLikesSheet = () => {
+  Sheet.open('likes');
+  _resolveFavs();   // подтянет свежие цены/статус точки (кэш 2 мин)
+};
 window.closeLikesSheet= () => Sheet.close('likes');
 window.openAchievementsSheet = () => Sheet.open('achievements');
 window.closeAchievementsSheet = () => Sheet.close('achievements');
@@ -3788,7 +4200,7 @@ function _offerTokenization() {
           style="flex:1;padding:14px;border:1.5px solid var(--b1);border-radius:14px;background:transparent;color:var(--tx2);font-family:var(--fd);font-weight:700;font-size:.85rem;cursor:pointer">
           Нет, спасибо
         </button>
-        <button onclick="_startTokenization()"
+        <button onclick="_startTokenization(undefined,this)"
           style="flex:2;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-family:var(--fd);font-weight:900;font-size:.85rem;cursor:pointer;box-shadow:0 4px 14px var(--acc-shadow)">
           Да, сохранить
         </button>
@@ -3797,8 +4209,8 @@ function _offerTokenization() {
   document.body.appendChild(overlay);
 }
 
-window._startTokenization = async function (gate = 'tokenization_korti_milli') {
-  document.getElementById('tok-offer-overlay')?.remove();
+window._startTokenization = async function (gate = 'tokenization_korti_milli', btn) {
+  busy(btn);
   try {
     const r    = await fetch('https://api.dastdaroz.shop/api/payment-mp/tokenize', {
       method:  'POST',
@@ -3807,8 +4219,10 @@ window._startTokenization = async function (gate = 'tokenization_korti_milli') {
     });
     const data = await r.json();
     if (!r.ok || !data.url) throw new Error(data.error || 'Ошибка');
-    window.location.href = data.url;
+    window.location.href = data.url;   // спиннер остаётся до ухода на страницу оплаты
   } catch (e) {
+    unbusy(btn);
+    document.getElementById('tok-offer-overlay')?.remove();
     toast('Ошибка: ' + e.message, 'err');
   }
 };
