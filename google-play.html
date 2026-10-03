@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Открыть в Google Play</title>
+    <script>
+        // Intent для открытия Play Market напрямую
+        window.location.href = "intent://details?id=shop.dastdaroz#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=https://play.google.com/store/apps/details?id=shop.dastdaroz;end";
+        
+        // Если intent не сработал, открываем веб-ссылку
+        setTimeout(function() {
+            window.location.href = "https://play.google.com/store/apps/details?id=shop.dastdaroz";
+        }, 1500);
+    </script>
+</head>
+<body>
+    <p>Открываем Google Play...</p>
+    <p><a href="https://play.google.com/store/apps/details?id=shop.dastdaroz">Нажмите сюда, если не открылось автоматически</a></p>
+</body>
+</html>
