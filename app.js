@@ -455,7 +455,7 @@ function _initSheets() {
   Sheet.body('profile-edit').style.cssText = 'padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
 
   // ── Достижения ────────────────────────────────────────────
-  Sheet.define({ id: 'achievements', title: 'Достижения', zIndex: 700 });
+  Sheet.define({ id: 'achievements', title: 'Достижения', zIndex: 700, onOpen: _renderLeaderboard });
   Sheet.body('achievements').style.cssText = 'display:flex;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 24px);';
 
   // ── Промокод ──────────────────────────────────────────────
@@ -552,18 +552,27 @@ onAuthStateChanged(auth, async u => {
     CU    = null;
     UD    = null;
     if (_addrBannerUnsub) { _addrBannerUnsub(); _addrBannerUnsub = null; }
+    _resetUserState();   // после выхода: чистим данные прошлого пользователя
     listenFavs();   // для гостя — просто очищает избранное
     await Promise.all([loadProds(), loadCats(), loadStores(), loadDeliveryServices()]);
     renderSB();
     renderGuestBanner();
     renderGuestProfile();
     renderCart();
+    // Если гость остался на закрытой странице (после выхода из аккаунта) —
+    // повторно проходим через goPage: он сам покажет страницу «Авторизация».
+    const _cur = document.querySelector('.page.active')?.id?.replace('page-', '');
+    if (['orders', 'cart', 'profile', 'order-detail'].includes(_cur)) {
+      goPage(_cur === 'order-detail' ? 'orders' : _cur);
+      _authFromPage = 'home';   // «назад» с экрана авторизации ведёт на главную
+    }
     return;
   }
 
   GUEST = false;
   CU    = u;
   await loadUD();
+  syncPublicProfile();   // публичная карточка для списка участников (без телефона и адреса)
   listenFavs();
   // Загружаем координаты последнего адреса ДО loadStores/loadProds —
   // они нужны для выбора ближайшей точки ритейлера.
@@ -663,6 +672,90 @@ window.doLogout = async function (btn) {
     unbusy(btn);
   }
 };
+
+// ─── Участники (вкладка «Достижения») ─────────────────────────
+// Публичная карточка: publicProfiles/{uid} = { name, avatarUrl, updatedAt }.
+// В неё специально НЕ попадают телефон, адрес, токены — только безопасное имя и аватар.
+function _publicName() {
+  let n = (UD?.displayName || '').trim();
+  if ((n.match(/\d/g) || []).length >= 5) n = '';        // телефон, записанный вместо имени
+  if (!n) return '';
+  const [first, second] = n.split(/\s+/);
+  return first.slice(0, 20) + (second ? ' ' + second[0].toUpperCase() + '.' : '');   // «Азиз К.»
+}
+
+async function syncPublicProfile() {
+  if (!CU) return;
+  try {
+    await setDoc(doc(db, 'publicProfiles', CU.uid), {
+      name: _publicName(),
+      avatarUrl: UD?.avatarUrl || '',
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (e) { console.warn('[publicProfile]', e?.message); }
+}
+
+async function _renderLeaderboard() {
+  const body = Sheet.body('achievements');
+  if (!body) return;
+  if (GUEST || !CU) {
+    body.innerHTML = '<div class="lb-empty">Войдите, чтобы увидеть участников</div>';
+    return;
+  }
+  body.innerHTML = Array.from({ length: 6 }, () =>
+    '<div class="lb-row"><div class="lb-av skl-block"></div><div class="skl-block" style="height:11px;width:42%;border-radius:6px"></div></div>'
+  ).join('');
+  try {
+    const LIMIT = 100;
+    const snap = await getDocs(query(collection(db, 'publicProfiles'), orderBy('updatedAt', 'desc'), limit(LIMIT)));
+    let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const me = list.find(x => x.id === CU.uid);
+    list = [...(me ? [me] : []), ...list.filter(x => x.id !== CU.uid)];   // вы — первым
+
+    const rows = list.map(u => {
+      const isMe = u.id === CU.uid;
+      const name = (u.name || '').trim() || 'Пользователь ·' + u.id.slice(-4);
+      const av   = u.avatarUrl
+        ? `<img src="${escHtml(u.avatarUrl)}" alt="">`
+        : escHtml((name[0] || '?').toUpperCase());
+      return `<div class="lb-row${isMe ? ' me' : ''}">
+        <div class="lb-av">${av}</div>
+        <div class="lb-name">${escHtml(name)}</div>
+        ${isMe ? '<span class="lb-you">Вы</span>' : ''}
+      </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="lb-top">
+        <div class="lb-top-ico">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0012 0V2z"/></svg>
+        </div>
+        <div>
+          <div class="lb-top-t">Рейтинг скоро</div>
+          <div class="lb-top-s">Пока здесь все участники. Позже появится рейтинг по заказам.</div>
+        </div>
+      </div>
+      <div class="lb-lbl">Участники · ${list.length}${list.length >= LIMIT ? '+' : ''}</div>
+      <div class="lb-list">${rows || '<div class="lb-empty">Пока никого нет</div>'}</div>`;
+  } catch (e) {
+    console.warn('[leaderboard]', e?.message);
+    body.innerHTML = '<div class="lb-empty">Не удалось загрузить список<button type="button" class="lb-retry" onclick="refreshLeaderboard()">Повторить</button></div>';
+  }
+}
+window.refreshLeaderboard = _renderLeaderboard;
+
+/** Сброс данных прошлого пользователя (после выхода из аккаунта). */
+function _resetUserState() {
+  cart   = [];
+  orders = [];
+  _userLat = null;
+  _userLng = null;
+  if (unsubLive)       { unsubLive();       unsubLive = null; }
+  if (_supBadgeUnsub)  { _supBadgeUnsub();  _supBadgeUnsub = null; }
+  _updateSupportBadge(0);
+  renderOrdersBadge();
+  renderOrders();
+}
 
 window.goLogin = function () { location.href = 'login.html'; };
 
@@ -3671,6 +3764,7 @@ window.saveProfile = async function (btn) {
     };
     await setDoc(doc(db, 'users', CU.uid), saveData, { merge: true });
     UD = { ...UD, ...saveData };
+    syncPublicProfile();
     renderSB(); renderProfile();
     Sheet.close('profile-edit');
     toast('Профиль сохранён', 'ok');
@@ -3745,6 +3839,7 @@ window.openAvWidget = function () {
         { merge: true }
       );
       UD.avatarUrl = url;
+      syncPublicProfile();
       renderSB();
       renderProfile();
       // Обновляем аватар прямо в открытом шите
