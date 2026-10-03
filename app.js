@@ -707,9 +707,17 @@ async function _renderLeaderboard() {
   ).join('');
   try {
     const LIMIT = 100;
-    const snap = await getDocs(query(collection(db, 'publicProfiles'), orderBy('updatedAt', 'desc'), limit(LIMIT)));
-    let list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const me = list.find(x => x.id === CU.uid);
+    const fetchList = async () => {
+      const snap = await getDocs(query(collection(db, 'publicProfiles'), orderBy('updatedAt', 'desc'), limit(LIMIT)));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    };
+    let list = await fetchList();
+    let me = list.find(x => x.id === CU.uid);
+    if (!me) {                       // вас ещё нет в списке (например, правила опубликовали уже после входа) — дописываем себя
+      await syncPublicProfile();
+      list = await fetchList();
+      me = list.find(x => x.id === CU.uid);
+    }
     list = [...(me ? [me] : []), ...list.filter(x => x.id !== CU.uid)];   // вы — первым
 
     const rows = list.map(u => {
@@ -1008,6 +1016,7 @@ function removeGuestBanner() {
 
 // ─── 9. Магазины / Ритейлеры ─────────────────────────────────
 async function loadStores() {
+  _storesReady = false;
   const cityId = _selectedCityId;
   try {
     const [byPrimary, byCityIds] = await Promise.all([
@@ -1034,10 +1043,38 @@ async function loadStores() {
         .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     } catch { stores = []; }
   }
-  renderHomeRetailerFeed();
+  _storesReady = true;
+  _maybeRenderHomeFeed();
 }
 
-async function renderHomeRetailerFeed() {
+// Лента главной и вкладка «Каталог» строятся из ОДНИХ данных (prods) одной функцией —
+// поэтому набор и порядок товаров в блоках ритейлеров у них всегда одинаковые.
+let _storesReady = false, _prodsReady = false;
+function _maybeRenderHomeFeed() {
+  if (_storesReady && _prodsReady) renderHomeRetailerFeed();   // рисуем один раз, когда готовы и магазины, и товары
+}
+
+/** HTML блоков ритейлеров: группировка по магазину, порядок магазинов и подборка товаров (до 6).
+ *  Общая для главной и каталога. */
+function _retailerBlocksHtml(list, { withId = false } = {}) {
+  primeImgs(6);
+  const groups = new Map();
+  list.forEach(p => {
+    const sid = p.storeId || '__none__';
+    if (!groups.has(sid)) groups.set(sid, { store: stores.find(s => s.id === sid), prods: [] });
+    groups.get(sid).prods.push(p);
+  });
+  return [...groups.entries()]
+    .sort((a, b) => retailerRank(a[0]) - retailerRank(b[0]))
+    .map(([sid, { store, prods: gp }]) => {
+      const locId      = gp[0]?.locationId;
+      const locData    = locId ? (window._locDataMap?.[locId] || null) : null;
+      const blockStore = sid !== '__none__' ? (store || { id: sid, name: gp[0]?.retailerName }) : null;
+      return buildHrfBlock(blockStore, pickHrfProds(gp, 6), locData, { withId, fallbackName: gp[0]?.retailerName });
+    }).join('');
+}
+
+function renderHomeRetailerFeed() {
   const feedEl = document.getElementById('home-retailer-feed');
   if (!feedEl) return;
 
@@ -1052,62 +1089,14 @@ async function renderHomeRetailerFeed() {
     return;
   }
 
-  if (!stores.length) { feedEl.innerHTML = ''; return; }
-
-  // Грузим все данные параллельно — без промежуточного скелетона в JS
-  const results = await Promise.all(stores.map(async store => {
-    try {
-      // _userLat / _userLng уже загружены в onAuthStateChanged через _loadUserCoords()
-      // Загружаем ВСЕ точки города, чтобы выбрать ближайшую
-      let allLocs = await getRetailerLocs(store.id, _selectedCityId);
-
-      // Fallback: если в выбранном городе нет точек — берём любые (до 5)
-      if (!allLocs.length) {
-        const locFb = await getDocs(
-          query(collection(db, 'retailers', store.id, 'locations'), limit(5))
-        );
-        allLocs = locFb.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-      if (!allLocs.length) return null;
-
-      // Ближайшая точка к пользователю (или первая, если GPS недоступен)
-      const nearestLoc = pickNearestLoc(allLocs);
-      const locId   = nearestLoc.id;
-      const locData = nearestLoc;
-      window._locDataMap = { ...(window._locDataMap || {}), [locId]: locData };
-
-      // Тянем до 15 доступных товаров, потом рандомно выбираем 2
-      const prodSnap = await getDocs(
-        query(collection(db, 'retailers', store.id, 'locations', locId, 'catalog'),
-              where('available', '==', true), limit(15))
-      );
-      const allProds = prodSnap.docs.map(d => ({
-        id: d.id, ...d.data(), storeId: store.id, locationId: locId
-      }));
-      // Fisher-Yates shuffle → берём первые 2
-      for (let i = allProds.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allProds[i], allProds[j]] = [allProds[j], allProds[i]];
-      }
-      const hrfProds = allProds.slice(0, 6);
-      hrfProds.forEach(p => { jsonProdsMap[p.id] = p; });
-
-      return { store, hrfProds, locData };
-    } catch (e) {
-      console.warn('hrf:', store.name, e?.message);
-      return null;
-    }
-  }));
-
-  // Один раз рендерим всё — заменяем HTML-скелетон реальным контентом
-  feedEl.innerHTML = results
-    .filter(Boolean)
-    .sort((a, b) => retailerRank(a.store.id) - retailerRank(b.store.id))
-    .map(({ store, hrfProds, locData }) => buildHrfBlock(store, hrfProds, locData, { withId: true }))
-    .join('');
+  // только магазины текущего города, у которых есть товары ближайшей точки
+  const ids  = new Set(stores.map(st => st.id));
+  const list = prods.filter(p => p.storeId && ids.has(p.storeId));
+  feedEl.innerHTML = list.length ? _retailerBlocksHtml(list, { withId: true }) : '';
 }
 
 window.openRetailer = async function (sid, opts) {
+  _resetStoreSearch();
   const forceList = !!(opts && opts.list); // {list:true} — принудительно показать список точек
   activeStore    = stores.find(s => s.id === sid);
   storeCatFilter = 'all';
@@ -1139,6 +1128,7 @@ window.openStore = window.openRetailer; // алиас для совместим�
 // Открыть каталог конкретной точки ритейлера
 window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) {
   document.getElementById('pages').scrollTop = 0;
+  _resetStoreSearch();
   // Убираем режим списка точек — нужно показать пилюли категорий
   const ps = document.getElementById('page-store');
   if (ps) ps.classList.remove('ret-loc-mode');
@@ -1213,6 +1203,7 @@ window.openRetailerCatalog = async function (rid, locId, locAddr, auto = false) 
 
     jsonMenuData = { categories, products: allProds };
     allProds.forEach(p => { jsonProdsMap[p.id] = p; });
+    _buildStoreSearchIndex(allProds);
 
     renderStoreCatPills();
     renderStoreProds();
@@ -1428,6 +1419,7 @@ function renderStoreCatPills() {
 function renderStoreProds() {
   const el = document.getElementById('store-prods');
   if (!el || !activeStore) return;
+  primeImgs(6);
 
   const skeleton = Array(6).fill(0).map(() =>
     `<div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:42%"></div><div class="skl-block" style="height:11px;width:84%"></div><div class="skl-block" style="height:8px;width:62%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>`
@@ -1443,6 +1435,23 @@ function renderStoreProds() {
         <div class="store-cat-empty-t">Ошибка при загрузке</div>
         <div class="store-cat-empty-s">${jsonMenuData.error}</div>
       </div>`;
+      return;
+    }
+
+    // ── Режим поиска: плоский список результатов вместо секций ───
+    if (storeSearchQ) {
+      const { list: found, fuzzy } = _searchStoreProds(storeSearchQ);
+      const banner = window._retailerClosedBanner || '';
+      if (_catScrollObserver) { _catScrollObserver.disconnect(); _catScrollObserver = null; }
+      el.className = 'store-prods-sectioned';
+      el.innerHTML = (banner ? `<div class="cat-closed-notice">${banner}</div>` : '') + (found.length
+        ? `<div class="cat-section">
+             <div class="cat-section-header">${fuzzy ? 'Похожие результаты' : 'Найдено'}: ${found.length}</div>
+             <div class="pg">${found.map(p => renderPC({ ...p, storeId: activeStore.id })).join('')}</div>
+           </div>`
+        : `<div class="store-cat-empty"><span class="store-cat-empty-ico">🔍</span>
+             <div class="store-cat-empty-t">Ничего не найдено</div>
+             <div class="store-cat-empty-s">Попробуйте изменить запрос</div></div>`);
       return;
     }
 
@@ -1490,6 +1499,268 @@ function renderStoreProds() {
     : `<div class="store-cat-empty" style="grid-column:1/-1"><span class="store-cat-empty-ico">📦</span><div class="store-cat-empty-t">Товаров пока нет</div></div>`;
 }
 
+
+// ─── Поиск по товарам точки ──────────────────────────────────
+// Индекс строится один раз при загрузке каталога точки, дальше поиск — по готовым
+// строкам (без запросов в Firestore). Все слова запроса должны встретиться в
+// названии / описании / категории. «ё» = «е», тайк. буквы ≈ русские (ғ→г, қ→к…).
+let storeSearchQ    = '';
+let _storeSearchIdx = [];
+let _storeSearchT   = null;
+const _TJ_MAP = { 'ғ': 'г', 'ӣ': 'и', 'қ': 'к', 'ӯ': 'у', 'ҳ': 'х', 'ҷ': 'ч' };
+
+function _sNorm(str) {
+  return String(str == null ? '' : str).toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[ғӣқӯҳҷ]/g, c => _TJ_MAP[c])
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Латиница → кириллица «на слух» (kofe → кофе, burger → бургер)
+const _L2C_DIGRAPHS = [['shch','щ'],['sch','щ'],['sh','ш'],['ch','ч'],['zh','ж'],['kh','х'],['ts','ц'],
+                       ['yu','ю'],['ya','я'],['ye','е'],['yo','е'],['ph','ф'],['ck','к'],['qu','кв']];
+const _L2C = { a:'а', b:'б', d:'д', e:'е', f:'ф', g:'г', h:'х', i:'и', j:'дж', k:'к', l:'л', m:'м', n:'н',
+               o:'о', p:'п', q:'к', r:'р', s:'с', t:'т', u:'у', v:'в', w:'в', x:'кс', y:'и', z:'з' };
+function _lat2cyr(str) {
+  let out = str;
+  for (const [a, b] of _L2C_DIGRAPHS) out = out.split(a).join(b);
+  return out.replace(/c(?=[eiy])/g, 'с').replace(/[a-z]/g, c => c === 'c' ? 'к' : _L2C[c]);
+}
+// Забыли переключить раскладку: ghbdtn → привет
+const _LAYOUT = { q:'й', w:'ц', e:'у', r:'к', t:'е', y:'н', u:'г', i:'ш', o:'щ', p:'з', '[':'х', ']':'ъ',
+                  a:'ф', s:'ы', d:'в', f:'а', g:'п', h:'р', j:'о', k:'л', l:'д', ';':'ж', "'":'э',
+                  z:'я', x:'ч', c:'с', v:'м', b:'и', n:'т', m:'ь', ',':'б', '.':'ю', '`':'ё' };
+
+/** Расстояние Дамерау–Левенштейна (опечатка, лишняя/пропущенная буква, перестановка) с ранним выходом. */
+function _osa(a, b, max) {
+  const al = a.length, bl = b.length;
+  if (Math.abs(al - bl) > max) return max + 1;
+  let prev2 = null, prev = Array.from({ length: bl + 1 }, (_, j) => j);
+  for (let i = 1; i <= al; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= bl; j++) {
+      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
+      cur[j] = v;
+      if (v < rowMin) rowMin = v;
+    }
+    if (rowMin > max) return max + 1;
+    prev2 = prev; prev = cur;
+  }
+  return prev[bl];
+}
+
+/** Поисковый индекс по любым элементам: textOf(item) → { name, desc, cat }. */
+function _makeSearchIdx(items, textOf) {
+  return items.map(p => {
+    const t      = textOf(p);
+    const name   = _sNorm(t.name);
+    const hay    = name + ' ' + _sNorm(t.desc) + ' ' + _sNorm(t.cat);
+    const hasLat = /[a-z]/.test(hay);
+    const all    = hasLat ? hay + ' ' + _lat2cyr(hay) : hay;       // латинские названия ищутся и кириллицей
+    return {
+      p, name,
+      nameAlt: hasLat ? _lat2cyr(name) : name,
+      all,
+      nsp:   all.replace(/ /g, ''),                                // без пробелов: «кокакола», «ко фе»
+      words: [...new Set(all.split(' ').filter(w => w.length > 1))],
+    };
+  });
+}
+
+function _buildStoreSearchIndex(products) {
+  _storeSearchIdx = _makeSearchIdx(products, p => ({ name: p.name, desc: p.description, cat: p.categoryId }));
+}
+
+/** Варианты запроса: как введён / латиница «на слух» кириллицей / с исправленной раскладкой. */
+function _queryVariants(raw) {
+  const base = _sNorm(raw);
+  const v = new Set([base]);
+  if (/[a-z]/i.test(raw)) {
+    v.add(_sNorm(_lat2cyr(base)));
+    v.add(_sNorm(String(raw).toLowerCase().replace(/[a-z\[\];',.`]/g, c => _LAYOUT[c] || c)));
+  }
+  v.delete('');
+  return [...v];
+}
+
+function _strictMatch(it, q) {
+  if (q.split(' ').every(t => it.all.includes(t))) return true;
+  return q.length >= 3 && it.nsp.includes(q.replace(/ /g, ''));
+}
+
+function _rankOf(it, q) {
+  if (it.name.startsWith(q) || it.nameAlt.startsWith(q)) return 0;
+  if (it.name.includes(q)   || it.nameAlt.includes(q))   return 1;
+  return q.split(' ').every(t => it.name.includes(t) || it.nameAlt.includes(t)) ? 2 : 3;
+}
+
+/** Расстояние слова запроса до товара: 0 — точно, 1–2 — с опечаткой, 99 — не подходит. */
+function _tokenDist(t, it) {
+  if (it.all.includes(t)) return 0;
+  const k = t.length < 4 ? 0 : t.length < 6 ? 1 : 2;     // короткие слова не «угадываем» — иначе много мусора
+  if (!k) return 99;
+  let best = 99;
+  for (const w of it.words) {
+    if (w.length + k < t.length) continue;
+    let d = _osa(t, w, k);
+    if (w.length > t.length) d = Math.min(d, _osa(t, w.slice(0, t.length), k));   // недописанное слово
+    if (d <= k && d < best) best = d;
+  }
+  return best;
+}
+
+/** Точный поиск (с вариантами латиница/раскладка/без пробелов). Возвращает элементы по важности. */
+function _strictSearch(idx, variants) {
+  const hits = [];
+  for (const it of idx) {
+    let best = 9;
+    for (const q of variants) if (_strictMatch(it, q)) best = Math.min(best, _rankOf(it, q));
+    if (best < 9) hits.push([best, it.p]);
+  }
+  hits.sort((a, b) => a[0] - b[0]);                      // сортировка стабильная — порядок источника сохраняется
+  return hits.map(h => h[1]);
+}
+
+/** Поиск с опечатками — только когда точного совпадения нет. */
+function _fuzzySearch(idx, variants) {
+  const near = [];
+  for (const it of idx) {
+    let best = 99;
+    for (const q of variants) {
+      let sum = 0;
+      for (const t of q.split(' ')) {
+        const d = _tokenDist(t, it);
+        if (d >= 99) { sum = 99; break; }
+        sum += d;
+      }
+      if (sum < best) best = sum;
+    }
+    if (best < 99) near.push([best, it.p]);
+  }
+  near.sort((a, b) => a[0] - b[0]);
+  return near.map(x => x[1]);
+}
+
+/** Возвращает { list, fuzzy }: сначала точный поиск, если пусто — поиск с опечатками. */
+function _searchStoreProds(raw) {
+  const variants = _queryVariants(raw);
+  if (!variants.length) return { list: [], fuzzy: false };
+  const hits = _strictSearch(_storeSearchIdx, variants);
+  if (hits.length) return { list: hits, fuzzy: false };
+  return { list: _fuzzySearch(_storeSearchIdx, variants), fuzzy: true };
+}
+
+// ─── Поиск во вкладке «Каталог»: магазины + товары ───────────
+let _catIdx     = { prods: null, plen: -1, stores: null, slen: -1, pIdx: [], sIdx: [] };
+let _catSearchT = null;
+
+function _catSearch(raw) {
+  const variants = _queryVariants(raw);
+  if (!variants.length) return { prods: [], stores: [], fuzzy: false };
+  // индекс пересобираем только если изменился список товаров/магазинов
+  if (_catIdx.prods !== prods || _catIdx.plen !== prods.length || _catIdx.stores !== stores || _catIdx.slen !== stores.length) {
+    const catName = {}; cats.forEach(c => { catName[c.id] = c.name; });
+    _catIdx = {
+      prods, plen: prods.length, stores, slen: stores.length,
+      pIdx: _makeSearchIdx(prods,  p => ({ name: p.name, desc: p.description, cat: catName[p.categoryId] || p.categoryId })),
+      sIdx: _makeSearchIdx(stores, s => ({ name: s.name, desc: s.description, cat: '' })),
+    };
+  }
+  let ps = _strictSearch(_catIdx.pIdx, variants);
+  let ss = _strictSearch(_catIdx.sIdx, variants);
+  let fuzzy = false;
+  if (!ps.length && !ss.length) {
+    ps = _fuzzySearch(_catIdx.pIdx, variants);
+    ss = _fuzzySearch(_catIdx.sIdx, variants);
+    fuzzy = true;
+  }
+  return { prods: ps, stores: ss, fuzzy };
+}
+
+function _renderCatalogSearch(el) {
+  const r        = _catSearch(searchQ);
+  const inCat    = p => catFilter === 'all' || p.categoryId === catFilter;
+  const matched  = r.prods.filter(inCat);
+  const nameHit  = new Set(r.stores.map(s => s.id));
+  const matchIds = new Set(matched.map(p => p.id));
+
+  // группы по магазину: найденные товары + магазины, найденные по названию
+  const groups = new Map();
+  const grp = sid => { if (!groups.has(sid)) groups.set(sid, { match: [] }); return groups.get(sid); };
+  matched.forEach(p => grp(p.storeId || '__none__').match.push(p));
+  r.stores.forEach(st => grp(st.id));
+
+  const blocks = [...groups.entries()].map(([sid, g]) => {
+    // магазин, найденный по названию, дополняем обычной подборкой его товаров
+    const rest  = nameHit.has(sid) ? pickHrfProds(prods.filter(p => p.storeId === sid && !matchIds.has(p.id) && inCat(p)), 6) : [];
+    const shown = [...g.match, ...rest].slice(0, 6);
+    return { sid, shown, nameHit: nameHit.has(sid) };
+  }).filter(b => b.shown.length);
+
+  if (!blocks.length) {
+    el.className = '';
+    el.innerHTML = `<div class="store-cat-empty"><span class="store-cat-empty-ico">🔍</span>
+      <div class="store-cat-empty-t">Ничего не найдено</div>
+      <div class="store-cat-empty-s">Попробуйте изменить запрос</div></div>`;
+    return;
+  }
+
+  blocks.sort((a, b) => (b.nameHit - a.nameHit) || (retailerRank(a.sid) - retailerRank(b.sid)));
+  primeImgs(6);
+  el.className = '';
+  el.innerHTML = (r.fuzzy ? '<div class="cat-section-header" style="margin-bottom:12px">Похожие результаты</div>' : '')
+    + blocks.map(({ sid, shown }) => {
+      const store     = stores.find(s => s.id === sid);
+      const locId     = shown[0]?.locationId;
+      const grpLoc    = locId ? (window._locDataMap?.[locId] || null) : null;
+      const blockStore = sid !== '__none__' ? (store || { id: sid, name: shown[0]?.retailerName }) : null;
+      return buildHrfBlock(blockStore, shown, grpLoc, { fallbackName: shown[0]?.retailerName });
+    }).join('');
+}
+
+window.onCatalogSearch = function (v) {
+  document.getElementById('catalog-search')?.classList.toggle('has-q', !!v);
+  const top = document.getElementById('search-inp-top');
+  if (top && top.value !== v) top.value = v;                 // верхняя строка (десктоп) синхронизируется
+  clearTimeout(_catSearchT);
+  _catSearchT = setTimeout(() => { searchQ = v || ''; renderCatalog(); }, v ? 120 : 0);
+};
+
+window.clearCatalogSearch = function () {
+  const inp = document.getElementById('catalog-search-input');
+  if (inp) { inp.value = ''; inp.focus(); }
+  onCatalogSearch('');
+};
+
+function _resetStoreSearch() {
+  clearTimeout(_storeSearchT);
+  storeSearchQ = '';
+  _storeSearchIdx = [];
+  const inp = document.getElementById('store-search-input');
+  if (inp) inp.value = '';
+  document.getElementById('store-search')?.classList.remove('has-q');
+  document.getElementById('page-store')?.classList.remove('ret-searching');
+}
+
+window.onStoreSearch = function (v) {
+  document.getElementById('store-search')?.classList.toggle('has-q', !!v);
+  clearTimeout(_storeSearchT);
+  _storeSearchT = setTimeout(() => {
+    storeSearchQ = (v || '').trim();
+    document.getElementById('page-store')?.classList.toggle('ret-searching', !!storeSearchQ);
+    if (jsonMenuData) renderStoreProds();   // сам выберет: результаты или секции
+  }, v ? 120 : 0);
+};
+
+window.clearStoreSearch = function () {
+  const inp = document.getElementById('store-search-input');
+  if (inp) { inp.value = ''; inp.focus(); }
+  onStoreSearch('');
+};
 
 // ─── Скролл-шпион категорий (retailer catalog) ───────────────
 function _initCatScrollSpy() {
@@ -1558,6 +1829,7 @@ function _initStickyPillsDetector() {
 // ─── 10. Товары ───────────────────────────────────────────────
 // Загружаем товары из каталогов точек ритейлеров (не из глобальной коллекции products)
 async function loadProds() {
+  _prodsReady = false;
   try {
     const cityId = _selectedCityId;
 
@@ -1617,9 +1889,11 @@ async function loadProds() {
     console.error('loadProds:', e);
     prods = [];
   }
+  _prodsReady = true;
   renderCatalog();
   renderHomeCats();
   renderStoreProds();
+  _maybeRenderHomeFeed();
 }
 
 // ─── Единый блок «ритейлер + 2 товара» (главная и каталог) ───
@@ -1648,27 +1922,26 @@ function pickHrfProds(list, n = 2) {
  *  Результат кладётся в _userLat / _userLng.
  *  Для гостей — сбрасывает в null (нет адресов). */
 async function _loadUserCoords() {
-  _userLat = null;
-  _userLng = null;
-  if (!CU || GUEST) return;
-  try {
-    const snap = await getDocs(
-      query(
-        collection(db, 'users', CU.uid, 'addresses'),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      )
-    );
-    if (!snap.empty) {
-      const addr = snap.docs[0].data();
-      if (addr.lat != null && addr.lng != null) {
-        _userLat = addr.lat;
-        _userLng = addr.lng;
+  let lat = null, lng = null;   // присваиваем в конце — чтобы параллельные рендеры не видели «пустые» координаты
+  if (CU && !GUEST) {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, 'users', CU.uid, 'addresses'),
+          orderBy('createdAt', 'desc'),
+          limit(1)
+        )
+      );
+      if (!snap.empty) {
+        const addr = snap.docs[0].data();
+        if (addr.lat != null && addr.lng != null) { lat = addr.lat; lng = addr.lng; }
       }
+    } catch (e) {
+      console.warn('[coords] Не удалось загрузить адрес:', e?.message);
     }
-  } catch (e) {
-    console.warn('[coords] Не удалось загрузить адрес:', e?.message);
   }
+  _userLat = lat;
+  _userLng = lng;
 }
 
 /** Расстояние Хаверсина между двумя точками, км. */
@@ -1751,12 +2024,40 @@ function buildHrfBlock(store, hrfProds, locData, { withId = false, fallbackName 
     </div>`;
 }
 
+// ─── Загрузка картинок: blur-up + приоритет первого экрана ────
+// Картинка появляется размытой и «наводится на резкость». Уже загруженные раньше
+// (кэш браузера) показываются сразу, без анимации — иначе она повторялась бы
+// при каждой перерисовке карточек (добавление в корзину и т.д.).
+const _imgSeen  = new Set();   // src, которые уже загружались
+let   _eagerLeft = 0;          // сколько ближайших картинок грузить с высоким приоритетом
+
+/** Вызывать перед построением списка карточек: первые n картинок — без lazy и с high-priority. */
+function primeImgs(n = 6) { _eagerLeft = n; }
+
+/** <img> с эффектом фокусировки. count=false — не тратить счётчик приоритета (модалка, избранное). */
+function imgTag(url, alt = '', { cls = '', count = true } = {}) {
+  const seen = _imgSeen.has(url);
+  let load = 'loading="lazy"';
+  if (count && _eagerLeft > 0) { _eagerLeft--; load = 'loading="eager" fetchpriority="high"'; }
+  return `<img class="ld${seen ? ' on' : ''}${cls ? ' ' + cls : ''}" src="${escHtml(url)}" alt="${escHtml(alt)}" ${load} decoding="async" draggable="false" onload="imgOk(this)" onerror="imgErr(this)">`;
+}
+
+window.imgOk = function (img) {
+  _imgSeen.add(img.getAttribute('src'));
+  img.classList.add('on');
+  img.parentElement?.classList.remove('img-loading');
+};
+window.imgErr = function (img) {
+  img.style.display = 'none';
+  img.parentElement?.classList.remove('img-loading');
+};
+
 function renderPC(p, preview = false) {
   const qty     = getCartQty(p.id);
   const unavail = !p.available;
   const ic      = catIcon(p.categoryId, catName(p.categoryId));
   const imgHtml = p.imageUrl
-    ? `<img src="${escHtml(p.imageUrl)}" alt="${escHtml(p.name)}" loading="lazy">`
+    ? imgTag(p.imageUrl, p.name)
     : `<div style="width:64px;height:64px;opacity:.2">${ic.svg.replace('width="26" height="26"', 'width="64" height="64"')}</div>`;
 
   // Проверяем режим работы точки для этого товара
@@ -1793,7 +2094,7 @@ function renderPC(p, preview = false) {
     </button>`;
 
   return `<div class="pc" onclick="${cardClick}">
-    <div class="pc-img">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}${heart}</div>
+    <div class="pc-img${p.imageUrl && !_imgSeen.has(p.imageUrl) ? ' img-loading' : ''}">${imgHtml}${unavail ? '<div class="pc-badge">Нет</div>' : ''}${heart}</div>
     <div class="pc-body">
       ${retailerTag}
       <div class="pc-price">${p.price}<span> TJS</span></div>
@@ -1961,7 +2262,7 @@ function renderFavSheet() {
     const loading = !cache || (cache.loading && !cache.p);
     const live    = cache?.p || null;
     const price   = live ? live.price : f.price;
-    const img   = f.imageUrl ? `<img src="${escHtml(f.imageUrl)}" alt="" loading="lazy">` : '';
+    const img   = f.imageUrl ? imgTag(f.imageUrl, f.name, { count: false }) : '';
 
     // Режим работы точки: закрыто → кнопка неактивна («Закрыто»)
     const loc    = cache?.loc || window._locDataMap?.[f.locationId] || null;
@@ -1976,7 +2277,7 @@ function renderFavSheet() {
         : `<button class="fav-add" onclick="favAdd('${escHtml(f.productId)}','${escHtml(f.key)}',this)">В корзину</button>`;
 
     return `<div class="fav-row">
-      <div class="fav-img">${img}</div>
+      <div class="fav-img${f.imageUrl && !_imgSeen.has(f.imageUrl) ? ' img-loading' : ''}">${img}</div>
       <div class="fav-main">
         <div class="fav-info">
           ${f.retailerName ? `<div class="pc-retailer">${escHtml(f.retailerName)}</div>` : ''}
@@ -2029,6 +2330,9 @@ function refreshHrfCards() {
 function renderCatalog() {
   const el = document.getElementById('cat-prods');
   if (!el) return;
+  primeImgs(6);
+  const _sb = document.getElementById('catalog-search');
+  if (_sb) _sb.style.display = _hasAddress === false ? 'none' : '';   // без адреса искать нечего
 
   if (_hasAddress === false) {
     el.className = 'pg';
@@ -2042,12 +2346,10 @@ function renderCatalog() {
     return;
   }
 
+  if (searchQ.trim()) { _renderCatalogSearch(el); return; }   // режим поиска: магазины + товары
+
   let list = [...prods];
   if (catFilter !== 'all') list = list.filter(p => p.categoryId === catFilter);
-  if (searchQ) list = list.filter(p =>
-    p.name.toLowerCase().includes(searchQ.toLowerCase()) ||
-    (p.description || '').toLowerCase().includes(searchQ.toLowerCase())
-  );
 
   if (!list.length) {
     el.className = 'pg';
@@ -2070,16 +2372,9 @@ function renderCatalog() {
     return;
   }
 
-  // Те же блоки, что и на главной (общий buildHrfBlock)
+  // Те же блоки, что и на главной (общая функция — одинаковые товары и порядок)
   el.className = '';
-  el.innerHTML = [...groups.entries()]
-    .sort((a, b) => retailerRank(a[0]) - retailerRank(b[0]))
-    .map(([sid, { store, prods: gp }]) => {
-    const firstLocId = gp[0]?.locationId;
-    const grpLocData = firstLocId ? (window._locDataMap?.[firstLocId] || null) : null;
-    const blockStore = sid !== '__none__' ? (store || { id: sid, name: gp[0]?.retailerName }) : null;
-    return buildHrfBlock(blockStore, pickHrfProds(gp, 6), grpLocData, { fallbackName: gp[0]?.retailerName });
-  }).join('');
+  el.innerHTML = _retailerBlocksHtml(list);
 }
 
 // Модалка товара
@@ -2227,7 +2522,7 @@ function _pmSlideInner(p) {
     : '';
 
   const heroHtml = p.imageUrl
-    ? `<img class="pm-hero-img" src="${escHtml(p.imageUrl)}" alt="${escHtml(p.name)}" loading="lazy" draggable="false">`
+    ? imgTag(p.imageUrl, p.name, { cls: 'pm-hero-img', count: false })
     : `<div class="pm-hero-ph">${ic.svg.replace('width="26" height="26"', 'width="100" height="100"')}</div>`;
 
   const chips = [];
@@ -2285,7 +2580,7 @@ function renderProdModal(p) {
   // прогреваем картинки соседей — чтобы при свайпе появлялись сразу
   [_pmIdx - 1, _pmIdx + 1].forEach(i => {
     const n = _pmGet(_pmList[i]);
-    if (n?.imageUrl) { const im = new Image(); im.src = n.imageUrl; }
+    if (n?.imageUrl) { const im = new Image(); im.onload = () => _imgSeen.add(n.imageUrl); im.src = n.imageUrl; }
   });
 }
 
@@ -2394,7 +2689,14 @@ window.filterCat = function (id) {
 
 
 // ─── 12. Поиск ────────────────────────────────────────────────
-window.onSearch = function (v) { searchQ = v; renderCatalog(); if (v) goPage('catalog'); };
+window.onSearch = function (v) {
+  searchQ = v || '';
+  const ci = document.getElementById('catalog-search-input');
+  if (ci && ci.value !== searchQ) ci.value = searchQ;
+  document.getElementById('catalog-search')?.classList.toggle('has-q', !!searchQ);
+  renderCatalog();
+  if (v) goPage('catalog');
+};
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeOrderModal(); closeProdModal(); }
 });
@@ -4151,10 +4453,24 @@ function checkAddressBanner(uid) {
     return;
   }
   const q = query(collection(db, 'users', uid, 'addresses'));
+  let _addrSig = null;   // «отпечаток» адресов: id + координаты
   _addrBannerUnsub = onSnapshot(q,
     snap => {
+      const had = _hasAddress;
       _hasAddress = !snap.empty;
       window.dispatchEvent(new CustomEvent('appDataLoaded', { detail: { hasAddress: _hasAddress } }));
+
+      const sig     = snap.docs.map(d => { const a = d.data(); return d.id + ':' + a.lat + ',' + a.lng; }).sort().join('|');
+      const first   = _addrSig === null;
+      const changed = sig !== _addrSig;
+      _addrSig = sig;
+      // Первый снимок: ленты уже построены в onAuthStateChanged ПОСЛЕ загрузки координат.
+      // Повторная перерисовка меняла товары на главной у пользователя на глазах — пропускаем,
+      // кроме случая, когда координаты тогда не загрузились.
+      const needCoords = _userLat === null && snap.docs.some(d => d.data().lat != null);
+      if (first && _hasAddress && !needCoords) return;
+      // Дальше — только если адреса реально изменились
+      if (!first && !changed && had === _hasAddress) return;
       _refreshFeedsOnAddr();
     },
     _err => {

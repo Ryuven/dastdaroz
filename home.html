@@ -250,6 +250,11 @@ a{color:inherit;text-decoration:none}
 .pc:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:var(--shadow-md)}
 .pc-img{aspect-ratio:1/1;width:100%;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
 .pc-img img{width:100%;height:100%;object-fit:cover}
+/* Фокусировка: размытая картинка проявляется и становится резкой */
+img.ld{opacity:0;filter:blur(18px);transform:scale(1.08);transition:opacity .3s ease-out,filter .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+img.ld.on{opacity:1;filter:none;transform:none}
+.pc-img.img-loading,.fav-img.img-loading{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:skl 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){img.ld{transition:opacity .2s;filter:none;transform:none}}
 .pc-badge{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.48rem;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.06em}
 /* ── Избранное: сердечко на карточке + строки в шторке ── */
 .pc-fav{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.14);transition:transform .15s,color .15s;-webkit-tap-highlight-color:transparent}
@@ -625,6 +630,22 @@ button.rh-chip-addr:active{opacity:.6}
 .store-cat-empty-ico{font-size:3rem;opacity:.15;margin-bottom:12px;display:block}
 .store-cat-empty-t{font-size:.88rem;font-weight:700;color:var(--tx3);margin-bottom:5px}
 .store-cat-empty-s{font-size:.72rem;color:var(--tx3)}
+
+/* ── Поиск по товарам точки ── */
+.store-search{padding:4px 22px 8px}
+.store-search-in{display:flex;align-items:center;gap:10px;height:46px;padding:0 6px 0 14px;background:var(--s2);border:1.5px solid var(--b0);border-radius:14px;transition:border-color .15s,background .15s}
+.store-search-in:focus-within{border-color:var(--accg);background:var(--s1)}
+.store-search-in>svg{flex-shrink:0;color:var(--tx3)}
+.store-search-in input{flex:1;min-width:0;height:100%;border:none;outline:none;background:none;padding:0;font-family:var(--fs);font-size:16px;color:var(--tx);-webkit-appearance:none;appearance:none}
+.store-search-in input::placeholder{color:var(--tx3)}
+.store-search-x{display:none;width:34px;height:34px;border:none;border-radius:10px;background:var(--s1);color:var(--tx2);align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;-webkit-tap-highlight-color:transparent}
+.store-search-x:active{transform:scale(.92)}
+.store-search.has-q .store-search-x{display:flex}
+#page-store.ret-loc-mode .store-search{display:none}
+#page-store.ret-searching .cat-filter-wrap{display:none}
+@media(max-width:860px){.store-search{padding:4px 14px 8px}}
+/* в «Каталоге» страница уже с отступами — своих не добавляем */
+#page-catalog .store-search{padding:0 0 14px}
 
 /* ── RETAILER CATALOG: скролл-секции по категориям ── */
 .store-prods-sectioned{display:flex;flex-direction:column;gap:0}
@@ -1513,6 +1534,18 @@ button.rh-chip-addr:active{opacity:.6}
 
     <!-- CATALOG -->
     <div class="page" id="page-catalog">
+      <div class="store-search" id="catalog-search">
+        <div class="store-search-in">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="catalog-search-input" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 placeholder="Поиск магазинов и товаров" aria-label="Поиск магазинов и товаров"
+                 oninput="onCatalogSearch(this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur();else if(event.key==='Escape')clearCatalogSearch()">
+          <button type="button" class="store-search-x" aria-label="Очистить" onclick="clearCatalogSearch()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
       <div id="cat-prods">
         <div class="hrf-block">
           <div class="hrf-header">
@@ -1678,6 +1711,18 @@ button.rh-chip-addr:active{opacity:.6}
     <!-- STORE CATALOG -->
     <div class="page" id="page-store">
       <div id="store-header"></div>
+      <div class="store-search" id="store-search">
+        <div class="store-search-in">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="store-search-input" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 placeholder="Поиск по товарам" aria-label="Поиск по товарам точки"
+                 oninput="onStoreSearch(this.value)"
+                 onkeydown="if(event.key==='Enter')this.blur();else if(event.key==='Escape')clearStoreSearch()">
+          <button type="button" class="store-search-x" aria-label="Очистить" onclick="clearStoreSearch()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
       <div class="cat-filter-wrap"><div class="cat-filter-scroll" id="store-cats"><button class="cat-filter-pill active" onclick="filterStoreCat('all')">Все</button></div></div>
       <div class="pg" id="store-prods">
         <div class="pc pc-skeleton"><div class="pc-img"></div><div class="pc-body"><div class="skl-block" style="height:12px;width:40%"></div><div class="skl-block" style="height:11px;width:88%"></div><div class="skl-block" style="height:8px;width:68%"></div><div class="pc-footer"><div class="skl-block" style="height:32px;border-radius:10px"></div></div></div></div>
